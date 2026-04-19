@@ -1,0 +1,108 @@
+{
+  "users": [
+    {
+      "id": "marie.dupont",
+      "full_name": "Marie Dupont",
+      "email": "marie.dupont@cybertwin.local",
+      "department": "Human Resources",
+      "role": "HR Manager",
+      "privilege_level": "standard",
+      "assigned_host": "ws-rh-01",
+      "access_rights": ["email", "intranet", "hr_portal", "shared_files"],
+      "work_hours": {"start": "08:30", "end": "17:30"},
+      "typical_login_hours": {"earliest": "08:00", "latest": "18:00", "weekends": false},
+      "risk_profile": "medium",
+      "last_password_change": "2024-01-05",
+      "mfa_enabled": true,
+      "failed_login_history": {"last_7_days": 0, "last_30_days": 1},
+      "devices": [
+        {"type": "laptop", "model": "Dell Latitude 5540", "serial": "DL5540-HR-0021"},
+        {"type": "monitor", "model": "Dell P2422H 24\"", "serial": "DLP24-0087"}
+      ]
+    },
+    {
+      "id": "jean.martin",
+      "full_name": "Jean Martin",
+      "email": "jean.martin@cybertwin.local",
+      "department": "Engineering",
+      "role": "Senior Developer",
+      "privilege_level": "elevated",
+      "assigned_host": "ws-dev-01",
+      "access_rights": ["email", "intranet", "git_repos", "ssh_servers", "ci_cd", "shared_files"],
+      "work_hours": {"start": "09:00", "end": "18:00"},
+      "typical_login_hours": {"earliest": "08:30", "latest": "22:00", "weekends": true},
+      "risk_profile": "medium",
+      "last_password_change": "2023-12-20",
+      "mfa_enabled": true,
+      "failed_login_history": {"last_7_days": 0, "last_30_days": 0},
+      "devices": [
+        {"type": "laptop", "model": "Lenovo ThinkPad X1 Carbon Gen 11", "serial": "TPX1C-DEV-0044"},
+        {"type": "monitor", "model": "LG 27UK850-W 27\" 4K", "serial": "LG27-0112"},
+        {"type": "yubikey", "model": "YubiKey 5 NFC", "serial": "YK5-0033"}
+      ]
+    },
+    {
+      "id": "alice.bernard",
+      "full_name": "Alice Bernard",
+      "email": "alice.bernard@cybertwin.local",
+      "department": "Finance",
+      "role": "Financial Analyst",
+      "privilege_level": "standard",
+      "assigned_host": "ws-fin-01",
+      "access_rights": ["email", "intranet", "erp", "financial_reports", "shared_files"],
+      "work_hours": {"start": "08:00", "end": "17:00"},
+      "typical_login_hours": {"earliest": "07:30", "latest": "18:00", "weekends": false},
+      "risk_profile": "high",
+      "last_password_change": "2023-11-15",
+      "mfa_enabled": true,
+      "failed_login_history": {"last_7_days": 1, "last_30_days": 3},
+      "devices": [
+        {"type": "laptop", "model": "Dell Latitude 5540", "serial": "DL5540-FIN-0018"},
+        {"type": "monitor", "model": "Dell P2422H 24\"", "serial": "DLP24-0091"},
+        {"type": "docking_station", "model": "Dell WD19S", "serial": "DLWD-0055"}
+      ]
+    },
+    {
+      "id": "admin.sys",
+      "full_name": "Admin Systeme",
+      "email": "admin.sys@cybertwin.local",
+      "department": "IT",
+      "role": "System Administrator",
+      "privilege_level": "admin",
+      "assigned_host": null,
+      "access_rights": ["all"],
+      "work_hours": {"start": "08:00", "end": "20:00"},
+      "typical_login_hours": {"earliest": "07:00", "latest": "23:00", "weekends": true},
+      "risk_profile": "critical",
+      "last_password_change": "2024-01-10",
+      "mfa_enabled": true,
+      "failed_login_history": {"last_7_days": 0, "last_30_days": 2},
+      "devices": [
+        {"type": "laptop", "model": "Lenovo ThinkPad T14s Gen 4", "serial": "TPT14-IT-0002"},
+        {"type": "yubikey", "model": "YubiKey 5C NFC", "serial": "YK5C-0001"},
+        {"type": "smartphone", "model": "Google Pixel 8", "serial": "GP8-IT-0001"}
+      ]
+    },
+    {
+      "id": "pierre.leroy",
+      "full_name": "Pierre Leroy",
+      "email": "pierre.leroy@cybertwin.local",
+      "department": "IT",
+      "role": "Network Engineer",
+      "privilege_level": "elevated",
+      "assigned_host": null,
+      "access_rights": ["email", "intranet", "network_mgmt", "ssh_servers", "firewall_mgmt"],
+      "work_hours": {"start": "09:00", "end": "18:00"},
+      "typical_login_hours": {"earliest": "08:00", "latest": "22:00", "weekends": true},
+      "risk_profile": "high",
+      "last_password_change": "2024-01-02",
+      "mfa_enabled": true,
+      "failed_login_history": {"last_7_days": 0, "last_30_days": 0},
+      "devices": [
+        {"type": "laptop", "model": "Lenovo ThinkPad T14s Gen 4", "serial": "TPT14-IT-0005"},
+        {"type": "yubikey", "model": "YubiKey 5 NFC", "serial": "YK5-0041"},
+        {"type": "smartphone", "model": "Samsung Galaxy S23", "serial": "SGS23-IT-0003"}
+      ]
+    }
+  ]
+}

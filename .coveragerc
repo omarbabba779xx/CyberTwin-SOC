@@ -1,0 +1,14 @@
+[run]
+source = backend
+omit =
+    backend/__init__.py
+    backend/*/__init__.py
+    tests/*
+
+[report]
+show_missing = true
+precision = 1
+fail_under = 60
+
+[html]
+directory = htmlcov

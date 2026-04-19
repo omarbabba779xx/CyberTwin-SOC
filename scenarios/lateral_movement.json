@@ -1,0 +1,265 @@
+{
+  "id": "sc-lateral-001",
+  "name": "APT28 Fancy Bear Lateral Movement Campaign",
+  "description": "A sophisticated lateral movement campaign modeled after APT28 (Fancy Bear / Sofacy) tactics. The attack begins with a compromised developer workstation via a trojanized Python package (supply chain compromise), followed by credential dumping with Mimikatz, Active Directory reconnaissance with BloodHound, lateral movement using PsExec and WMI, Golden Ticket persistence, and ultimately domain-wide compromise. This mirrors real APT28 TTPs documented in campaigns against government and defense organizations.",
+  "severity": "critical",
+  "category": "lateral_movement",
+  "threat_actor": {
+    "name": "APT28",
+    "aliases": ["Fancy Bear", "Sofacy", "Sednit", "Forest Blizzard", "STRONTIUM", "Pawn Storm"],
+    "origin": "Russia (GRU Unit 26165)",
+    "motivation": "Espionage",
+    "active_since": "2004"
+  },
+  "references": [
+    "https://attack.mitre.org/groups/G0007/",
+    "https://www.microsoft.com/en-us/security/blog/2023/08/02/midnight-blizzard-conducts-targeted-social-engineering-over-microsoft-teams/",
+    "https://www.mandiant.com/resources/blog/apt28-center-stage",
+    "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-108a",
+    "https://www.fireeye.com/blog/threat-research/2017/08/apt28-targets-hospitality-sector.html"
+  ],
+  "kill_chain": ["exploitation", "installation", "command_and_control", "lateral_movement", "actions_on_objectives"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Supply Chain Compromise via Trojanized Python Package",
+      "description": "A developer installs a trojanized Python package 'python-dateutil-x' (typosquatting the legitimate python-dateutil). The malicious package contains a post-install script that downloads and executes the XAgent backdoor (APT28's custom implant). The backdoor establishes a reverse HTTPS connection to the C2 server. This mirrors real supply chain attacks documented against PyPI in 2023.",
+      "technique_id": "T1195.002",
+      "technique_name": "Supply Chain Compromise: Compromise Software Supply Chain",
+      "tactic": "Initial Access",
+      "target_host": "ws-dev-01",
+      "target_user": "jean.martin",
+      "delay_seconds": 0,
+      "stealth_level": "high",
+      "expected_logs": [
+        {"type": "process", "description": "pip install triggers setup.py with embedded PowerShell downloader", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "process", "description": "python.exe spawns powershell.exe -EncodedCommand", "event_id": "Windows Event 4688 (Process Creation)"},
+        {"type": "network", "description": "HTTPS connection to C2 at 194.36.209.100 on port 443", "event_id": "Sysmon Event 3 (NetworkConnect)"},
+        {"type": "file_access", "description": "XAgent binary dropped to %APPDATA%\\Microsoft\\Windows\\svchost.exe", "event_id": "Sysmon Event 11 (FileCreate)"},
+        {"type": "process", "description": "Scheduled task created for persistence", "event_id": "Windows Event 4698 (Scheduled Task Created)"}
+      ],
+      "indicators": {
+        "package_name": "python-dateutil-x",
+        "legitimate_package": "python-dateutil",
+        "malware": "XAgent (Sofacy backdoor)",
+        "c2_server": "194.36.209.100",
+        "c2_port": 443,
+        "dropped_binary": "%APPDATA%\\Microsoft\\Windows\\svchost.exe"
+      },
+      "ioc": {
+        "domains": ["update-service.dynamic-dns.net"],
+        "ips": ["194.36.209.100"],
+        "file_hashes": {
+          "trojanized_package_sha256": "b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
+          "xagent_sha256": "d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5"
+        }
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Credential Dumping with Mimikatz",
+      "description": "APT28 uses Mimikatz to dump credentials from LSASS process memory on the developer workstation. They extract NTLM hashes, Kerberos tickets, and cleartext passwords. The attacker uses a reflective DLL injection technique to load Mimikatz directly into memory to avoid disk-based detection, a well-documented APT28 evasion technique.",
+      "technique_id": "T1003.001",
+      "technique_name": "OS Credential Dumping: LSASS Memory",
+      "tactic": "Credential Access",
+      "target_host": "ws-dev-01",
+      "target_user": "jean.martin",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "Suspicious process accessing lsass.exe memory", "event_id": "Sysmon Event 10 (ProcessAccess) targeting lsass.exe"},
+        {"type": "process", "description": "PowerShell Invoke-Mimikatz reflective loading", "event_id": "Windows Event 4104 (Script Block Logging)"},
+        {"type": "security", "description": "Sensitive privilege use: SeDebugPrivilege enabled", "event_id": "Windows Event 4672 (Special Logon)"},
+        {"type": "security", "description": "Credential Manager accessed", "event_id": "Windows Event 4648 (Logon with Explicit Credentials)"},
+        {"type": "process", "description": "Reflective DLL injection into legitimate process", "event_id": "Sysmon Event 8 (CreateRemoteThread)"}
+      ],
+      "indicators": {
+        "tool": "Mimikatz 2.2.0",
+        "technique": "Reflective DLL Injection into lsass.exe",
+        "commands": [
+          "Invoke-Mimikatz -Command '\"sekurlsa::logonpasswords\"'",
+          "Invoke-Mimikatz -Command '\"sekurlsa::tickets /export\"'",
+          "Invoke-Mimikatz -Command '\"lsadump::sam\"'"
+        ],
+        "credentials_obtained": ["NTLM hashes", "Kerberos TGT", "cleartext passwords"],
+        "target_process": "lsass.exe"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "mimikatz_reflective_sha256": "e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6"
+        }
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Active Directory Reconnaissance with BloodHound",
+      "description": "APT28 deploys SharpHound (BloodHound's data collector) to map the entire Active Directory environment, identifying the shortest attack path from the compromised developer account to Domain Admin. They discover that jean.martin has GenericAll rights on a Group Policy Object linked to the Domain Controllers OU, providing a path to domain dominance.",
+      "technique_id": "T1087.002",
+      "technique_name": "Account Discovery: Domain Account",
+      "tactic": "Discovery",
+      "target_host": "ws-dev-01",
+      "target_user": "jean.martin",
+      "delay_seconds": 180,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "SharpHound.exe executed with -c All collection method", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "network", "description": "High volume LDAP queries to domain controller srv-ad-01", "event_id": "Sysmon Event 3 (NetworkConnect)"},
+        {"type": "process", "description": "net group /domain and nltest /dclist enumeration", "event_id": "Windows Event 4688 (Process Creation)"},
+        {"type": "file_access", "description": "BloodHound ZIP output created in C:\\Users\\Public\\", "event_id": "Sysmon Event 11 (FileCreate)"},
+        {"type": "security", "description": "Kerberos service ticket requests for multiple SPNs (Kerberoasting recon)", "event_id": "Windows Event 4769 (Kerberos Service Ticket)"}
+      ],
+      "indicators": {
+        "tools": ["SharpHound 1.1.1", "BloodHound 4.3", "Rubeus"],
+        "commands": [
+          "SharpHound.exe -c All,GPOLocalGroup --outputdirectory C:\\Users\\Public",
+          "net group \"Domain Admins\" /domain",
+          "net group \"Enterprise Admins\" /domain",
+          "nltest /dclist:cybertwin.local",
+          "Rubeus.exe kerberoast /outfile:C:\\Users\\Public\\hashes.txt"
+        ],
+        "attack_path_identified": "jean.martin -> GenericAll on GPO -> Domain Controllers OU -> Domain Admin",
+        "domain": "cybertwin.local"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "sharphound_sha256": "f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7",
+          "rubeus_sha256": "a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8"
+        }
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Lateral Movement via PsExec and WMI",
+      "description": "Using the NTLM hashes obtained from Mimikatz, APT28 performs Pass-the-Hash attacks to move laterally to the web server (srv-web-01) using Impacket's psexec.py and wmiexec.py. They deploy additional persistence mechanisms on each compromised host. The attacker avoids using RDP to reduce forensic artifacts, consistent with documented APT28 tradecraft.",
+      "technique_id": "T1021.002",
+      "technique_name": "Remote Services: SMB/Windows Admin Shares",
+      "tactic": "Lateral Movement",
+      "target_host": "srv-web-01",
+      "target_user": "jean.martin",
+      "delay_seconds": 60,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "authentication", "description": "NTLM authentication from ws-dev-01 using Pass-the-Hash", "event_id": "Windows Event 4624 (Logon Type 3 - Network)"},
+        {"type": "security", "description": "Admin share access: \\\\srv-web-01\\ADMIN$ and \\\\srv-web-01\\C$", "event_id": "Windows Event 5140 (Network Share Access)"},
+        {"type": "process", "description": "PsExec service binary PSEXESVC.exe installed and started", "event_id": "Windows Event 7045 (Service Installed)"},
+        {"type": "process", "description": "cmd.exe spawned by PSEXESVC service", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "network", "description": "WMI connection over DCOM (port 135) from ws-dev-01", "event_id": "Sysmon Event 3 (NetworkConnect)"}
+      ],
+      "indicators": {
+        "source_ip": "10.0.1.11",
+        "tools": ["Impacket psexec.py", "Impacket wmiexec.py"],
+        "auth_method": "Pass-the-Hash (NTLM)",
+        "time": "02:30",
+        "services_created": ["PSEXESVC"],
+        "shares_accessed": ["ADMIN$", "C$", "IPC$"]
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "psexesvc_sha256": "b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9"
+        }
+      }
+    },
+    {
+      "phase": 5,
+      "name": "Web Shell Deployment and Persistence",
+      "description": "APT28 deploys a custom ASPX web shell (a variant of their documented tool 'XTunnel') on the web server for persistent access independent of the C2 channel. The web shell is obfuscated and placed in a legitimate-looking IIS directory. Additionally, they create a Golden Ticket using the krbtgt hash obtained from the domain controller to ensure persistent domain access.",
+      "technique_id": "T1505.003",
+      "technique_name": "Server Software Component: Web Shell",
+      "tactic": "Persistence",
+      "target_host": "srv-web-01",
+      "target_user": "SYSTEM",
+      "delay_seconds": 180,
+      "stealth_level": "low",
+      "expected_logs": [
+        {"type": "file_access", "description": "New ASPX file created in IIS web root", "event_id": "Sysmon Event 11 (FileCreate)"},
+        {"type": "process", "description": "w3wp.exe spawning cmd.exe or powershell.exe", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "web_access", "description": "HTTP POST requests to /iishelp/maintenance.aspx", "event_id": "IIS W3C Log"},
+        {"type": "security", "description": "Kerberos TGT forged with anomalous lifetime (Golden Ticket)", "event_id": "Windows Event 4769 (Kerberos Service Ticket)"},
+        {"type": "security", "description": "Account logged on with forged Kerberos ticket", "event_id": "Windows Event 4624 (Logon Type 3 - anomalous SID)"}
+      ],
+      "indicators": {
+        "webshell_path": "C:\\inetpub\\wwwroot\\iishelp\\maintenance.aspx",
+        "webshell_type": "ASPX (XTunnel variant)",
+        "golden_ticket": {
+          "tool": "Mimikatz kerberos::golden",
+          "target_domain": "cybertwin.local",
+          "krbtgt_hash": "obtained from DCSync",
+          "ticket_lifetime": "10 years"
+        },
+        "persistence_mechanisms": ["Web shell", "Golden Ticket", "Scheduled Task"]
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "webshell_sha256": "c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0",
+          "xtunnel_sha256": "d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1"
+        }
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Domain Controller Compromise via DCSync",
+      "description": "APT28 performs a DCSync attack against the domain controller using the compromised domain admin credentials, replicating the entire Active Directory database including all user password hashes. They then pivot to the database server (srv-db-01) and dump sensitive application data. This phase represents full domain compromise, consistent with APT28's documented objective of total environment control.",
+      "technique_id": "T1003.006",
+      "technique_name": "OS Credential Dumping: DCSync",
+      "tactic": "Credential Access",
+      "target_host": "srv-ad-01",
+      "target_user": "CYBERTWIN\\Administrator",
+      "delay_seconds": 120,
+      "stealth_level": "low",
+      "expected_logs": [
+        {"type": "security", "description": "Directory service replication request from non-DC source", "event_id": "Windows Event 4662 (Object Access - DS-Replication-Get-Changes-All)"},
+        {"type": "network", "description": "MS-DRSR (Directory Replication Service) traffic from ws-dev-01", "event_id": "Sysmon Event 3 (NetworkConnect port 445/135)"},
+        {"type": "authentication", "description": "Privileged logon with Domain Admin from developer workstation", "event_id": "Windows Event 4672 (Special Logon)"},
+        {"type": "database", "description": "SQL queries extracting sensitive data from application database", "event_id": "SQL Server Audit Log"},
+        {"type": "security", "description": "New domain admin account created for persistence", "event_id": "Windows Event 4720 (User Account Created)"}
+      ],
+      "indicators": {
+        "dcsync_tool": "Mimikatz lsadump::dcsync",
+        "commands": [
+          "Invoke-Mimikatz -Command '\"lsadump::dcsync /domain:cybertwin.local /all /csv\"'",
+          "net user svc_backup P@ssw0rd2025! /add /domain",
+          "net group \"Domain Admins\" svc_backup /add /domain"
+        ],
+        "pivot_chain": ["ws-dev-01", "srv-web-01", "srv-ad-01", "srv-db-01"],
+        "backdoor_account": "svc_backup",
+        "total_hashes_extracted": "all domain users"
+      },
+      "ioc": {
+        "domains": ["update-service.dynamic-dns.net"],
+        "ips": ["194.36.209.100"],
+        "file_hashes": {
+          "ntds_dit_dump_sha256": "e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2"
+        }
+      }
+    }
+  ],
+  "mitre_techniques_summary": [
+    "T1195.002",
+    "T1003.001",
+    "T1087.002",
+    "T1021.002",
+    "T1505.003",
+    "T1003.006"
+  ],
+  "expected_detection_points": [
+    "Python/pip spawning PowerShell with encoded commands",
+    "Process accessing lsass.exe memory (Mimikatz credential dumping)",
+    "SharpHound/BloodHound Active Directory enumeration",
+    "Kerberoasting via excessive Kerberos TGS requests",
+    "Pass-the-Hash NTLM authentication from developer workstation",
+    "PsExec service installation on remote hosts (PSEXESVC)",
+    "WMI lateral movement over DCOM",
+    "Web shell deployment in IIS web root",
+    "Golden Ticket with anomalous Kerberos ticket lifetime",
+    "DCSync replication request from non-domain controller",
+    "New domain admin account creation (svc_backup)"
+  ]
+}

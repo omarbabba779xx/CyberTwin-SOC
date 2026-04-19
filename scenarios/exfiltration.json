@@ -1,0 +1,254 @@
+{
+  "id": "sc-exfil-001",
+  "name": "Insider Threat Data Exfiltration Campaign",
+  "description": "A disgruntled employee in the finance department systematically exfiltrates sensitive financial and trade secret data using legitimate access rights. This scenario is modeled after real-world insider threat cases including the Tesla insider threat (2020) where an employee attempted to exfiltrate gigabytes of proprietary data, and patterns documented in the CERT Insider Threat Center database. The insider uses a combination of cloud storage, USB devices, personal email, and steganography to exfiltrate data while attempting to cover their tracks.",
+  "severity": "critical",
+  "category": "exfiltration",
+  "threat_actor": {
+    "name": "Insider Threat (Malicious Employee)",
+    "aliases": ["N/A"],
+    "origin": "Internal",
+    "motivation": "Financial gain / Revenge / Corporate espionage",
+    "active_since": "N/A"
+  },
+  "references": [
+    "https://attack.mitre.org/techniques/T1567/",
+    "https://www.cisa.gov/topics/physical-security/insider-threat-mitigation",
+    "https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=540644",
+    "https://www.fbi.gov/investigate/counterintelligence/the-insider-threat"
+  ],
+  "kill_chain": ["reconnaissance", "collection", "exfiltration", "anti_forensics"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Internal Reconnaissance and Data Discovery",
+      "description": "The insider employee (alice.bernard) systematically searches network shares, SharePoint sites, and the ERP system to identify high-value financial documents, trade secrets, and customer PII. Access patterns deviate from normal behavior: the employee accesses directories outside their normal scope (executive reports, M&A documents, customer databases) during non-business hours. This pattern matches the CERT Insider Threat Center's documented pre-exfiltration behavior.",
+      "technique_id": "T1083",
+      "technique_name": "File and Directory Discovery",
+      "tactic": "Discovery",
+      "target_host": "ws-fin-01",
+      "target_user": "alice.bernard",
+      "delay_seconds": 0,
+      "stealth_level": "high",
+      "expected_logs": [
+        {"type": "file_access", "description": "SMB access to \\\\srv-db-01\\executive\\ outside normal scope", "event_id": "Windows Event 5145 (Network Share Object Access)"},
+        {"type": "file_access", "description": "Access to restricted M&A folder \\\\srv-db-01\\finance\\mergers\\", "event_id": "Windows Event 4663 (Object Access)"},
+        {"type": "application", "description": "SAP ERP queries for complete customer database export", "event_id": "SAP Security Audit Log (SM20)"},
+        {"type": "security", "description": "File access outside normal working hours (23:15 local time)", "event_id": "Windows Event 4663 (Object Access)"},
+        {"type": "file_access", "description": "Recursive directory listing of multiple department shares", "event_id": "Sysmon Event 1 (ProcessCreate - dir /s)"}
+      ],
+      "indicators": {
+        "directories_browsed": [
+          "\\\\srv-db-01\\finance\\quarterly_reports\\",
+          "\\\\srv-db-01\\finance\\mergers\\project_phoenix\\",
+          "\\\\srv-db-01\\hr\\payroll\\",
+          "\\\\srv-db-01\\executive\\board_materials\\",
+          "\\\\srv-db-01\\engineering\\patents\\"
+        ],
+        "access_pattern": "sequential_browsing_outside_scope",
+        "access_time": "23:15-02:30 (outside business hours)",
+        "anomaly": "First access to executive and engineering shares in 2 years of employment"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Bulk Data Staging to Local Workstation",
+      "description": "The insider copies large volumes of sensitive files from network shares to a hidden local directory on their workstation. They use robocopy with specific flags to mirror entire directory structures while preserving timestamps (to blend in with normal file operations). Over 340 files totaling 1.2 GB are staged, including financial forecasts, customer PII, patent applications, and M&A documents.",
+      "technique_id": "T1074.001",
+      "technique_name": "Data Staged: Local Data Staging",
+      "tactic": "Collection",
+      "target_host": "ws-fin-01",
+      "target_user": "alice.bernard",
+      "delay_seconds": 600,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "robocopy.exe with /MIR /COPY:DAT flags for timestamp preservation", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "file_access", "description": "340+ file copy operations from network share to local disk", "event_id": "Windows Event 4663 (Object Access)"},
+        {"type": "security", "description": "DLP alert: bulk copy of files classified as Confidential", "event_id": "DLP Policy Alert"},
+        {"type": "file_access", "description": "Hidden directory created: C:\\Users\\alice.bernard\\.cache\\system_backup\\", "event_id": "Sysmon Event 11 (FileCreate)"},
+        {"type": "network", "description": "Sustained SMB data transfer from srv-db-01 (1.2 GB over 45 minutes)", "event_id": "Windows Event 5145 (Network Share)"}
+      ],
+      "indicators": {
+        "files_copied": 340,
+        "total_size_mb": 1200,
+        "staging_directory": "C:\\Users\\alice.bernard\\.cache\\system_backup\\",
+        "copy_tool": "robocopy.exe /MIR /COPY:DAT /R:0",
+        "file_types": [".xlsx", ".pdf", ".docx", ".pptx", ".csv", ".sql"],
+        "classification_labels": ["Confidential", "Internal Only", "Restricted"]
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Data Compression and Encryption",
+      "description": "The insider compresses staged data into multiple password-protected 7-Zip archives, splitting them into 50 MB volumes to stay under cloud storage upload limits and avoid triggering DLP size thresholds. The archive password is strong and unique, making forensic recovery of contents difficult. They also rename the archive extensions from .7z to .bak to disguise them as backup files.",
+      "technique_id": "T1560.001",
+      "technique_name": "Archive Collected Data: Archive via Utility",
+      "tactic": "Collection",
+      "target_host": "ws-fin-01",
+      "target_user": "alice.bernard",
+      "delay_seconds": 300,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "7z.exe a -v50m -p -mhe=on (split archive with encrypted headers)", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "file_access", "description": "Multiple .7z.001/.7z.002 split volumes created", "event_id": "Sysmon Event 11 (FileCreate)"},
+        {"type": "process", "description": "ren command renaming .7z extensions to .bak", "event_id": "Windows Event 4688 (Process Creation)"},
+        {"type": "file_access", "description": "24 archive volumes created totaling 1.1 GB", "event_id": "Sysmon Event 11 (FileCreate)"},
+        {"type": "process", "description": "certutil.exe used to verify archive integrity", "event_id": "Sysmon Event 1 (ProcessCreate)"}
+      ],
+      "indicators": {
+        "tool": "7-Zip 23.01",
+        "command": "7z.exe a -v50m -pX#9kL2$mN7qR4 -mhe=on C:\\Users\\alice.bernard\\.cache\\sys_backup.7z C:\\Users\\alice.bernard\\.cache\\system_backup\\*",
+        "archive_volumes": 24,
+        "total_archive_size_mb": 1100,
+        "password_protected": true,
+        "encrypted_headers": true,
+        "renamed_extension": ".bak"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "archive_vol1_sha256": "f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3",
+          "archive_vol2_sha256": "a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4"
+        }
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Exfiltration via Personal Cloud Storage and Email",
+      "description": "The insider uploads archive volumes to personal Google Drive and Mega.nz accounts using the web browser (avoiding installable clients that might be blocked by endpoint protection). They also email selected high-value documents to a personal ProtonMail account as a secondary channel. This multi-channel exfiltration approach matches documented insider threat patterns where individuals use redundant methods.",
+      "technique_id": "T1567.002",
+      "technique_name": "Exfiltration Over Web Service: Exfiltration to Cloud Storage",
+      "tactic": "Exfiltration",
+      "target_host": "ws-fin-01",
+      "target_user": "alice.bernard",
+      "delay_seconds": 120,
+      "stealth_level": "low",
+      "expected_logs": [
+        {"type": "web_access", "description": "Browser upload to drive.google.com (personal account)", "event_id": "Proxy Log (HTTPS POST to drive.google.com)"},
+        {"type": "web_access", "description": "Browser upload to mega.nz (secondary channel)", "event_id": "Proxy Log (HTTPS POST to mega.nz)"},
+        {"type": "network", "description": "1.1 GB total outbound upload over 2 hours", "event_id": "Firewall Egress Log"},
+        {"type": "email", "description": "Outbound email to personal ProtonMail with attachments", "event_id": "Exchange MessageTracking (SMTP SEND)"},
+        {"type": "dns", "description": "DNS queries to mega.nz and mail.protonmail.com", "event_id": "Sysmon Event 22 (DNSEvent)"}
+      ],
+      "indicators": {
+        "primary_destination": "drive.google.com (personal account: a.bernard.personal@gmail.com)",
+        "secondary_destination": "mega.nz",
+        "email_exfil": "alice.b.private@protonmail.com",
+        "upload_size_mb": 1100,
+        "protocol": "HTTPS",
+        "personal_account": true,
+        "upload_duration_minutes": 120
+      },
+      "ioc": {
+        "domains": ["drive.google.com", "mega.nz", "mail.protonmail.com"],
+        "ips": [],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 5,
+      "name": "Exfiltration via USB Device",
+      "description": "As a physical backup method, the insider connects a personal Samsung T7 portable SSD (2 TB) to their workstation and copies the uncompressed data directly. USB device whitelisting is not enforced in the organization, and the DLP endpoint agent only monitors network transfers, not USB. The insider performs this copy during lunch break when nearby colleagues are away. This mirrors the Tesla insider threat case where USB was the primary exfiltration vector.",
+      "technique_id": "T1052.001",
+      "technique_name": "Exfiltration Over Physical Medium: Exfiltration over USB",
+      "tactic": "Exfiltration",
+      "target_host": "ws-fin-01",
+      "target_user": "alice.bernard",
+      "delay_seconds": 180,
+      "stealth_level": "low",
+      "expected_logs": [
+        {"type": "security", "description": "USB mass storage device connected (Samsung T7 SSD)", "event_id": "Windows Event 6416 (New External Device)"},
+        {"type": "security", "description": "New drive letter E: mounted for removable device", "event_id": "Sysmon Event 11 (FileCreate on E:\\)"},
+        {"type": "file_access", "description": "Bulk file copy operations to removable drive E:\\", "event_id": "Windows Event 4663 (Object Access - Removable Storage)"},
+        {"type": "security", "description": "Registry key modified: USBSTOR device history updated", "event_id": "Sysmon Event 13 (RegistryEvent)"},
+        {"type": "process", "description": "xcopy.exe /E /H copying hidden and system files to USB", "event_id": "Sysmon Event 1 (ProcessCreate)"}
+      ],
+      "indicators": {
+        "usb_device": "Samsung Portable SSD T7 2TB",
+        "device_id": "USB\\VID_04E8&PID_4001\\S5XNNG0R504312",
+        "serial_number": "S5XNNG0R504312",
+        "drive_letter": "E:\\",
+        "files_copied_to_usb": 340,
+        "copy_size_mb": 1200,
+        "copy_tool": "xcopy.exe /E /H /Y"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Anti-Forensics and Track Covering",
+      "description": "The insider attempts to cover their tracks by deleting the staging directory, clearing recent file lists, emptying the Recycle Bin, clearing browser history, and using SDelete (Sysinternals) to securely wipe the staging area to prevent forensic recovery. They also modify file access timestamps using PowerShell to obscure the timeline. This systematic evidence destruction is a common final phase in insider threat cases documented by the CERT Insider Threat Center.",
+      "technique_id": "T1070.004",
+      "technique_name": "Indicator Removal: File Deletion",
+      "tactic": "Defense Evasion",
+      "target_host": "ws-fin-01",
+      "target_user": "alice.bernard",
+      "delay_seconds": 60,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "sdelete64.exe -p 3 -s securely wiping staging directory", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "file_access", "description": "Mass deletion of 340+ files from staging directory", "event_id": "Sysmon Event 23 (FileDelete)"},
+        {"type": "process", "description": "PowerShell Set-ItemProperty -Name LastWriteTime to modify timestamps", "event_id": "Windows Event 4104 (Script Block Logging)"},
+        {"type": "process", "description": "RunDll32.exe InetCpl.cpl ClearMyTracksByProcess (IE/Edge history clear)", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "security", "description": "Windows Event Log cleared: Security log", "event_id": "Windows Event 1102 (Audit Log Cleared)"}
+      ],
+      "indicators": {
+        "tools_used": ["SDelete 2.05 (Sysinternals)", "PowerShell", "cipher.exe /w"],
+        "commands": [
+          "sdelete64.exe -p 3 -s C:\\Users\\alice.bernard\\.cache\\system_backup\\",
+          "sdelete64.exe -p 3 -s C:\\Users\\alice.bernard\\.cache\\sys_backup.*",
+          "cipher /w:C:\\Users\\alice.bernard\\.cache\\",
+          "powershell -c \"Get-ChildItem 'C:\\Users\\alice.bernard\\Documents' | ForEach-Object { $_.LastWriteTime = (Get-Date).AddDays(-30) }\"",
+          "del /f /q %APPDATA%\\Microsoft\\Windows\\Recent\\*",
+          "wevtutil cl Security"
+        ],
+        "deleted_path": "C:\\Users\\alice.bernard\\.cache\\system_backup\\",
+        "actions": ["secure_wipe_staging", "clear_recent_files", "empty_recycle_bin", "clear_browser_history", "modify_timestamps", "clear_security_log"]
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "sdelete_sha256": "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5"
+        }
+      }
+    }
+  ],
+  "mitre_techniques_summary": [
+    "T1083",
+    "T1074.001",
+    "T1560.001",
+    "T1567.002",
+    "T1052.001",
+    "T1070.004"
+  ],
+  "expected_detection_points": [
+    "File access to directories outside employee's normal scope (executive, engineering shares)",
+    "Bulk file access anomaly: 340+ files copied in single session",
+    "Data access during non-business hours (23:15-02:30)",
+    "DLP alert: confidential files copied to local staging directory",
+    "7-Zip creating password-protected split archives with encrypted headers",
+    "Browser upload to personal cloud storage (Google Drive, Mega.nz)",
+    "Email with attachments sent to personal ProtonMail account",
+    "Unregistered USB mass storage device connected (Samsung T7)",
+    "Bulk file copy to removable media",
+    "SDelete secure wipe tool execution",
+    "Windows Security Event Log cleared (Event 1102)",
+    "PowerShell timestamp modification on recent files"
+  ]
+}

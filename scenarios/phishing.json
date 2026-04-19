@@ -1,0 +1,240 @@
+{
+  "id": "sc-phishing-001",
+  "name": "APT29 Cozy Bear Spear Phishing Campaign",
+  "description": "A targeted spear phishing campaign modeled after APT29 (Cozy Bear) tactics used in the SolarWinds compromise. The attack begins with a spear phishing email containing a malicious link disguised as a security update, leading to credential harvesting via an EnvyScout HTML smuggling dropper, followed by Cobalt Strike beacon deployment, internal reconnaissance, and data exfiltration via encrypted C2 channels.",
+  "severity": "critical",
+  "category": "initial_access",
+  "threat_actor": {
+    "name": "APT29",
+    "aliases": ["Cozy Bear", "Nobelium", "Midnight Blizzard", "The Dukes"],
+    "origin": "Russia",
+    "motivation": "Espionage",
+    "active_since": "2008"
+  },
+  "references": [
+    "https://attack.mitre.org/groups/G0016/",
+    "https://www.microsoft.com/en-us/security/blog/2021/05/27/new-sophisticated-email-based-attack-from-nobelium/",
+    "https://www.mandiant.com/resources/blog/tracking-apt29-phishing-campaigns",
+    "https://www.cisa.gov/news-events/cybersecurity-advisories/aa21-148a"
+  ],
+  "kill_chain": ["reconnaissance", "weaponization", "delivery", "exploitation", "installation", "command_and_control", "actions_on_objectives"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Spear Phishing Email Delivery (EnvyScout)",
+      "description": "APT29 sends a spear phishing email impersonating a trusted organization (e.g., USAID, Microsoft) with an HTML attachment using the EnvyScout HTML smuggling technique to bypass email security gateways. The email targets the HR department with a fake benefits portal update.",
+      "technique_id": "T1566.002",
+      "technique_name": "Phishing: Spearphishing Link",
+      "tactic": "Initial Access",
+      "target_host": "ws-rh-01",
+      "target_user": "marie.dupont",
+      "delay_seconds": 0,
+      "stealth_level": "high",
+      "expected_logs": [
+        {"type": "email", "description": "Incoming email from external sender with HTML attachment", "event_id": "Exchange MessageTracking"},
+        {"type": "web_access", "description": "User opens HTML attachment triggering JavaScript blob download", "event_id": "Sysmon Event 15 (FileCreateStreamHash)"},
+        {"type": "dns", "description": "DNS resolution for typosquatted domain micros0ft-update.com", "event_id": "Sysmon Event 22 (DNSEvent)"},
+        {"type": "process", "description": "mshta.exe or wscript.exe spawned from browser process", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "network", "description": "HTTPS connection to C2 infrastructure on port 443", "event_id": "Sysmon Event 3 (NetworkConnect)"}
+      ],
+      "indicators": {
+        "sender": "no-reply@micros0ft-update.com",
+        "subject": "Action Required: Critical Security Update for Employee Portal",
+        "url": "https://micros0ft-update.com/security-update/portal",
+        "domain": "micros0ft-update.com",
+        "attachment": "Security_Update_Guide.html"
+      },
+      "ioc": {
+        "domains": ["micros0ft-update.com", "login-microsoftonline.cloud"],
+        "ips": ["185.220.101.42"],
+        "file_hashes": {
+          "html_dropper_sha256": "a3b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0",
+          "envyscout_sha256": "7c42f4c5e3a1d2b0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6"
+        }
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Credential Harvesting via Fake OAuth Portal",
+      "description": "The phishing link redirects to a convincing replica of the Microsoft 365 OAuth consent page. The victim enters corporate credentials, which are captured and sent to APT29's collection infrastructure. The page also requests OAuth token permissions to maintain persistent access.",
+      "technique_id": "T1556.006",
+      "technique_name": "Modify Authentication Process: Multi-Factor Authentication",
+      "tactic": "Credential Access",
+      "target_host": "ws-rh-01",
+      "target_user": "marie.dupont",
+      "delay_seconds": 30,
+      "stealth_level": "high",
+      "expected_logs": [
+        {"type": "web_access", "description": "POST request with credentials to phishing domain", "event_id": "Proxy Log"},
+        {"type": "network", "description": "TLS connection to 185.220.101.42 on port 443", "event_id": "Sysmon Event 3 (NetworkConnect)"},
+        {"type": "authentication", "description": "OAuth consent grant logged in Azure AD", "event_id": "Azure AD Sign-in Log"},
+        {"type": "security", "description": "Suspicious OAuth application consent from unusual IP", "event_id": "Azure AD Audit Log"}
+      ],
+      "indicators": {
+        "external_ip": "185.220.101.42",
+        "data_type": "credentials_and_oauth_tokens",
+        "fake_portal": "login-microsoftonline.cloud",
+        "oauth_app_name": "Security Update Service"
+      },
+      "ioc": {
+        "domains": ["login-microsoftonline.cloud"],
+        "ips": ["185.220.101.42", "185.220.101.43"],
+        "file_hashes": {}
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Cobalt Strike Beacon Deployment",
+      "description": "Using the harvested credentials, APT29 deploys a Cobalt Strike beacon via a malicious ISO file delivered through the compromised email account. The ISO contains a hidden DLL (NativeZone loader) that is side-loaded when the user opens a decoy document inside the mounted ISO image.",
+      "technique_id": "T1059.003",
+      "technique_name": "Command and Scripting Interpreter: Windows Command Shell",
+      "tactic": "Execution",
+      "target_host": "ws-rh-01",
+      "target_user": "marie.dupont",
+      "delay_seconds": 300,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "rundll32.exe loading NativeZone DLL from mounted ISO", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "file_access", "description": "ISO file mounted creating virtual drive", "event_id": "Windows Event 4663 (Object Access)"},
+        {"type": "process", "description": "DLL side-loading via legitimate signed binary", "event_id": "Sysmon Event 7 (ImageLoaded)"},
+        {"type": "network", "description": "HTTPS beacon to Cobalt Strike C2 on 45.77.182.18", "event_id": "Sysmon Event 3 (NetworkConnect)"},
+        {"type": "registry", "description": "Registry persistence key added under HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", "event_id": "Sysmon Event 13 (RegistryEvent)"}
+      ],
+      "indicators": {
+        "source_ip": "185.220.101.42",
+        "c2_server": "45.77.182.18",
+        "c2_port": 443,
+        "beacon_type": "HTTPS",
+        "malleable_profile": "jquery-c2.4.7.profile"
+      },
+      "ioc": {
+        "domains": ["cdn-static-update.azureedge.workers.dev"],
+        "ips": ["45.77.182.18"],
+        "file_hashes": {
+          "iso_sha256": "b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5",
+          "nativezone_dll_sha256": "e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9",
+          "cobalt_strike_beacon_sha256": "d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2"
+        }
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Active Directory Reconnaissance",
+      "description": "APT29 uses built-in Windows tools and the ADFind utility to enumerate the Active Directory environment, identify domain administrators, trust relationships, and high-value targets. They also run BloodHound to map attack paths to Domain Admin.",
+      "technique_id": "T1087.002",
+      "technique_name": "Account Discovery: Domain Account",
+      "tactic": "Discovery",
+      "target_host": "ws-rh-01",
+      "target_user": "marie.dupont",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "expected_logs": [
+        {"type": "process", "description": "AdFind.exe executed for domain enumeration", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "process", "description": "nltest.exe /dclist and /domain_trusts commands", "event_id": "Windows Event 4688 (Process Creation)"},
+        {"type": "network", "description": "LDAP queries to domain controller on port 389", "event_id": "Sysmon Event 3 (NetworkConnect)"},
+        {"type": "process", "description": "SharpHound.exe collector executed for BloodHound", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "file_access", "description": "BloodHound ZIP output written to temp directory", "event_id": "Sysmon Event 11 (FileCreate)"}
+      ],
+      "indicators": {
+        "commands": [
+          "adfind.exe -f objectcategory=person -csv name cn mail",
+          "nltest /dclist:cybertwin.local",
+          "nltest /domain_trusts /all_trusts",
+          "net group \"Domain Admins\" /domain",
+          "SharpHound.exe -c All --outputdirectory C:\\Users\\Public"
+        ],
+        "tools": ["ADFind", "BloodHound/SharpHound", "nltest"],
+        "protocol": "LDAP"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "adfind_sha256": "c92c7d8a7b0f5e6d4c3b2a1f0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d",
+          "sharphound_sha256": "f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e9d0c1b2a3f4e5d6c7b8a9f0e1"
+        }
+      }
+    },
+    {
+      "phase": 5,
+      "name": "Sensitive Data Collection",
+      "description": "APT29 accesses sensitive HR and financial documents from network shares and SharePoint, targeting employee PII, salary data, and strategic documents. Data is staged in a hidden directory before exfiltration.",
+      "technique_id": "T1005",
+      "technique_name": "Data from Local System",
+      "tactic": "Collection",
+      "target_host": "srv-db-01",
+      "target_user": "marie.dupont",
+      "delay_seconds": 180,
+      "stealth_level": "low",
+      "expected_logs": [
+        {"type": "file_access", "description": "Access to sensitive HR directories via SMB", "event_id": "Windows Event 5145 (Network Share Access)"},
+        {"type": "file_access", "description": "Bulk file read operations on \\\\srv-db-01\\hr-confidential", "event_id": "Windows Event 4663 (Object Access)"},
+        {"type": "process", "description": "7zip.exe archiving staged files with password", "event_id": "Sysmon Event 1 (ProcessCreate)"},
+        {"type": "file_access", "description": "Archive file created in C:\\Users\\Public\\Downloads", "event_id": "Sysmon Event 11 (FileCreate)"}
+      ],
+      "indicators": {
+        "files_accessed": ["employee_salaries_2025.xlsx", "personal_data_EU_GDPR.csv", "board_meeting_minutes_Q1.pdf", "strategic_plan_2026.docx"],
+        "staging_directory": "C:\\Users\\Public\\Downloads\\",
+        "volume": "large"
+      },
+      "ioc": {
+        "domains": [],
+        "ips": [],
+        "file_hashes": {
+          "staged_archive_sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+        }
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Data Exfiltration via Encrypted C2 Channel",
+      "description": "APT29 exfiltrates the staged data through the Cobalt Strike HTTPS beacon, splitting data into small chunks to avoid DLP detection. They also use legitimate cloud services (OneDrive API) as a secondary exfiltration channel, a technique characteristic of Nobelium operations.",
+      "technique_id": "T1041",
+      "technique_name": "Exfiltration Over C2 Channel",
+      "tactic": "Exfiltration",
+      "target_host": "ws-rh-01",
+      "target_user": "marie.dupont",
+      "delay_seconds": 240,
+      "stealth_level": "high",
+      "expected_logs": [
+        {"type": "network", "description": "Sustained HTTPS beacon traffic to 45.77.182.18 with increasing payload sizes", "event_id": "Sysmon Event 3 (NetworkConnect)"},
+        {"type": "network", "description": "Chunked data transfer via Cobalt Strike named pipe", "event_id": "Firewall Egress Log"},
+        {"type": "web_access", "description": "Microsoft Graph API calls to OneDrive for secondary exfil", "event_id": "Proxy Log"},
+        {"type": "dns", "description": "DNS queries to graph.microsoft.com at unusual frequency", "event_id": "Sysmon Event 22 (DNSEvent)"},
+        {"type": "process", "description": "PowerShell invoking Invoke-WebRequest to upload chunks", "event_id": "Windows Event 4104 (Script Block Logging)"}
+      ],
+      "indicators": {
+        "c2_ip": "45.77.182.18",
+        "secondary_exfil": "graph.microsoft.com (OneDrive API)",
+        "data_size_mb": 150,
+        "protocol": "HTTPS",
+        "chunk_size_kb": 512,
+        "exfil_duration_minutes": 45
+      },
+      "ioc": {
+        "domains": ["cdn-static-update.azureedge.workers.dev", "45.77.182.18"],
+        "ips": ["45.77.182.18", "185.220.101.42"],
+        "file_hashes": {}
+      }
+    }
+  ],
+  "mitre_techniques_summary": [
+    "T1566.002",
+    "T1556.006",
+    "T1059.003",
+    "T1087.002",
+    "T1005",
+    "T1041"
+  ],
+  "expected_detection_points": [
+    "HTML smuggling attachment with embedded JavaScript blob",
+    "DNS request to typosquatted domain (micros0ft-update.com)",
+    "Suspicious OAuth consent grant from external IP",
+    "ISO file mount followed by DLL side-loading via rundll32.exe",
+    "Cobalt Strike HTTPS beacon pattern (malleable C2 profile)",
+    "ADFind.exe and SharpHound.exe execution",
+    "Bulk access to sensitive file shares outside business hours",
+    "Chunked HTTPS exfiltration to known threat infrastructure",
+    "Microsoft Graph API abuse for data exfiltration"
+  ]
+}

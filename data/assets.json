@@ -1,0 +1,239 @@
+{
+  "network": {
+    "name": "CyberTwin Corporate Network",
+    "domain": "cybertwin.local",
+    "subnet": "10.0.1.0/24",
+    "gateway": "10.0.1.1",
+    "dns_servers": ["10.0.1.5", "10.0.1.6"],
+    "ntp_server": "10.0.1.5"
+  },
+  "hosts": [
+    {
+      "id": "ws-rh-01",
+      "hostname": "WS-RH-01",
+      "dns_name": "ws-rh-01.cybertwin.local",
+      "ip": "10.0.1.10",
+      "mac": "00:1A:2B:3C:D1:10",
+      "type": "workstation",
+      "os": "Windows 10 Pro 22H2",
+      "role": "HR Workstation",
+      "department": "Human Resources",
+      "services": ["outlook", "browser", "office", "hr_portal", "adobe_reader", "teams"],
+      "installed_software": [
+        "Microsoft Office 2021 Professional",
+        "Google Chrome 120.0.6099",
+        "Adobe Acrobat Reader DC 23.008",
+        "Microsoft Teams 1.6.00.33567",
+        "Symantec Endpoint Protection 14.3",
+        "7-Zip 23.01",
+        "SAP GUI 7.70"
+      ],
+      "open_ports": [135, 139, 445, 3389, 5040, 49664, 49665],
+      "patch_level": "KB5034441 (2024-01)",
+      "last_update": "2024-01-15T03:00:00Z",
+      "criticality": "medium",
+      "assigned_user": "marie.dupont"
+    },
+    {
+      "id": "ws-dev-01",
+      "hostname": "WS-DEV-01",
+      "dns_name": "ws-dev-01.cybertwin.local",
+      "ip": "10.0.1.11",
+      "mac": "00:1A:2B:3C:D1:11",
+      "type": "workstation",
+      "os": "Ubuntu 22.04.3 LTS",
+      "role": "Developer Workstation",
+      "department": "Engineering",
+      "services": ["vscode", "terminal", "browser", "docker", "git", "ssh", "postman"],
+      "installed_software": [
+        "Visual Studio Code 1.85.1",
+        "Docker Desktop 4.26.1",
+        "Git 2.43.0",
+        "Node.js 20.10.0",
+        "Python 3.11.7",
+        "Firefox 121.0",
+        "Postman 10.21",
+        "OpenSSH Server 8.9p1",
+        "ClamAV 1.2.1"
+      ],
+      "open_ports": [22, 3000, 5432, 8080, 8443, 9229],
+      "patch_level": "5.15.0-91-generic",
+      "last_update": "2024-01-12T02:30:00Z",
+      "criticality": "medium",
+      "assigned_user": "jean.martin"
+    },
+    {
+      "id": "ws-fin-01",
+      "hostname": "WS-FIN-01",
+      "dns_name": "ws-fin-01.cybertwin.local",
+      "ip": "10.0.1.12",
+      "mac": "00:1A:2B:3C:D1:12",
+      "type": "workstation",
+      "os": "Windows 10 Pro 22H2",
+      "role": "Finance Workstation",
+      "department": "Finance",
+      "services": ["outlook", "browser", "office", "erp_client", "power_bi", "teams", "adobe_reader"],
+      "installed_software": [
+        "Microsoft Office 2021 Professional",
+        "Google Chrome 120.0.6099",
+        "SAP ERP Client 7.70",
+        "Microsoft Power BI Desktop 2.124",
+        "Adobe Acrobat Reader DC 23.008",
+        "Microsoft Teams 1.6.00.33567",
+        "Symantec Endpoint Protection 14.3",
+        "Citrix Workspace 2309"
+      ],
+      "open_ports": [135, 139, 445, 3389, 5040, 49664, 49665],
+      "patch_level": "KB5034441 (2024-01)",
+      "last_update": "2024-01-15T03:00:00Z",
+      "criticality": "high",
+      "assigned_user": "alice.bernard"
+    },
+    {
+      "id": "srv-web-01",
+      "hostname": "SRV-WEB-01",
+      "dns_name": "srv-web-01.cybertwin.local",
+      "ip": "10.0.1.50",
+      "mac": "00:1A:2B:3C:D5:50",
+      "type": "server",
+      "os": "Ubuntu 22.04.3 LTS",
+      "role": "Web Server",
+      "department": "IT",
+      "services": ["nginx", "nodejs", "ssh", "docker", "prometheus_exporter"],
+      "installed_software": [
+        "Nginx 1.24.0",
+        "Node.js 20.10.0",
+        "PM2 5.3.0",
+        "OpenSSH Server 8.9p1",
+        "Docker CE 24.0.7",
+        "Certbot 2.7.4",
+        "Fail2Ban 0.11.2",
+        "ClamAV 1.2.1"
+      ],
+      "open_ports": [22, 80, 443, 8080, 9090, 9100],
+      "patch_level": "5.15.0-91-generic",
+      "last_update": "2024-01-10T01:00:00Z",
+      "criticality": "high",
+      "assigned_user": null
+    },
+    {
+      "id": "srv-db-01",
+      "hostname": "SRV-DB-01",
+      "dns_name": "srv-db-01.cybertwin.local",
+      "ip": "10.0.1.51",
+      "mac": "00:1A:2B:3C:D5:51",
+      "type": "server",
+      "os": "Ubuntu 22.04.3 LTS",
+      "role": "Database Server",
+      "department": "IT",
+      "services": ["postgresql", "ssh", "pgbouncer", "prometheus_exporter"],
+      "installed_software": [
+        "PostgreSQL 16.1",
+        "PgBouncer 1.21.0",
+        "OpenSSH Server 8.9p1",
+        "pg_stat_statements",
+        "pgBackRest 2.49",
+        "ClamAV 1.2.1",
+        "Fail2Ban 0.11.2"
+      ],
+      "open_ports": [22, 5432, 6432, 9100, 9187],
+      "patch_level": "5.15.0-91-generic",
+      "last_update": "2024-01-10T01:00:00Z",
+      "criticality": "critical",
+      "assigned_user": null
+    },
+    {
+      "id": "srv-ad-01",
+      "hostname": "SRV-AD-01",
+      "dns_name": "srv-ad-01.cybertwin.local",
+      "ip": "10.0.1.5",
+      "mac": "00:1A:2B:3C:D0:05",
+      "type": "server",
+      "os": "Windows Server 2022 Datacenter 21H2",
+      "role": "Domain Controller",
+      "department": "IT",
+      "services": ["active_directory", "dns", "ldap", "kerberos", "dhcp", "ntp", "group_policy"],
+      "installed_software": [
+        "Active Directory Domain Services",
+        "DNS Server",
+        "DHCP Server",
+        "Group Policy Management Console",
+        "Windows Server Backup",
+        "Symantec Endpoint Protection 14.3",
+        "LAPS 6.2",
+        "Sysmon 15.0"
+      ],
+      "open_ports": [53, 88, 135, 139, 389, 445, 464, 636, 3268, 3269, 3389, 5985, 9389],
+      "patch_level": "KB5034439 (2024-01)",
+      "last_update": "2024-01-14T02:00:00Z",
+      "criticality": "critical",
+      "assigned_user": null
+    },
+    {
+      "id": "srv-mail-01",
+      "hostname": "SRV-MAIL-01",
+      "dns_name": "srv-mail-01.cybertwin.local",
+      "ip": "10.0.1.52",
+      "mac": "00:1A:2B:3C:D5:52",
+      "type": "server",
+      "os": "Windows Server 2022 Standard 21H2",
+      "role": "Mail Server",
+      "department": "IT",
+      "services": ["exchange", "smtp", "imap", "owa"],
+      "installed_software": [
+        "Microsoft Exchange Server 2019 CU14",
+        "Symantec Endpoint Protection 14.3",
+        "Sysmon 15.0"
+      ],
+      "open_ports": [25, 110, 143, 443, 587, 993, 995, 3389],
+      "patch_level": "KB5034439 (2024-01)",
+      "last_update": "2024-01-14T02:00:00Z",
+      "criticality": "high",
+      "assigned_user": null
+    },
+    {
+      "id": "fw-01",
+      "hostname": "FW-01",
+      "dns_name": "fw-01.cybertwin.local",
+      "ip": "10.0.1.1",
+      "mac": "00:1A:2B:3C:D0:01",
+      "type": "firewall",
+      "os": "pfSense CE 2.7.2",
+      "role": "Perimeter Firewall",
+      "department": "IT",
+      "services": ["firewall", "vpn", "ids", "dhcp_relay", "syslog_forwarder"],
+      "installed_software": [
+        "pfSense CE 2.7.2",
+        "Snort 3.1.72",
+        "OpenVPN 2.6.8",
+        "Suricata 7.0.3",
+        "pfBlockerNG 3.2.0"
+      ],
+      "open_ports": [22, 80, 443, 1194, 500, 4500],
+      "patch_level": "pfSense-CE-2.7.2-RELEASE",
+      "last_update": "2024-01-08T00:00:00Z",
+      "criticality": "critical",
+      "assigned_user": null
+    }
+  ],
+  "network_segments": [
+    {
+      "name": "User LAN",
+      "vlan_id": 10,
+      "range": "10.0.1.10-10.0.1.49",
+      "hosts": ["ws-rh-01", "ws-dev-01", "ws-fin-01"]
+    },
+    {
+      "name": "Server DMZ",
+      "vlan_id": 20,
+      "range": "10.0.1.50-10.0.1.99",
+      "hosts": ["srv-web-01", "srv-db-01", "srv-mail-01"]
+    },
+    {
+      "name": "Core Infrastructure",
+      "vlan_id": 1,
+      "range": "10.0.1.1-10.0.1.9",
+      "hosts": ["fw-01", "srv-ad-01"]
+    }
+  ]
+}
