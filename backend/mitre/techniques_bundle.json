@@ -1,0 +1,3737 @@
+{
+  "techniques": {
+    "T1595": {
+      "name": "Active Scanning",
+      "tactic": "TA0043",
+      "description": "Active Scanning. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1595.001": {
+      "name": "Active Scanning: Scanning IP Blocks",
+      "tactic": "TA0043",
+      "description": "Active Scanning: Scanning IP Blocks. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1595.002": {
+      "name": "Active Scanning: Vulnerability Scanning",
+      "tactic": "TA0043",
+      "description": "Active Scanning: Vulnerability Scanning. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1595.003": {
+      "name": "Active Scanning: Wordlist Scanning",
+      "tactic": "TA0043",
+      "description": "Active Scanning: Wordlist Scanning. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1592": {
+      "name": "Gather Victim Host Information",
+      "tactic": "TA0043",
+      "description": "Gather Victim Host Information. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1592.001": {
+      "name": "Gather Victim Host Information: Hardware",
+      "tactic": "TA0043",
+      "description": "Gather Victim Host Information: Hardware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1592.002": {
+      "name": "Gather Victim Host Information: Software",
+      "tactic": "TA0043",
+      "description": "Gather Victim Host Information: Software. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1592.003": {
+      "name": "Gather Victim Host Information: Firmware",
+      "tactic": "TA0043",
+      "description": "Gather Victim Host Information: Firmware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1592.004": {
+      "name": "Gather Victim Host Information: Client Configurations",
+      "tactic": "TA0043",
+      "description": "Gather Victim Host Information: Client Configurations. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1589": {
+      "name": "Gather Victim Identity Information",
+      "tactic": "TA0043",
+      "description": "Gather Victim Identity Information. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1589.001": {
+      "name": "Gather Victim Identity Information: Credentials",
+      "tactic": "TA0043",
+      "description": "Gather Victim Identity Information: Credentials. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1589.002": {
+      "name": "Gather Victim Identity Information: Email Addresses",
+      "tactic": "TA0043",
+      "description": "Gather Victim Identity Information: Email Addresses. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1589.003": {
+      "name": "Gather Victim Identity Information: Employee Names",
+      "tactic": "TA0043",
+      "description": "Gather Victim Identity Information: Employee Names. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1590": {
+      "name": "Gather Victim Network Information",
+      "tactic": "TA0043",
+      "description": "Gather Victim Network Information. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1590.001": {
+      "name": "Gather Victim Network Information: Domain Properties",
+      "tactic": "TA0043",
+      "description": "Gather Victim Network Information: Domain Properties. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1590.002": {
+      "name": "Gather Victim Network Information: DNS",
+      "tactic": "TA0043",
+      "description": "Gather Victim Network Information: DNS. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1590.003": {
+      "name": "Gather Victim Network Information: Network Trust Dependencies",
+      "tactic": "TA0043",
+      "description": "Gather Victim Network Information: Network Trust Dependencies. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1590.004": {
+      "name": "Gather Victim Network Information: Network Topology",
+      "tactic": "TA0043",
+      "description": "Gather Victim Network Information: Network Topology. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1590.005": {
+      "name": "Gather Victim Network Information: IP Addresses",
+      "tactic": "TA0043",
+      "description": "Gather Victim Network Information: IP Addresses. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1590.006": {
+      "name": "Gather Victim Network Information: Network Security Appliances",
+      "tactic": "TA0043",
+      "description": "Gather Victim Network Information: Network Security Appliances. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1591": {
+      "name": "Gather Victim Org Information",
+      "tactic": "TA0043",
+      "description": "Gather Victim Org Information. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1591.001": {
+      "name": "Gather Victim Org Information: Determine Physical Locations",
+      "tactic": "TA0043",
+      "description": "Gather Victim Org Information: Determine Physical Locations. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1591.002": {
+      "name": "Gather Victim Org Information: Business Relationships",
+      "tactic": "TA0043",
+      "description": "Gather Victim Org Information: Business Relationships. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1591.003": {
+      "name": "Gather Victim Org Information: Identify Business Tempo",
+      "tactic": "TA0043",
+      "description": "Gather Victim Org Information: Identify Business Tempo. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1591.004": {
+      "name": "Gather Victim Org Information: Identify Roles",
+      "tactic": "TA0043",
+      "description": "Gather Victim Org Information: Identify Roles. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1598": {
+      "name": "Phishing for Information",
+      "tactic": "TA0043",
+      "description": "Phishing for Information. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1598.001": {
+      "name": "Phishing for Information: Spearphishing Service",
+      "tactic": "TA0043",
+      "description": "Phishing for Information: Spearphishing Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1598.002": {
+      "name": "Phishing for Information: Spearphishing Attachment",
+      "tactic": "TA0043",
+      "description": "Phishing for Information: Spearphishing Attachment. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1598.003": {
+      "name": "Phishing for Information: Spearphishing Link",
+      "tactic": "TA0043",
+      "description": "Phishing for Information: Spearphishing Link. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1597": {
+      "name": "Search Closed Sources",
+      "tactic": "TA0043",
+      "description": "Search Closed Sources. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1597.001": {
+      "name": "Search Closed Sources: Threat Intel Vendors",
+      "tactic": "TA0043",
+      "description": "Search Closed Sources: Threat Intel Vendors. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1597.002": {
+      "name": "Search Closed Sources: Purchase Technical Data",
+      "tactic": "TA0043",
+      "description": "Search Closed Sources: Purchase Technical Data. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1596": {
+      "name": "Search Open Technical Databases",
+      "tactic": "TA0043",
+      "description": "Search Open Technical Databases. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1596.001": {
+      "name": "Search Open Technical Databases: DNS/Passive DNS",
+      "tactic": "TA0043",
+      "description": "Search Open Technical Databases: DNS/Passive DNS. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1596.002": {
+      "name": "Search Open Technical Databases: WHOIS",
+      "tactic": "TA0043",
+      "description": "Search Open Technical Databases: WHOIS. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1596.003": {
+      "name": "Search Open Technical Databases: Digital Certificates",
+      "tactic": "TA0043",
+      "description": "Search Open Technical Databases: Digital Certificates. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1596.004": {
+      "name": "Search Open Technical Databases: CDNs",
+      "tactic": "TA0043",
+      "description": "Search Open Technical Databases: CDNs. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1596.005": {
+      "name": "Search Open Technical Databases: Scan Databases",
+      "tactic": "TA0043",
+      "description": "Search Open Technical Databases: Scan Databases. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1593": {
+      "name": "Search Open Websites/Domains",
+      "tactic": "TA0043",
+      "description": "Search Open Websites/Domains. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1593.001": {
+      "name": "Search Open Websites/Domains: Social Media",
+      "tactic": "TA0043",
+      "description": "Search Open Websites/Domains: Social Media. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1593.002": {
+      "name": "Search Open Websites/Domains: Search Engines",
+      "tactic": "TA0043",
+      "description": "Search Open Websites/Domains: Search Engines. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1593.003": {
+      "name": "Search Open Websites/Domains: Code Repositories",
+      "tactic": "TA0043",
+      "description": "Search Open Websites/Domains: Code Repositories. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1594": {
+      "name": "Search Victim-Owned Websites",
+      "tactic": "TA0043",
+      "description": "Search Victim-Owned Websites. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1583": {
+      "name": "Acquire Infrastructure",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1583.001": {
+      "name": "Acquire Infrastructure: Domains",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: Domains. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1583.002": {
+      "name": "Acquire Infrastructure: DNS Server",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: DNS Server. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1583.003": {
+      "name": "Acquire Infrastructure: Virtual Private Server",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: Virtual Private Server. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1583.004": {
+      "name": "Acquire Infrastructure: Server",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: Server. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1583.005": {
+      "name": "Acquire Infrastructure: Botnet",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: Botnet. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1583.006": {
+      "name": "Acquire Infrastructure: Web Services",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: Web Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1583.007": {
+      "name": "Acquire Infrastructure: Serverless",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: Serverless. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1583.008": {
+      "name": "Acquire Infrastructure: Malvertising",
+      "tactic": "TA0042",
+      "description": "Acquire Infrastructure: Malvertising. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1586": {
+      "name": "Compromise Accounts",
+      "tactic": "TA0042",
+      "description": "Compromise Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1586.001": {
+      "name": "Compromise Accounts: Social Media Accounts",
+      "tactic": "TA0042",
+      "description": "Compromise Accounts: Social Media Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1586.002": {
+      "name": "Compromise Accounts: Email Accounts",
+      "tactic": "TA0042",
+      "description": "Compromise Accounts: Email Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1586.003": {
+      "name": "Compromise Accounts: Cloud Accounts",
+      "tactic": "TA0042",
+      "description": "Compromise Accounts: Cloud Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1584": {
+      "name": "Compromise Infrastructure",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1584.001": {
+      "name": "Compromise Infrastructure: Domains",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure: Domains. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1584.002": {
+      "name": "Compromise Infrastructure: DNS Server",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure: DNS Server. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1584.003": {
+      "name": "Compromise Infrastructure: Virtual Private Server",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure: Virtual Private Server. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1584.004": {
+      "name": "Compromise Infrastructure: Server",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure: Server. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1584.005": {
+      "name": "Compromise Infrastructure: Botnet",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure: Botnet. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1584.006": {
+      "name": "Compromise Infrastructure: Web Services",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure: Web Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1584.007": {
+      "name": "Compromise Infrastructure: Serverless",
+      "tactic": "TA0042",
+      "description": "Compromise Infrastructure: Serverless. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1587": {
+      "name": "Develop Capabilities",
+      "tactic": "TA0042",
+      "description": "Develop Capabilities. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1587.001": {
+      "name": "Develop Capabilities: Malware",
+      "tactic": "TA0042",
+      "description": "Develop Capabilities: Malware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1587.002": {
+      "name": "Develop Capabilities: Code Signing Certificates",
+      "tactic": "TA0042",
+      "description": "Develop Capabilities: Code Signing Certificates. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1587.003": {
+      "name": "Develop Capabilities: Digital Certificates",
+      "tactic": "TA0042",
+      "description": "Develop Capabilities: Digital Certificates. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1587.004": {
+      "name": "Develop Capabilities: Exploits",
+      "tactic": "TA0042",
+      "description": "Develop Capabilities: Exploits. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1585": {
+      "name": "Establish Accounts",
+      "tactic": "TA0042",
+      "description": "Establish Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1585.001": {
+      "name": "Establish Accounts: Social Media Accounts",
+      "tactic": "TA0042",
+      "description": "Establish Accounts: Social Media Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1585.002": {
+      "name": "Establish Accounts: Email Accounts",
+      "tactic": "TA0042",
+      "description": "Establish Accounts: Email Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1585.003": {
+      "name": "Establish Accounts: Cloud Accounts",
+      "tactic": "TA0042",
+      "description": "Establish Accounts: Cloud Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1588": {
+      "name": "Obtain Capabilities",
+      "tactic": "TA0042",
+      "description": "Obtain Capabilities. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1588.001": {
+      "name": "Obtain Capabilities: Malware",
+      "tactic": "TA0042",
+      "description": "Obtain Capabilities: Malware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1588.002": {
+      "name": "Obtain Capabilities: Tool",
+      "tactic": "TA0042",
+      "description": "Obtain Capabilities: Tool. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1588.003": {
+      "name": "Obtain Capabilities: Code Signing Certificates",
+      "tactic": "TA0042",
+      "description": "Obtain Capabilities: Code Signing Certificates. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1588.004": {
+      "name": "Obtain Capabilities: Digital Certificates",
+      "tactic": "TA0042",
+      "description": "Obtain Capabilities: Digital Certificates. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1588.005": {
+      "name": "Obtain Capabilities: Exploits",
+      "tactic": "TA0042",
+      "description": "Obtain Capabilities: Exploits. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1588.006": {
+      "name": "Obtain Capabilities: Vulnerabilities",
+      "tactic": "TA0042",
+      "description": "Obtain Capabilities: Vulnerabilities. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1650": {
+      "name": "Acquire Access",
+      "tactic": "TA0042",
+      "description": "Acquire Access. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1608": {
+      "name": "Stage Capabilities",
+      "tactic": "TA0042",
+      "description": "Stage Capabilities. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1608.001": {
+      "name": "Stage Capabilities: Upload Malware",
+      "tactic": "TA0042",
+      "description": "Stage Capabilities: Upload Malware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1608.002": {
+      "name": "Stage Capabilities: Upload Tool",
+      "tactic": "TA0042",
+      "description": "Stage Capabilities: Upload Tool. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1608.003": {
+      "name": "Stage Capabilities: Install Digital Certificate",
+      "tactic": "TA0042",
+      "description": "Stage Capabilities: Install Digital Certificate. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1608.004": {
+      "name": "Stage Capabilities: Drive-by Target",
+      "tactic": "TA0042",
+      "description": "Stage Capabilities: Drive-by Target. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1608.005": {
+      "name": "Stage Capabilities: Link Target",
+      "tactic": "TA0042",
+      "description": "Stage Capabilities: Link Target. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1608.006": {
+      "name": "Stage Capabilities: SEO Poisoning",
+      "tactic": "TA0042",
+      "description": "Stage Capabilities: SEO Poisoning. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1189": {
+      "name": "Drive-by Compromise",
+      "tactic": "TA0001",
+      "description": "Drive-by Compromise. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1190": {
+      "name": "Exploit Public-Facing Application",
+      "tactic": "TA0001",
+      "description": "Exploit Public-Facing Application. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1133": {
+      "name": "External Remote Services",
+      "tactic": "TA0001",
+      "description": "External Remote Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1200": {
+      "name": "Hardware Additions",
+      "tactic": "TA0001",
+      "description": "Hardware Additions. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1566": {
+      "name": "Phishing",
+      "tactic": "TA0001",
+      "description": "Phishing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1566.001": {
+      "name": "Phishing: Spearphishing Attachment",
+      "tactic": "TA0001",
+      "description": "Phishing: Spearphishing Attachment. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1566.002": {
+      "name": "Phishing: Spearphishing Link",
+      "tactic": "TA0001",
+      "description": "Phishing: Spearphishing Link. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1566.003": {
+      "name": "Phishing: Spearphishing via Service",
+      "tactic": "TA0001",
+      "description": "Phishing: Spearphishing via Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1566.004": {
+      "name": "Phishing: Spearphishing Voice",
+      "tactic": "TA0001",
+      "description": "Phishing: Spearphishing Voice. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1091": {
+      "name": "Replication Through Removable Media",
+      "tactic": "TA0001",
+      "description": "Replication Through Removable Media. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1195": {
+      "name": "Supply Chain Compromise",
+      "tactic": "TA0001",
+      "description": "Supply Chain Compromise. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1195.001": {
+      "name": "Supply Chain Compromise: Compromise Software Dependencies",
+      "tactic": "TA0001",
+      "description": "Supply Chain Compromise: Compromise Software Dependencies. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1195.002": {
+      "name": "Supply Chain Compromise: Compromise Software Supply Chain",
+      "tactic": "TA0001",
+      "description": "Supply Chain Compromise: Compromise Software Supply Chain. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1195.003": {
+      "name": "Supply Chain Compromise: Compromise Hardware Supply Chain",
+      "tactic": "TA0001",
+      "description": "Supply Chain Compromise: Compromise Hardware Supply Chain. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1199": {
+      "name": "Trusted Relationship",
+      "tactic": "TA0001",
+      "description": "Trusted Relationship. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1659": {
+      "name": "Content Injection",
+      "tactic": "TA0001",
+      "description": "Content Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1078": {
+      "name": "Valid Accounts",
+      "tactic": "TA0001",
+      "description": "Valid Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1078.001": {
+      "name": "Valid Accounts: Default Accounts",
+      "tactic": "TA0001",
+      "description": "Valid Accounts: Default Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1078.002": {
+      "name": "Valid Accounts: Domain Accounts",
+      "tactic": "TA0001",
+      "description": "Valid Accounts: Domain Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1078.003": {
+      "name": "Valid Accounts: Local Accounts",
+      "tactic": "TA0001",
+      "description": "Valid Accounts: Local Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1078.004": {
+      "name": "Valid Accounts: Cloud Accounts",
+      "tactic": "TA0001",
+      "description": "Valid Accounts: Cloud Accounts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1648": {
+      "name": "Serverless Execution",
+      "tactic": "TA0002",
+      "description": "Serverless Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1651": {
+      "name": "Cloud Administration Command",
+      "tactic": "TA0002",
+      "description": "Cloud Administration Command. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1059": {
+      "name": "Command and Scripting Interpreter",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1059.001": {
+      "name": "Command and Scripting Interpreter: PowerShell",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: PowerShell. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.002": {
+      "name": "Command and Scripting Interpreter: AppleScript",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: AppleScript. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.003": {
+      "name": "Command and Scripting Interpreter: Windows Command Shell",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: Windows Command Shell. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.004": {
+      "name": "Command and Scripting Interpreter: Unix Shell",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: Unix Shell. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.005": {
+      "name": "Command and Scripting Interpreter: Visual Basic",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: Visual Basic. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.006": {
+      "name": "Command and Scripting Interpreter: Python",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: Python. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.007": {
+      "name": "Command and Scripting Interpreter: JavaScript",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: JavaScript. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.008": {
+      "name": "Command and Scripting Interpreter: Network Device CLI",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: Network Device CLI. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.009": {
+      "name": "Command and Scripting Interpreter: Cloud API",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: Cloud API. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1059.010": {
+      "name": "Command and Scripting Interpreter: AutoHotKey & AutoIT",
+      "tactic": "TA0002",
+      "description": "Command and Scripting Interpreter: AutoHotKey & AutoIT. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1609": {
+      "name": "Container Administration Command",
+      "tactic": "TA0002",
+      "description": "Container Administration Command. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1610": {
+      "name": "Deploy Container",
+      "tactic": "TA0002",
+      "description": "Deploy Container. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1203": {
+      "name": "Exploitation for Client Execution",
+      "tactic": "TA0002",
+      "description": "Exploitation for Client Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1559": {
+      "name": "Inter-Process Communication",
+      "tactic": "TA0002",
+      "description": "Inter-Process Communication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1559.001": {
+      "name": "Inter-Process Communication: Component Object Model",
+      "tactic": "TA0002",
+      "description": "Inter-Process Communication: Component Object Model. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1559.002": {
+      "name": "Inter-Process Communication: Dynamic Data Exchange",
+      "tactic": "TA0002",
+      "description": "Inter-Process Communication: Dynamic Data Exchange. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1559.003": {
+      "name": "Inter-Process Communication: XPC Services",
+      "tactic": "TA0002",
+      "description": "Inter-Process Communication: XPC Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1106": {
+      "name": "Native API",
+      "tactic": "TA0002",
+      "description": "Native API. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1053": {
+      "name": "Scheduled Task/Job",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1053.001": {
+      "name": "Scheduled Task/Job: At",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job: At. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1053.002": {
+      "name": "Scheduled Task/Job: At (Windows)",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job: At (Windows). Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1053.003": {
+      "name": "Scheduled Task/Job: Cron",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job: Cron. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1053.004": {
+      "name": "Scheduled Task/Job: Launchd",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job: Launchd. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1053.005": {
+      "name": "Scheduled Task/Job: Scheduled Task",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job: Scheduled Task. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1053.006": {
+      "name": "Scheduled Task/Job: Systemd Timers",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job: Systemd Timers. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1053.007": {
+      "name": "Scheduled Task/Job: Container Orchestration Job",
+      "tactic": "TA0002",
+      "description": "Scheduled Task/Job: Container Orchestration Job. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1129": {
+      "name": "Shared Modules",
+      "tactic": "TA0002",
+      "description": "Shared Modules. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1072": {
+      "name": "Software Deployment Tools",
+      "tactic": "TA0002",
+      "description": "Software Deployment Tools. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1569": {
+      "name": "System Services",
+      "tactic": "TA0002",
+      "description": "System Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1569.001": {
+      "name": "System Services: Launchctl",
+      "tactic": "TA0002",
+      "description": "System Services: Launchctl. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1569.002": {
+      "name": "System Services: Service Execution",
+      "tactic": "TA0002",
+      "description": "System Services: Service Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1204": {
+      "name": "User Execution",
+      "tactic": "TA0002",
+      "description": "User Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1204.001": {
+      "name": "User Execution: Malicious Link",
+      "tactic": "TA0002",
+      "description": "User Execution: Malicious Link. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1204.002": {
+      "name": "User Execution: Malicious File",
+      "tactic": "TA0002",
+      "description": "User Execution: Malicious File. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1204.003": {
+      "name": "User Execution: Malicious Image",
+      "tactic": "TA0002",
+      "description": "User Execution: Malicious Image. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1047": {
+      "name": "Windows Management Instrumentation",
+      "tactic": "TA0002",
+      "description": "Windows Management Instrumentation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1612": {
+      "name": "Build Image on Host",
+      "tactic": "TA0003",
+      "description": "Build Image on Host. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1098": {
+      "name": "Account Manipulation",
+      "tactic": "TA0003",
+      "description": "Account Manipulation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1098.001": {
+      "name": "Account Manipulation: Additional Cloud Credentials",
+      "tactic": "TA0003",
+      "description": "Account Manipulation: Additional Cloud Credentials. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1098.002": {
+      "name": "Account Manipulation: Additional Email Delegate Permissions",
+      "tactic": "TA0003",
+      "description": "Account Manipulation: Additional Email Delegate Permissions. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1098.003": {
+      "name": "Account Manipulation: Additional Cloud Roles",
+      "tactic": "TA0003",
+      "description": "Account Manipulation: Additional Cloud Roles. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1098.004": {
+      "name": "Account Manipulation: SSH Authorized Keys",
+      "tactic": "TA0003",
+      "description": "Account Manipulation: SSH Authorized Keys. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1098.005": {
+      "name": "Account Manipulation: Device Registration",
+      "tactic": "TA0003",
+      "description": "Account Manipulation: Device Registration. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1098.006": {
+      "name": "Account Manipulation: Additional Container Cluster Roles",
+      "tactic": "TA0003",
+      "description": "Account Manipulation: Additional Container Cluster Roles. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1197": {
+      "name": "BITS Jobs",
+      "tactic": "TA0003",
+      "description": "BITS Jobs. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1547": {
+      "name": "Boot or Logon Autostart Execution",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1547.001": {
+      "name": "Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.002": {
+      "name": "Boot or Logon Autostart Execution: Authentication Packages",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Authentication Packages. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.003": {
+      "name": "Boot or Logon Autostart Execution: Time Providers",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Time Providers. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.004": {
+      "name": "Boot or Logon Autostart Execution: Winlogon Helper DLL",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Winlogon Helper DLL. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.005": {
+      "name": "Boot or Logon Autostart Execution: Security Support Provider",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Security Support Provider. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.006": {
+      "name": "Boot or Logon Autostart Execution: Kernel Modules and Extensions",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Kernel Modules and Extensions. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.007": {
+      "name": "Boot or Logon Autostart Execution: Re-opened Applications",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Re-opened Applications. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.008": {
+      "name": "Boot or Logon Autostart Execution: LSASS Driver",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: LSASS Driver. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.009": {
+      "name": "Boot or Logon Autostart Execution: Shortcut Modification",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Shortcut Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.010": {
+      "name": "Boot or Logon Autostart Execution: Port Monitors",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Port Monitors. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.011": {
+      "name": "Boot or Logon Autostart Execution: Plist Modification",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Plist Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.012": {
+      "name": "Boot or Logon Autostart Execution: Print Processors",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Print Processors. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.013": {
+      "name": "Boot or Logon Autostart Execution: XDG Autostart Entries",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: XDG Autostart Entries. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.014": {
+      "name": "Boot or Logon Autostart Execution: Active Setup",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Active Setup. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1547.015": {
+      "name": "Boot or Logon Autostart Execution: Login Items",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Autostart Execution: Login Items. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1037": {
+      "name": "Boot or Logon Initialization Scripts",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Initialization Scripts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1037.001": {
+      "name": "Boot or Logon Initialization Scripts: Logon Script (Windows)",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Initialization Scripts: Logon Script (Windows). Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1037.002": {
+      "name": "Boot or Logon Initialization Scripts: Login Hook",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Initialization Scripts: Login Hook. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1037.003": {
+      "name": "Boot or Logon Initialization Scripts: Network Logon Script",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Initialization Scripts: Network Logon Script. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1037.004": {
+      "name": "Boot or Logon Initialization Scripts: RC Scripts",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Initialization Scripts: RC Scripts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1037.005": {
+      "name": "Boot or Logon Initialization Scripts: Startup Items",
+      "tactic": "TA0003",
+      "description": "Boot or Logon Initialization Scripts: Startup Items. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1176": {
+      "name": "Browser Extensions",
+      "tactic": "TA0003",
+      "description": "Browser Extensions. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1554": {
+      "name": "Compromise Host Software Binary",
+      "tactic": "TA0003",
+      "description": "Compromise Host Software Binary. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1136": {
+      "name": "Create Account",
+      "tactic": "TA0003",
+      "description": "Create Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1136.001": {
+      "name": "Create Account: Local Account",
+      "tactic": "TA0003",
+      "description": "Create Account: Local Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1136.002": {
+      "name": "Create Account: Domain Account",
+      "tactic": "TA0003",
+      "description": "Create Account: Domain Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1136.003": {
+      "name": "Create Account: Cloud Account",
+      "tactic": "TA0003",
+      "description": "Create Account: Cloud Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1543": {
+      "name": "Create or Modify System Process",
+      "tactic": "TA0003",
+      "description": "Create or Modify System Process. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1543.001": {
+      "name": "Create or Modify System Process: Launch Agent",
+      "tactic": "TA0003",
+      "description": "Create or Modify System Process: Launch Agent. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1543.002": {
+      "name": "Create or Modify System Process: Systemd Service",
+      "tactic": "TA0003",
+      "description": "Create or Modify System Process: Systemd Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1543.003": {
+      "name": "Create or Modify System Process: Windows Service",
+      "tactic": "TA0003",
+      "description": "Create or Modify System Process: Windows Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1543.004": {
+      "name": "Create or Modify System Process: Launch Daemon",
+      "tactic": "TA0003",
+      "description": "Create or Modify System Process: Launch Daemon. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546": {
+      "name": "Event Triggered Execution",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1546.001": {
+      "name": "Event Triggered Execution: Change Default File Association",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Change Default File Association. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.002": {
+      "name": "Event Triggered Execution: Screensaver",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Screensaver. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.003": {
+      "name": "Event Triggered Execution: Windows Management Instrumentation Event Subscription",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Windows Management Instrumentation Event Subscription. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.004": {
+      "name": "Event Triggered Execution: Unix Shell Configuration Modification",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Unix Shell Configuration Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.005": {
+      "name": "Event Triggered Execution: Trap",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Trap. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.006": {
+      "name": "Event Triggered Execution: LC_LOAD_DYLIB Addition",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: LC_LOAD_DYLIB Addition. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.007": {
+      "name": "Event Triggered Execution: Netsh Helper DLL",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Netsh Helper DLL. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.008": {
+      "name": "Event Triggered Execution: Accessibility Features",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Accessibility Features. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.009": {
+      "name": "Event Triggered Execution: AppCert DLLs",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: AppCert DLLs. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.010": {
+      "name": "Event Triggered Execution: AppInit DLLs",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: AppInit DLLs. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.011": {
+      "name": "Event Triggered Execution: Application Shimming",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Application Shimming. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.012": {
+      "name": "Event Triggered Execution: Image File Execution Options Injection",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Image File Execution Options Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.013": {
+      "name": "Event Triggered Execution: PowerShell Profile",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: PowerShell Profile. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.014": {
+      "name": "Event Triggered Execution: Emond",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Emond. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.015": {
+      "name": "Event Triggered Execution: Component Object Model Hijacking",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Component Object Model Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1546.016": {
+      "name": "Event Triggered Execution: Installer Packages",
+      "tactic": "TA0003",
+      "description": "Event Triggered Execution: Installer Packages. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574": {
+      "name": "Hijack Execution Flow",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1574.001": {
+      "name": "Hijack Execution Flow: DLL Search Order Hijacking",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: DLL Search Order Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.002": {
+      "name": "Hijack Execution Flow: DLL Side-Loading",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: DLL Side-Loading. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.004": {
+      "name": "Hijack Execution Flow: Dylib Hijacking",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Dylib Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.005": {
+      "name": "Hijack Execution Flow: Executable Installer File Permissions Race Condition",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Executable Installer File Permissions Race Condition. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.006": {
+      "name": "Hijack Execution Flow: Dynamic Linker Hijacking",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Dynamic Linker Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.007": {
+      "name": "Hijack Execution Flow: Path Interception by PATH Environment Variable",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Path Interception by PATH Environment Variable. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.008": {
+      "name": "Hijack Execution Flow: Path Interception by Search Order Hijacking",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Path Interception by Search Order Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.009": {
+      "name": "Hijack Execution Flow: Path Interception by Unquoted Path",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Path Interception by Unquoted Path. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.010": {
+      "name": "Hijack Execution Flow: Services File Permissions Weakness",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Services File Permissions Weakness. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.011": {
+      "name": "Hijack Execution Flow: Services Registry Permissions Weakness",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: Services Registry Permissions Weakness. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.012": {
+      "name": "Hijack Execution Flow: COR_PROFILER",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: COR_PROFILER. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1574.013": {
+      "name": "Hijack Execution Flow: KernelCallbackTable",
+      "tactic": "TA0003",
+      "description": "Hijack Execution Flow: KernelCallbackTable. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1525": {
+      "name": "Implant Internal Image",
+      "tactic": "TA0003",
+      "description": "Implant Internal Image. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1556": {
+      "name": "Modify Authentication Process",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1556.001": {
+      "name": "Modify Authentication Process: Domain Controller Authentication",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Domain Controller Authentication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1556.002": {
+      "name": "Modify Authentication Process: Password Filter DLL",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Password Filter DLL. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1556.003": {
+      "name": "Modify Authentication Process: Pluggable Authentication Modules",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Pluggable Authentication Modules. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1556.004": {
+      "name": "Modify Authentication Process: Network Device Authentication",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Network Device Authentication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1556.005": {
+      "name": "Modify Authentication Process: Reversible Encryption",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Reversible Encryption. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1556.006": {
+      "name": "Modify Authentication Process: Multi-Factor Authentication",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Multi-Factor Authentication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1556.007": {
+      "name": "Modify Authentication Process: Hybrid Identity",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Hybrid Identity. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1556.008": {
+      "name": "Modify Authentication Process: Network Provider DLL",
+      "tactic": "TA0003",
+      "description": "Modify Authentication Process: Network Provider DLL. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1137": {
+      "name": "Office Application Startup",
+      "tactic": "TA0003",
+      "description": "Office Application Startup. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1137.001": {
+      "name": "Office Application Startup: Office Template Macros",
+      "tactic": "TA0003",
+      "description": "Office Application Startup: Office Template Macros. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1137.002": {
+      "name": "Office Application Startup: Office Test",
+      "tactic": "TA0003",
+      "description": "Office Application Startup: Office Test. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1137.003": {
+      "name": "Office Application Startup: Outlook Forms",
+      "tactic": "TA0003",
+      "description": "Office Application Startup: Outlook Forms. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1137.004": {
+      "name": "Office Application Startup: Outlook Home Page",
+      "tactic": "TA0003",
+      "description": "Office Application Startup: Outlook Home Page. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1137.005": {
+      "name": "Office Application Startup: Outlook Rules",
+      "tactic": "TA0003",
+      "description": "Office Application Startup: Outlook Rules. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1137.006": {
+      "name": "Office Application Startup: Add-ins",
+      "tactic": "TA0003",
+      "description": "Office Application Startup: Add-ins. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1542": {
+      "name": "Pre-OS Boot",
+      "tactic": "TA0003",
+      "description": "Pre-OS Boot. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1542.001": {
+      "name": "Pre-OS Boot: System Firmware",
+      "tactic": "TA0003",
+      "description": "Pre-OS Boot: System Firmware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1542.002": {
+      "name": "Pre-OS Boot: Component Firmware",
+      "tactic": "TA0003",
+      "description": "Pre-OS Boot: Component Firmware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1542.003": {
+      "name": "Pre-OS Boot: Bootkit",
+      "tactic": "TA0003",
+      "description": "Pre-OS Boot: Bootkit. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1542.004": {
+      "name": "Pre-OS Boot: ROMMONkit",
+      "tactic": "TA0003",
+      "description": "Pre-OS Boot: ROMMONkit. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1542.005": {
+      "name": "Pre-OS Boot: TFTP Boot",
+      "tactic": "TA0003",
+      "description": "Pre-OS Boot: TFTP Boot. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1505": {
+      "name": "Server Software Component",
+      "tactic": "TA0003",
+      "description": "Server Software Component. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1505.001": {
+      "name": "Server Software Component: SQL Stored Procedures",
+      "tactic": "TA0003",
+      "description": "Server Software Component: SQL Stored Procedures. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1505.002": {
+      "name": "Server Software Component: Transport Agent",
+      "tactic": "TA0003",
+      "description": "Server Software Component: Transport Agent. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1505.003": {
+      "name": "Server Software Component: Web Shell",
+      "tactic": "TA0003",
+      "description": "Server Software Component: Web Shell. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1505.004": {
+      "name": "Server Software Component: IIS Components",
+      "tactic": "TA0003",
+      "description": "Server Software Component: IIS Components. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1505.005": {
+      "name": "Server Software Component: Terminal Services DLL",
+      "tactic": "TA0003",
+      "description": "Server Software Component: Terminal Services DLL. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1205": {
+      "name": "Traffic Signaling",
+      "tactic": "TA0003",
+      "description": "Traffic Signaling. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1205.001": {
+      "name": "Traffic Signaling: Port Knocking",
+      "tactic": "TA0003",
+      "description": "Traffic Signaling: Port Knocking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1205.002": {
+      "name": "Traffic Signaling: Socket Filters",
+      "tactic": "TA0003",
+      "description": "Traffic Signaling: Socket Filters. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1548": {
+      "name": "Abuse Elevation Control Mechanism",
+      "tactic": "TA0004",
+      "description": "Abuse Elevation Control Mechanism. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1548.001": {
+      "name": "Abuse Elevation Control Mechanism: Setuid and Setgid",
+      "tactic": "TA0004",
+      "description": "Abuse Elevation Control Mechanism: Setuid and Setgid. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1548.002": {
+      "name": "Abuse Elevation Control Mechanism: Bypass User Account Control",
+      "tactic": "TA0004",
+      "description": "Abuse Elevation Control Mechanism: Bypass User Account Control. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1548.003": {
+      "name": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching",
+      "tactic": "TA0004",
+      "description": "Abuse Elevation Control Mechanism: Sudo and Sudo Caching. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1548.004": {
+      "name": "Abuse Elevation Control Mechanism: Elevated Execution with Prompt",
+      "tactic": "TA0004",
+      "description": "Abuse Elevation Control Mechanism: Elevated Execution with Prompt. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1548.005": {
+      "name": "Abuse Elevation Control Mechanism: Temporary Elevated Cloud Access",
+      "tactic": "TA0004",
+      "description": "Abuse Elevation Control Mechanism: Temporary Elevated Cloud Access. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1548.006": {
+      "name": "Abuse Elevation Control Mechanism: TCC Manipulation",
+      "tactic": "TA0004",
+      "description": "Abuse Elevation Control Mechanism: TCC Manipulation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1134": {
+      "name": "Access Token Manipulation",
+      "tactic": "TA0004",
+      "description": "Access Token Manipulation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1134.001": {
+      "name": "Access Token Manipulation: Token Impersonation/Theft",
+      "tactic": "TA0004",
+      "description": "Access Token Manipulation: Token Impersonation/Theft. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1134.002": {
+      "name": "Access Token Manipulation: Create Process with Token",
+      "tactic": "TA0004",
+      "description": "Access Token Manipulation: Create Process with Token. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1134.003": {
+      "name": "Access Token Manipulation: Make and Impersonate Token",
+      "tactic": "TA0004",
+      "description": "Access Token Manipulation: Make and Impersonate Token. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1134.004": {
+      "name": "Access Token Manipulation: Parent PID Spoofing",
+      "tactic": "TA0004",
+      "description": "Access Token Manipulation: Parent PID Spoofing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1134.005": {
+      "name": "Access Token Manipulation: SID-History Injection",
+      "tactic": "TA0004",
+      "description": "Access Token Manipulation: SID-History Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1068": {
+      "name": "Exploitation for Privilege Escalation",
+      "tactic": "TA0004",
+      "description": "Exploitation for Privilege Escalation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1611": {
+      "name": "Escape to Host",
+      "tactic": "TA0004",
+      "description": "Escape to Host. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1055": {
+      "name": "Process Injection",
+      "tactic": "TA0004",
+      "description": "Process Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1055.001": {
+      "name": "Process Injection: Dynamic-link Library Injection",
+      "tactic": "TA0004",
+      "description": "Process Injection: Dynamic-link Library Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.002": {
+      "name": "Process Injection: Portable Executable Injection",
+      "tactic": "TA0004",
+      "description": "Process Injection: Portable Executable Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.003": {
+      "name": "Process Injection: Thread Execution Hijacking",
+      "tactic": "TA0004",
+      "description": "Process Injection: Thread Execution Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.004": {
+      "name": "Process Injection: Asynchronous Procedure Call",
+      "tactic": "TA0004",
+      "description": "Process Injection: Asynchronous Procedure Call. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.005": {
+      "name": "Process Injection: Thread Local Storage",
+      "tactic": "TA0004",
+      "description": "Process Injection: Thread Local Storage. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.008": {
+      "name": "Process Injection: Ptrace System Calls",
+      "tactic": "TA0004",
+      "description": "Process Injection: Ptrace System Calls. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.009": {
+      "name": "Process Injection: Proc Memory",
+      "tactic": "TA0004",
+      "description": "Process Injection: Proc Memory. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.011": {
+      "name": "Process Injection: Extra Window Memory Injection",
+      "tactic": "TA0004",
+      "description": "Process Injection: Extra Window Memory Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.012": {
+      "name": "Process Injection: Process Hollowing",
+      "tactic": "TA0004",
+      "description": "Process Injection: Process Hollowing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.013": {
+      "name": "Process Injection: Process Doppelg\u00e4nging",
+      "tactic": "TA0004",
+      "description": "Process Injection: Process Doppelg\u00e4nging. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.014": {
+      "name": "Process Injection: VDSO Hijacking",
+      "tactic": "TA0004",
+      "description": "Process Injection: VDSO Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1055.015": {
+      "name": "Process Injection: ListPlanting",
+      "tactic": "TA0004",
+      "description": "Process Injection: ListPlanting. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1006": {
+      "name": "Direct Volume Access",
+      "tactic": "TA0005",
+      "description": "Direct Volume Access. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1014": {
+      "name": "Rootkit",
+      "tactic": "TA0005",
+      "description": "Rootkit. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1027": {
+      "name": "Obfuscated Files or Information",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1027.001": {
+      "name": "Obfuscated Files or Information: Binary Padding",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Binary Padding. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.002": {
+      "name": "Obfuscated Files or Information: Software Packing",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Software Packing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.003": {
+      "name": "Obfuscated Files or Information: Steganography",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Steganography. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.004": {
+      "name": "Obfuscated Files or Information: Compile After Delivery",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Compile After Delivery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.005": {
+      "name": "Obfuscated Files or Information: Indicator Removal from Tools",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Indicator Removal from Tools. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.006": {
+      "name": "Obfuscated Files or Information: HTML Smuggling",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: HTML Smuggling. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.007": {
+      "name": "Obfuscated Files or Information: Dynamic API Resolution",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Dynamic API Resolution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.008": {
+      "name": "Obfuscated Files or Information: Stripped Payloads",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Stripped Payloads. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.009": {
+      "name": "Obfuscated Files or Information: Embedded Payloads",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Embedded Payloads. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.010": {
+      "name": "Obfuscated Files or Information: Command Obfuscation",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Command Obfuscation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.011": {
+      "name": "Obfuscated Files or Information: Fileless Storage",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Fileless Storage. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.012": {
+      "name": "Obfuscated Files or Information: LNK Icon Smuggling",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: LNK Icon Smuggling. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1027.013": {
+      "name": "Obfuscated Files or Information: Encrypted/Encoded File",
+      "tactic": "TA0005",
+      "description": "Obfuscated Files or Information: Encrypted/Encoded File. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036": {
+      "name": "Masquerading",
+      "tactic": "TA0005",
+      "description": "Masquerading. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1036.001": {
+      "name": "Masquerading: Invalid Code Signature",
+      "tactic": "TA0005",
+      "description": "Masquerading: Invalid Code Signature. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.002": {
+      "name": "Masquerading: Right-to-Left Override",
+      "tactic": "TA0005",
+      "description": "Masquerading: Right-to-Left Override. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.003": {
+      "name": "Masquerading: Rename System Utilities",
+      "tactic": "TA0005",
+      "description": "Masquerading: Rename System Utilities. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.004": {
+      "name": "Masquerading: Masquerade Task or Service",
+      "tactic": "TA0005",
+      "description": "Masquerading: Masquerade Task or Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.005": {
+      "name": "Masquerading: Match Legitimate Name or Location",
+      "tactic": "TA0005",
+      "description": "Masquerading: Match Legitimate Name or Location. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.006": {
+      "name": "Masquerading: Space after Filename",
+      "tactic": "TA0005",
+      "description": "Masquerading: Space after Filename. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.007": {
+      "name": "Masquerading: Double File Extension",
+      "tactic": "TA0005",
+      "description": "Masquerading: Double File Extension. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.008": {
+      "name": "Masquerading: Masquerade File Type",
+      "tactic": "TA0005",
+      "description": "Masquerading: Masquerade File Type. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1036.009": {
+      "name": "Masquerading: Break Process Trees",
+      "tactic": "TA0005",
+      "description": "Masquerading: Break Process Trees. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070": {
+      "name": "Indicator Removal",
+      "tactic": "TA0005",
+      "description": "Indicator Removal. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1070.001": {
+      "name": "Indicator Removal: Clear Windows Event Logs",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Clear Windows Event Logs. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.002": {
+      "name": "Indicator Removal: Clear Linux or Mac System Logs",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Clear Linux or Mac System Logs. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.003": {
+      "name": "Indicator Removal: Clear Command History",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Clear Command History. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.004": {
+      "name": "Indicator Removal: File Deletion",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: File Deletion. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.005": {
+      "name": "Indicator Removal: Network Share Connection Removal",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Network Share Connection Removal. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.006": {
+      "name": "Indicator Removal: Timestomp",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Timestomp. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.007": {
+      "name": "Indicator Removal: Clear Network Connection History and Configurations",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Clear Network Connection History and Configurations. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.008": {
+      "name": "Indicator Removal: Clear Mailbox Data",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Clear Mailbox Data. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1070.009": {
+      "name": "Indicator Removal: Clear Persistence",
+      "tactic": "TA0005",
+      "description": "Indicator Removal: Clear Persistence. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1140": {
+      "name": "Deobfuscate/Decode Files or Information",
+      "tactic": "TA0005",
+      "description": "Deobfuscate/Decode Files or Information. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1202": {
+      "name": "Indirect Command Execution",
+      "tactic": "TA0005",
+      "description": "Indirect Command Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1207": {
+      "name": "Rogue Domain Controller",
+      "tactic": "TA0005",
+      "description": "Rogue Domain Controller. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1211": {
+      "name": "Exploitation for Defense Evasion",
+      "tactic": "TA0005",
+      "description": "Exploitation for Defense Evasion. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1216": {
+      "name": "System Script Proxy Execution",
+      "tactic": "TA0005",
+      "description": "System Script Proxy Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1216.001": {
+      "name": "System Script Proxy Execution: PubPrn",
+      "tactic": "TA0005",
+      "description": "System Script Proxy Execution: PubPrn. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1216.002": {
+      "name": "System Script Proxy Execution: SyncAppvPublishingServer",
+      "tactic": "TA0005",
+      "description": "System Script Proxy Execution: SyncAppvPublishingServer. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218": {
+      "name": "System Binary Proxy Execution",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1218.001": {
+      "name": "System Binary Proxy Execution: Compiled HTML File",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Compiled HTML File. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.002": {
+      "name": "System Binary Proxy Execution: Control Panel",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Control Panel. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.003": {
+      "name": "System Binary Proxy Execution: CMSTP",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: CMSTP. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.004": {
+      "name": "System Binary Proxy Execution: InstallUtil",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: InstallUtil. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.005": {
+      "name": "System Binary Proxy Execution: Mshta",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Mshta. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.007": {
+      "name": "System Binary Proxy Execution: Msiexec",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Msiexec. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.008": {
+      "name": "System Binary Proxy Execution: Odbcconf",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Odbcconf. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.009": {
+      "name": "System Binary Proxy Execution: Regsvcs/Regasm",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Regsvcs/Regasm. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.010": {
+      "name": "System Binary Proxy Execution: Regsvr32",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Regsvr32. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.011": {
+      "name": "System Binary Proxy Execution: Rundll32",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Rundll32. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.012": {
+      "name": "System Binary Proxy Execution: Verclsid",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Verclsid. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.013": {
+      "name": "System Binary Proxy Execution: Mavinject",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Mavinject. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.014": {
+      "name": "System Binary Proxy Execution: MMC",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: MMC. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1218.015": {
+      "name": "System Binary Proxy Execution: Electron Applications",
+      "tactic": "TA0005",
+      "description": "System Binary Proxy Execution: Electron Applications. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1221": {
+      "name": "Template Injection",
+      "tactic": "TA0005",
+      "description": "Template Injection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1480": {
+      "name": "Execution Guardrails",
+      "tactic": "TA0005",
+      "description": "Execution Guardrails. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1480.001": {
+      "name": "Execution Guardrails: Environmental Keying",
+      "tactic": "TA0005",
+      "description": "Execution Guardrails: Environmental Keying. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1480.002": {
+      "name": "Execution Guardrails: Mutual Exclusion",
+      "tactic": "TA0005",
+      "description": "Execution Guardrails: Mutual Exclusion. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1484": {
+      "name": "Domain or Tenant Policy Modification",
+      "tactic": "TA0005",
+      "description": "Domain or Tenant Policy Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1484.001": {
+      "name": "Domain or Tenant Policy Modification: Group Policy Modification",
+      "tactic": "TA0005",
+      "description": "Domain or Tenant Policy Modification: Group Policy Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1484.002": {
+      "name": "Domain or Tenant Policy Modification: Trust Modification",
+      "tactic": "TA0005",
+      "description": "Domain or Tenant Policy Modification: Trust Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1497": {
+      "name": "Virtualization/Sandbox Evasion",
+      "tactic": "TA0005",
+      "description": "Virtualization/Sandbox Evasion. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1497.001": {
+      "name": "Virtualization/Sandbox Evasion: System Checks",
+      "tactic": "TA0005",
+      "description": "Virtualization/Sandbox Evasion: System Checks. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1497.002": {
+      "name": "Virtualization/Sandbox Evasion: User Activity Based Checks",
+      "tactic": "TA0005",
+      "description": "Virtualization/Sandbox Evasion: User Activity Based Checks. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1497.003": {
+      "name": "Virtualization/Sandbox Evasion: Time Based Evasion",
+      "tactic": "TA0005",
+      "description": "Virtualization/Sandbox Evasion: Time Based Evasion. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1553": {
+      "name": "Subvert Trust Controls",
+      "tactic": "TA0005",
+      "description": "Subvert Trust Controls. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1553.001": {
+      "name": "Subvert Trust Controls: Gatekeeper Bypass",
+      "tactic": "TA0005",
+      "description": "Subvert Trust Controls: Gatekeeper Bypass. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1553.002": {
+      "name": "Subvert Trust Controls: Code Signing",
+      "tactic": "TA0005",
+      "description": "Subvert Trust Controls: Code Signing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1553.003": {
+      "name": "Subvert Trust Controls: SIP and Trust Provider Hijacking",
+      "tactic": "TA0005",
+      "description": "Subvert Trust Controls: SIP and Trust Provider Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1553.004": {
+      "name": "Subvert Trust Controls: Install Root Certificate",
+      "tactic": "TA0005",
+      "description": "Subvert Trust Controls: Install Root Certificate. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1553.005": {
+      "name": "Subvert Trust Controls: Mark-of-the-Web Bypass",
+      "tactic": "TA0005",
+      "description": "Subvert Trust Controls: Mark-of-the-Web Bypass. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1553.006": {
+      "name": "Subvert Trust Controls: Code Signing Policy Modification",
+      "tactic": "TA0005",
+      "description": "Subvert Trust Controls: Code Signing Policy Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562": {
+      "name": "Impair Defenses",
+      "tactic": "TA0005",
+      "description": "Impair Defenses. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1562.001": {
+      "name": "Impair Defenses: Disable or Modify Tools",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Disable or Modify Tools. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.002": {
+      "name": "Impair Defenses: Disable Windows Event Logging",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Disable Windows Event Logging. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.003": {
+      "name": "Impair Defenses: Impair Command History Logging",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Impair Command History Logging. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.004": {
+      "name": "Impair Defenses: Disable or Modify System Firewall",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Disable or Modify System Firewall. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.006": {
+      "name": "Impair Defenses: Indicator Blocking",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Indicator Blocking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.007": {
+      "name": "Impair Defenses: Disable or Modify Cloud Firewall",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Disable or Modify Cloud Firewall. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.008": {
+      "name": "Impair Defenses: Disable or Modify Cloud Logs",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Disable or Modify Cloud Logs. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.009": {
+      "name": "Impair Defenses: Safe Mode Boot",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Safe Mode Boot. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.010": {
+      "name": "Impair Defenses: Downgrade Attack",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Downgrade Attack. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.011": {
+      "name": "Impair Defenses: Spoof Security Alerting",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Spoof Security Alerting. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1562.012": {
+      "name": "Impair Defenses: Disable or Modify Linux Audit System",
+      "tactic": "TA0005",
+      "description": "Impair Defenses: Disable or Modify Linux Audit System. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564": {
+      "name": "Hide Artifacts",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1564.001": {
+      "name": "Hide Artifacts: Hidden Files and Directories",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Hidden Files and Directories. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.002": {
+      "name": "Hide Artifacts: Hidden Users",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Hidden Users. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.003": {
+      "name": "Hide Artifacts: Hidden Window",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Hidden Window. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.004": {
+      "name": "Hide Artifacts: NTFS File Attributes",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: NTFS File Attributes. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.005": {
+      "name": "Hide Artifacts: Hidden File System",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Hidden File System. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.006": {
+      "name": "Hide Artifacts: Run Virtual Instance",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Run Virtual Instance. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.007": {
+      "name": "Hide Artifacts: VBA Stomping",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: VBA Stomping. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.008": {
+      "name": "Hide Artifacts: Email Hiding Rules",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Email Hiding Rules. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.009": {
+      "name": "Hide Artifacts: Resource Forking",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Resource Forking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.010": {
+      "name": "Hide Artifacts: Process Argument Spoofing",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Process Argument Spoofing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.011": {
+      "name": "Hide Artifacts: Ignore Process Interrupts",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: Ignore Process Interrupts. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1564.012": {
+      "name": "Hide Artifacts: File/Path Exclusions",
+      "tactic": "TA0005",
+      "description": "Hide Artifacts: File/Path Exclusions. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1578": {
+      "name": "Modify Cloud Compute Infrastructure",
+      "tactic": "TA0005",
+      "description": "Modify Cloud Compute Infrastructure. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1578.001": {
+      "name": "Modify Cloud Compute Infrastructure: Create Snapshot",
+      "tactic": "TA0005",
+      "description": "Modify Cloud Compute Infrastructure: Create Snapshot. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1578.002": {
+      "name": "Modify Cloud Compute Infrastructure: Create Cloud Instance",
+      "tactic": "TA0005",
+      "description": "Modify Cloud Compute Infrastructure: Create Cloud Instance. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1578.003": {
+      "name": "Modify Cloud Compute Infrastructure: Delete Cloud Instance",
+      "tactic": "TA0005",
+      "description": "Modify Cloud Compute Infrastructure: Delete Cloud Instance. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1578.004": {
+      "name": "Modify Cloud Compute Infrastructure: Revert Cloud Instance",
+      "tactic": "TA0005",
+      "description": "Modify Cloud Compute Infrastructure: Revert Cloud Instance. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1578.005": {
+      "name": "Modify Cloud Compute Infrastructure: Modify Cloud Compute Configurations",
+      "tactic": "TA0005",
+      "description": "Modify Cloud Compute Infrastructure: Modify Cloud Compute Configurations. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1600": {
+      "name": "Weaken Encryption",
+      "tactic": "TA0005",
+      "description": "Weaken Encryption. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1600.001": {
+      "name": "Weaken Encryption: Reduce Key Space",
+      "tactic": "TA0005",
+      "description": "Weaken Encryption: Reduce Key Space. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1600.002": {
+      "name": "Weaken Encryption: Disable Crypto Hardware",
+      "tactic": "TA0005",
+      "description": "Weaken Encryption: Disable Crypto Hardware. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1601": {
+      "name": "Modify System Image",
+      "tactic": "TA0005",
+      "description": "Modify System Image. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1601.001": {
+      "name": "Modify System Image: Patch System Image",
+      "tactic": "TA0005",
+      "description": "Modify System Image: Patch System Image. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1601.002": {
+      "name": "Modify System Image: Downgrade System Image",
+      "tactic": "TA0005",
+      "description": "Modify System Image: Downgrade System Image. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1620": {
+      "name": "Reflective Code Loading",
+      "tactic": "TA0005",
+      "description": "Reflective Code Loading. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1647": {
+      "name": "Plist File Modification",
+      "tactic": "TA0005",
+      "description": "Plist File Modification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1656": {
+      "name": "Impersonation",
+      "tactic": "TA0005",
+      "description": "Impersonation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1539": {
+      "name": "Steal Web Session Cookie",
+      "tactic": "TA0006",
+      "description": "Steal Web Session Cookie. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1621": {
+      "name": "Multi-Factor Authentication Request Generation",
+      "tactic": "TA0006",
+      "description": "Multi-Factor Authentication Request Generation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1110": {
+      "name": "Brute Force",
+      "tactic": "TA0006",
+      "description": "Brute Force. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1110.001": {
+      "name": "Brute Force: Password Guessing",
+      "tactic": "TA0006",
+      "description": "Brute Force: Password Guessing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1110.002": {
+      "name": "Brute Force: Password Cracking",
+      "tactic": "TA0006",
+      "description": "Brute Force: Password Cracking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1110.003": {
+      "name": "Brute Force: Password Spraying",
+      "tactic": "TA0006",
+      "description": "Brute Force: Password Spraying. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1110.004": {
+      "name": "Brute Force: Credential Stuffing",
+      "tactic": "TA0006",
+      "description": "Brute Force: Credential Stuffing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1555": {
+      "name": "Credentials from Password Stores",
+      "tactic": "TA0006",
+      "description": "Credentials from Password Stores. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1555.001": {
+      "name": "Credentials from Password Stores: Keychain",
+      "tactic": "TA0006",
+      "description": "Credentials from Password Stores: Keychain. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1555.002": {
+      "name": "Credentials from Password Stores: Securityd Memory",
+      "tactic": "TA0006",
+      "description": "Credentials from Password Stores: Securityd Memory. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1555.003": {
+      "name": "Credentials from Password Stores: Credentials from Web Browsers",
+      "tactic": "TA0006",
+      "description": "Credentials from Password Stores: Credentials from Web Browsers. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1555.004": {
+      "name": "Credentials from Password Stores: Windows Credential Manager",
+      "tactic": "TA0006",
+      "description": "Credentials from Password Stores: Windows Credential Manager. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1555.005": {
+      "name": "Credentials from Password Stores: Password Managers",
+      "tactic": "TA0006",
+      "description": "Credentials from Password Stores: Password Managers. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1555.006": {
+      "name": "Credentials from Password Stores: Cloud Secrets Management Stores",
+      "tactic": "TA0006",
+      "description": "Credentials from Password Stores: Cloud Secrets Management Stores. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1212": {
+      "name": "Exploitation for Credential Access",
+      "tactic": "TA0006",
+      "description": "Exploitation for Credential Access. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1187": {
+      "name": "Forced Authentication",
+      "tactic": "TA0006",
+      "description": "Forced Authentication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1606": {
+      "name": "Forge Web Credentials",
+      "tactic": "TA0006",
+      "description": "Forge Web Credentials. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1606.001": {
+      "name": "Forge Web Credentials: Web Cookies",
+      "tactic": "TA0006",
+      "description": "Forge Web Credentials: Web Cookies. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1606.002": {
+      "name": "Forge Web Credentials: SAML Tokens",
+      "tactic": "TA0006",
+      "description": "Forge Web Credentials: SAML Tokens. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1056": {
+      "name": "Input Capture",
+      "tactic": "TA0006",
+      "description": "Input Capture. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1056.001": {
+      "name": "Input Capture: Keylogging",
+      "tactic": "TA0006",
+      "description": "Input Capture: Keylogging. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1056.002": {
+      "name": "Input Capture: GUI Input Capture",
+      "tactic": "TA0006",
+      "description": "Input Capture: GUI Input Capture. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1056.003": {
+      "name": "Input Capture: Web Portal Capture",
+      "tactic": "TA0006",
+      "description": "Input Capture: Web Portal Capture. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1056.004": {
+      "name": "Input Capture: Credential API Hooking",
+      "tactic": "TA0006",
+      "description": "Input Capture: Credential API Hooking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1557": {
+      "name": "Adversary-in-the-Middle",
+      "tactic": "TA0006",
+      "description": "Adversary-in-the-Middle. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1557.001": {
+      "name": "Adversary-in-the-Middle: LLMNR/NBT-NS Poisoning and SMB Relay",
+      "tactic": "TA0006",
+      "description": "Adversary-in-the-Middle: LLMNR/NBT-NS Poisoning and SMB Relay. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1557.002": {
+      "name": "Adversary-in-the-Middle: ARP Cache Poisoning",
+      "tactic": "TA0006",
+      "description": "Adversary-in-the-Middle: ARP Cache Poisoning. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1557.003": {
+      "name": "Adversary-in-the-Middle: DHCP Spoofing",
+      "tactic": "TA0006",
+      "description": "Adversary-in-the-Middle: DHCP Spoofing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1040": {
+      "name": "Network Sniffing",
+      "tactic": "TA0006",
+      "description": "Network Sniffing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1003": {
+      "name": "OS Credential Dumping",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1003.001": {
+      "name": "OS Credential Dumping: LSASS Memory",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: LSASS Memory. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1003.002": {
+      "name": "OS Credential Dumping: Security Account Manager",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: Security Account Manager. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1003.003": {
+      "name": "OS Credential Dumping: NTDS",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: NTDS. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1003.004": {
+      "name": "OS Credential Dumping: LSA Secrets",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: LSA Secrets. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1003.005": {
+      "name": "OS Credential Dumping: Cached Domain Credentials",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: Cached Domain Credentials. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1003.006": {
+      "name": "OS Credential Dumping: DCSync",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: DCSync. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1003.007": {
+      "name": "OS Credential Dumping: Proc Filesystem",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: Proc Filesystem. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1003.008": {
+      "name": "OS Credential Dumping: /etc/passwd and /etc/shadow",
+      "tactic": "TA0006",
+      "description": "OS Credential Dumping: /etc/passwd and /etc/shadow. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1528": {
+      "name": "Steal Application Access Token",
+      "tactic": "TA0006",
+      "description": "Steal Application Access Token. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1649": {
+      "name": "Steal or Forge Authentication Certificates",
+      "tactic": "TA0006",
+      "description": "Steal or Forge Authentication Certificates. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1558": {
+      "name": "Steal or Forge Kerberos Tickets",
+      "tactic": "TA0006",
+      "description": "Steal or Forge Kerberos Tickets. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1558.001": {
+      "name": "Steal or Forge Kerberos Tickets: Golden Ticket",
+      "tactic": "TA0006",
+      "description": "Steal or Forge Kerberos Tickets: Golden Ticket. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1558.002": {
+      "name": "Steal or Forge Kerberos Tickets: Silver Ticket",
+      "tactic": "TA0006",
+      "description": "Steal or Forge Kerberos Tickets: Silver Ticket. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1558.003": {
+      "name": "Steal or Forge Kerberos Tickets: Kerberoasting",
+      "tactic": "TA0006",
+      "description": "Steal or Forge Kerberos Tickets: Kerberoasting. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1558.004": {
+      "name": "Steal or Forge Kerberos Tickets: AS-REP Roasting",
+      "tactic": "TA0006",
+      "description": "Steal or Forge Kerberos Tickets: AS-REP Roasting. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1550": {
+      "name": "Use Alternate Authentication Material",
+      "tactic": "TA0006",
+      "description": "Use Alternate Authentication Material. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1550.001": {
+      "name": "Use Alternate Authentication Material: Application Access Token",
+      "tactic": "TA0006",
+      "description": "Use Alternate Authentication Material: Application Access Token. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1550.002": {
+      "name": "Use Alternate Authentication Material: Pass the Hash",
+      "tactic": "TA0006",
+      "description": "Use Alternate Authentication Material: Pass the Hash. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1550.003": {
+      "name": "Use Alternate Authentication Material: Pass the Ticket",
+      "tactic": "TA0006",
+      "description": "Use Alternate Authentication Material: Pass the Ticket. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1550.004": {
+      "name": "Use Alternate Authentication Material: Web Session Cookie",
+      "tactic": "TA0006",
+      "description": "Use Alternate Authentication Material: Web Session Cookie. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552": {
+      "name": "Unsecured Credentials",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1552.001": {
+      "name": "Unsecured Credentials: Credentials In Files",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Credentials In Files. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552.002": {
+      "name": "Unsecured Credentials: Credentials in Registry",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Credentials in Registry. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552.003": {
+      "name": "Unsecured Credentials: Bash History",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Bash History. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552.004": {
+      "name": "Unsecured Credentials: Private Keys",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Private Keys. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552.005": {
+      "name": "Unsecured Credentials: Cloud Instance Metadata API",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Cloud Instance Metadata API. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552.006": {
+      "name": "Unsecured Credentials: Group Policy Preferences",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Group Policy Preferences. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552.007": {
+      "name": "Unsecured Credentials: Container API",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Container API. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1552.008": {
+      "name": "Unsecured Credentials: Chat Messages",
+      "tactic": "TA0006",
+      "description": "Unsecured Credentials: Chat Messages. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1087": {
+      "name": "Account Discovery",
+      "tactic": "TA0007",
+      "description": "Account Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1087.001": {
+      "name": "Account Discovery: Local Account",
+      "tactic": "TA0007",
+      "description": "Account Discovery: Local Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1087.002": {
+      "name": "Account Discovery: Domain Account",
+      "tactic": "TA0007",
+      "description": "Account Discovery: Domain Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1087.003": {
+      "name": "Account Discovery: Email Account",
+      "tactic": "TA0007",
+      "description": "Account Discovery: Email Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1087.004": {
+      "name": "Account Discovery: Cloud Account",
+      "tactic": "TA0007",
+      "description": "Account Discovery: Cloud Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1010": {
+      "name": "Application Window Discovery",
+      "tactic": "TA0007",
+      "description": "Application Window Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1217": {
+      "name": "Browser Information Discovery",
+      "tactic": "TA0007",
+      "description": "Browser Information Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1580": {
+      "name": "Cloud Infrastructure Discovery",
+      "tactic": "TA0007",
+      "description": "Cloud Infrastructure Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1538": {
+      "name": "Cloud Service Dashboard",
+      "tactic": "TA0007",
+      "description": "Cloud Service Dashboard. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1526": {
+      "name": "Cloud Service Discovery",
+      "tactic": "TA0007",
+      "description": "Cloud Service Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1619": {
+      "name": "Cloud Storage Object Discovery",
+      "tactic": "TA0007",
+      "description": "Cloud Storage Object Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1622": {
+      "name": "Debugger Evasion",
+      "tactic": "TA0007",
+      "description": "Debugger Evasion. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1652": {
+      "name": "Device Driver Discovery",
+      "tactic": "TA0007",
+      "description": "Device Driver Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1482": {
+      "name": "Domain Trust Discovery",
+      "tactic": "TA0007",
+      "description": "Domain Trust Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1083": {
+      "name": "File and Directory Discovery",
+      "tactic": "TA0007",
+      "description": "File and Directory Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1615": {
+      "name": "Group Policy Discovery",
+      "tactic": "TA0007",
+      "description": "Group Policy Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1046": {
+      "name": "Network Service Discovery",
+      "tactic": "TA0007",
+      "description": "Network Service Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1135": {
+      "name": "Network Share Discovery",
+      "tactic": "TA0007",
+      "description": "Network Share Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1201": {
+      "name": "Password Policy Discovery",
+      "tactic": "TA0007",
+      "description": "Password Policy Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1120": {
+      "name": "Peripheral Device Discovery",
+      "tactic": "TA0007",
+      "description": "Peripheral Device Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1069": {
+      "name": "Permission Groups Discovery",
+      "tactic": "TA0007",
+      "description": "Permission Groups Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1069.001": {
+      "name": "Permission Groups Discovery: Local Groups",
+      "tactic": "TA0007",
+      "description": "Permission Groups Discovery: Local Groups. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1069.002": {
+      "name": "Permission Groups Discovery: Domain Groups",
+      "tactic": "TA0007",
+      "description": "Permission Groups Discovery: Domain Groups. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1069.003": {
+      "name": "Permission Groups Discovery: Cloud Groups",
+      "tactic": "TA0007",
+      "description": "Permission Groups Discovery: Cloud Groups. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1057": {
+      "name": "Process Discovery",
+      "tactic": "TA0007",
+      "description": "Process Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1012": {
+      "name": "Query Registry",
+      "tactic": "TA0007",
+      "description": "Query Registry. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1018": {
+      "name": "Remote System Discovery",
+      "tactic": "TA0007",
+      "description": "Remote System Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1518": {
+      "name": "Software Discovery",
+      "tactic": "TA0007",
+      "description": "Software Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1518.001": {
+      "name": "Software Discovery: Security Software Discovery",
+      "tactic": "TA0007",
+      "description": "Software Discovery: Security Software Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1082": {
+      "name": "System Information Discovery",
+      "tactic": "TA0007",
+      "description": "System Information Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1614": {
+      "name": "System Location Discovery",
+      "tactic": "TA0007",
+      "description": "System Location Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1614.001": {
+      "name": "System Location Discovery: System Language Discovery",
+      "tactic": "TA0007",
+      "description": "System Location Discovery: System Language Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1016": {
+      "name": "System Network Configuration Discovery",
+      "tactic": "TA0007",
+      "description": "System Network Configuration Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1016.001": {
+      "name": "System Network Configuration Discovery: Internet Connection Discovery",
+      "tactic": "TA0007",
+      "description": "System Network Configuration Discovery: Internet Connection Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1049": {
+      "name": "System Network Connections Discovery",
+      "tactic": "TA0007",
+      "description": "System Network Connections Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1033": {
+      "name": "System Owner/User Discovery",
+      "tactic": "TA0007",
+      "description": "System Owner/User Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1007": {
+      "name": "System Service Discovery",
+      "tactic": "TA0007",
+      "description": "System Service Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1124": {
+      "name": "System Time Discovery",
+      "tactic": "TA0007",
+      "description": "System Time Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1613": {
+      "name": "Container and Resource Discovery",
+      "tactic": "TA0007",
+      "description": "Container and Resource Discovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1654": {
+      "name": "Log Enumeration",
+      "tactic": "TA0007",
+      "description": "Log Enumeration. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1210": {
+      "name": "Exploitation of Remote Services",
+      "tactic": "TA0008",
+      "description": "Exploitation of Remote Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1534": {
+      "name": "Internal Spearphishing",
+      "tactic": "TA0008",
+      "description": "Internal Spearphishing. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1570": {
+      "name": "Lateral Tool Transfer",
+      "tactic": "TA0008",
+      "description": "Lateral Tool Transfer. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1563": {
+      "name": "Remote Service Session Hijacking",
+      "tactic": "TA0008",
+      "description": "Remote Service Session Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1563.001": {
+      "name": "Remote Service Session Hijacking: SSH Hijacking",
+      "tactic": "TA0008",
+      "description": "Remote Service Session Hijacking: SSH Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1563.002": {
+      "name": "Remote Service Session Hijacking: RDP Hijacking",
+      "tactic": "TA0008",
+      "description": "Remote Service Session Hijacking: RDP Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021": {
+      "name": "Remote Services",
+      "tactic": "TA0008",
+      "description": "Remote Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1021.001": {
+      "name": "Remote Services: Remote Desktop Protocol",
+      "tactic": "TA0008",
+      "description": "Remote Services: Remote Desktop Protocol. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021.002": {
+      "name": "Remote Services: SMB/Windows Admin Shares",
+      "tactic": "TA0008",
+      "description": "Remote Services: SMB/Windows Admin Shares. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021.003": {
+      "name": "Remote Services: Distributed Component Object Model",
+      "tactic": "TA0008",
+      "description": "Remote Services: Distributed Component Object Model. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021.004": {
+      "name": "Remote Services: SSH",
+      "tactic": "TA0008",
+      "description": "Remote Services: SSH. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021.005": {
+      "name": "Remote Services: VNC",
+      "tactic": "TA0008",
+      "description": "Remote Services: VNC. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021.006": {
+      "name": "Remote Services: Windows Remote Management",
+      "tactic": "TA0008",
+      "description": "Remote Services: Windows Remote Management. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021.007": {
+      "name": "Remote Services: Cloud Services",
+      "tactic": "TA0008",
+      "description": "Remote Services: Cloud Services. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1021.008": {
+      "name": "Remote Services: Direct Cloud VM Connections",
+      "tactic": "TA0008",
+      "description": "Remote Services: Direct Cloud VM Connections. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1080": {
+      "name": "Taint Shared Content",
+      "tactic": "TA0008",
+      "description": "Taint Shared Content. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1560": {
+      "name": "Archive Collected Data",
+      "tactic": "TA0009",
+      "description": "Archive Collected Data. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1560.001": {
+      "name": "Archive Collected Data: Archive via Utility",
+      "tactic": "TA0009",
+      "description": "Archive Collected Data: Archive via Utility. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1560.002": {
+      "name": "Archive Collected Data: Archive via Library",
+      "tactic": "TA0009",
+      "description": "Archive Collected Data: Archive via Library. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1560.003": {
+      "name": "Archive Collected Data: Archive via Custom Method",
+      "tactic": "TA0009",
+      "description": "Archive Collected Data: Archive via Custom Method. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1123": {
+      "name": "Audio Capture",
+      "tactic": "TA0009",
+      "description": "Audio Capture. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1119": {
+      "name": "Automated Collection",
+      "tactic": "TA0009",
+      "description": "Automated Collection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1115": {
+      "name": "Clipboard Data",
+      "tactic": "TA0009",
+      "description": "Clipboard Data. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1530": {
+      "name": "Data from Cloud Storage",
+      "tactic": "TA0009",
+      "description": "Data from Cloud Storage. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1602": {
+      "name": "Data from Configuration Repository",
+      "tactic": "TA0009",
+      "description": "Data from Configuration Repository. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1602.001": {
+      "name": "Data from Configuration Repository: SNMP (MIB Dump)",
+      "tactic": "TA0009",
+      "description": "Data from Configuration Repository: SNMP (MIB Dump). Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1602.002": {
+      "name": "Data from Configuration Repository: Network Device Configuration Dump",
+      "tactic": "TA0009",
+      "description": "Data from Configuration Repository: Network Device Configuration Dump. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1213": {
+      "name": "Data from Information Repositories",
+      "tactic": "TA0009",
+      "description": "Data from Information Repositories. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1213.001": {
+      "name": "Data from Information Repositories: Confluence",
+      "tactic": "TA0009",
+      "description": "Data from Information Repositories: Confluence. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1213.002": {
+      "name": "Data from Information Repositories: SharePoint",
+      "tactic": "TA0009",
+      "description": "Data from Information Repositories: SharePoint. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1213.003": {
+      "name": "Data from Information Repositories: Code Repositories",
+      "tactic": "TA0009",
+      "description": "Data from Information Repositories: Code Repositories. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1005": {
+      "name": "Data from Local System",
+      "tactic": "TA0009",
+      "description": "Data from Local System. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1039": {
+      "name": "Data from Network Shared Drive",
+      "tactic": "TA0009",
+      "description": "Data from Network Shared Drive. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1025": {
+      "name": "Data from Removable Media",
+      "tactic": "TA0009",
+      "description": "Data from Removable Media. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1074": {
+      "name": "Data Staged",
+      "tactic": "TA0009",
+      "description": "Data Staged. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1074.001": {
+      "name": "Data Staged: Local Data Staging",
+      "tactic": "TA0009",
+      "description": "Data Staged: Local Data Staging. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1074.002": {
+      "name": "Data Staged: Remote Data Staging",
+      "tactic": "TA0009",
+      "description": "Data Staged: Remote Data Staging. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1114": {
+      "name": "Email Collection",
+      "tactic": "TA0009",
+      "description": "Email Collection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1114.001": {
+      "name": "Email Collection: Local Email Collection",
+      "tactic": "TA0009",
+      "description": "Email Collection: Local Email Collection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1114.002": {
+      "name": "Email Collection: Remote Email Collection",
+      "tactic": "TA0009",
+      "description": "Email Collection: Remote Email Collection. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1114.003": {
+      "name": "Email Collection: Email Forwarding Rule",
+      "tactic": "TA0009",
+      "description": "Email Collection: Email Forwarding Rule. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1185": {
+      "name": "Browser Session Hijacking",
+      "tactic": "TA0009",
+      "description": "Browser Session Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1113": {
+      "name": "Screen Capture",
+      "tactic": "TA0009",
+      "description": "Screen Capture. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1125": {
+      "name": "Video Capture",
+      "tactic": "TA0009",
+      "description": "Video Capture. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1071": {
+      "name": "Application Layer Protocol",
+      "tactic": "TA0011",
+      "description": "Application Layer Protocol. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1071.001": {
+      "name": "Application Layer Protocol: Web Protocols",
+      "tactic": "TA0011",
+      "description": "Application Layer Protocol: Web Protocols. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1071.002": {
+      "name": "Application Layer Protocol: File Transfer Protocols",
+      "tactic": "TA0011",
+      "description": "Application Layer Protocol: File Transfer Protocols. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1071.003": {
+      "name": "Application Layer Protocol: Mail Protocols",
+      "tactic": "TA0011",
+      "description": "Application Layer Protocol: Mail Protocols. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1071.004": {
+      "name": "Application Layer Protocol: DNS",
+      "tactic": "TA0011",
+      "description": "Application Layer Protocol: DNS. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1092": {
+      "name": "Communication Through Removable Media",
+      "tactic": "TA0011",
+      "description": "Communication Through Removable Media. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1132": {
+      "name": "Data Encoding",
+      "tactic": "TA0011",
+      "description": "Data Encoding. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1132.001": {
+      "name": "Data Encoding: Standard Encoding",
+      "tactic": "TA0011",
+      "description": "Data Encoding: Standard Encoding. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1132.002": {
+      "name": "Data Encoding: Non-Standard Encoding",
+      "tactic": "TA0011",
+      "description": "Data Encoding: Non-Standard Encoding. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1001": {
+      "name": "Data Obfuscation",
+      "tactic": "TA0011",
+      "description": "Data Obfuscation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1001.001": {
+      "name": "Data Obfuscation: Junk Data",
+      "tactic": "TA0011",
+      "description": "Data Obfuscation: Junk Data. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1001.002": {
+      "name": "Data Obfuscation: Steganography",
+      "tactic": "TA0011",
+      "description": "Data Obfuscation: Steganography. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1001.003": {
+      "name": "Data Obfuscation: Protocol Impersonation",
+      "tactic": "TA0011",
+      "description": "Data Obfuscation: Protocol Impersonation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1568": {
+      "name": "Dynamic Resolution",
+      "tactic": "TA0011",
+      "description": "Dynamic Resolution. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1568.001": {
+      "name": "Dynamic Resolution: Fast Flux DNS",
+      "tactic": "TA0011",
+      "description": "Dynamic Resolution: Fast Flux DNS. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1568.002": {
+      "name": "Dynamic Resolution: Domain Generation Algorithms",
+      "tactic": "TA0011",
+      "description": "Dynamic Resolution: Domain Generation Algorithms. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1568.003": {
+      "name": "Dynamic Resolution: DNS Calculation",
+      "tactic": "TA0011",
+      "description": "Dynamic Resolution: DNS Calculation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1573": {
+      "name": "Encrypted Channel",
+      "tactic": "TA0011",
+      "description": "Encrypted Channel. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1573.001": {
+      "name": "Encrypted Channel: Symmetric Cryptography",
+      "tactic": "TA0011",
+      "description": "Encrypted Channel: Symmetric Cryptography. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1573.002": {
+      "name": "Encrypted Channel: Asymmetric Cryptography",
+      "tactic": "TA0011",
+      "description": "Encrypted Channel: Asymmetric Cryptography. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1008": {
+      "name": "Fallback Channels",
+      "tactic": "TA0011",
+      "description": "Fallback Channels. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1105": {
+      "name": "Ingress Tool Transfer",
+      "tactic": "TA0011",
+      "description": "Ingress Tool Transfer. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1104": {
+      "name": "Multi-Stage Channels",
+      "tactic": "TA0011",
+      "description": "Multi-Stage Channels. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1095": {
+      "name": "Non-Application Layer Protocol",
+      "tactic": "TA0011",
+      "description": "Non-Application Layer Protocol. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1571": {
+      "name": "Non-Standard Port",
+      "tactic": "TA0011",
+      "description": "Non-Standard Port. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1572": {
+      "name": "Protocol Tunneling",
+      "tactic": "TA0011",
+      "description": "Protocol Tunneling. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1090": {
+      "name": "Proxy",
+      "tactic": "TA0011",
+      "description": "Proxy. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1090.001": {
+      "name": "Proxy: Internal Proxy",
+      "tactic": "TA0011",
+      "description": "Proxy: Internal Proxy. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1090.002": {
+      "name": "Proxy: External Proxy",
+      "tactic": "TA0011",
+      "description": "Proxy: External Proxy. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1090.003": {
+      "name": "Proxy: Multi-hop Proxy",
+      "tactic": "TA0011",
+      "description": "Proxy: Multi-hop Proxy. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1090.004": {
+      "name": "Proxy: Domain Fronting",
+      "tactic": "TA0011",
+      "description": "Proxy: Domain Fronting. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1219": {
+      "name": "Remote Access Software",
+      "tactic": "TA0011",
+      "description": "Remote Access Software. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1102": {
+      "name": "Web Service",
+      "tactic": "TA0011",
+      "description": "Web Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1102.001": {
+      "name": "Web Service: Dead Drop Resolver",
+      "tactic": "TA0011",
+      "description": "Web Service: Dead Drop Resolver. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1102.002": {
+      "name": "Web Service: Bidirectional Communication",
+      "tactic": "TA0011",
+      "description": "Web Service: Bidirectional Communication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1102.003": {
+      "name": "Web Service: One-Way Communication",
+      "tactic": "TA0011",
+      "description": "Web Service: One-Way Communication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1020": {
+      "name": "Automated Exfiltration",
+      "tactic": "TA0010",
+      "description": "Automated Exfiltration. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1020.001": {
+      "name": "Automated Exfiltration: Traffic Duplication",
+      "tactic": "TA0010",
+      "description": "Automated Exfiltration: Traffic Duplication. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1030": {
+      "name": "Data Transfer Size Limits",
+      "tactic": "TA0010",
+      "description": "Data Transfer Size Limits. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1048": {
+      "name": "Exfiltration Over Alternative Protocol",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Alternative Protocol. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1048.001": {
+      "name": "Exfiltration Over Alternative Protocol: Exfiltration Over Symmetric Encrypted Non-C2 Protocol",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Alternative Protocol: Exfiltration Over Symmetric Encrypted Non-C2 Protocol. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1048.002": {
+      "name": "Exfiltration Over Alternative Protocol: Exfiltration Over Asymmetric Encrypted Non-C2 Protocol",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Alternative Protocol: Exfiltration Over Asymmetric Encrypted Non-C2 Protocol. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1048.003": {
+      "name": "Exfiltration Over Alternative Protocol: Exfiltration Over Unencrypted Non-C2 Protocol",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Alternative Protocol: Exfiltration Over Unencrypted Non-C2 Protocol. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1041": {
+      "name": "Exfiltration Over C2 Channel",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over C2 Channel. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1011": {
+      "name": "Exfiltration Over Other Network Medium",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Other Network Medium. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1011.001": {
+      "name": "Exfiltration Over Other Network Medium: Exfiltration Over Bluetooth",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Other Network Medium: Exfiltration Over Bluetooth. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1052": {
+      "name": "Exfiltration Over Physical Medium",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Physical Medium. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1052.001": {
+      "name": "Exfiltration Over Physical Medium: Exfiltration over USB",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Physical Medium: Exfiltration over USB. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1567": {
+      "name": "Exfiltration Over Web Service",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Web Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1567.001": {
+      "name": "Exfiltration Over Web Service: Exfiltration to Code Repository",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Web Service: Exfiltration to Code Repository. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1567.002": {
+      "name": "Exfiltration Over Web Service: Exfiltration to Cloud Storage",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Web Service: Exfiltration to Cloud Storage. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1567.003": {
+      "name": "Exfiltration Over Web Service: Exfiltration to Text Storage Sites",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Web Service: Exfiltration to Text Storage Sites. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1567.004": {
+      "name": "Exfiltration Over Web Service: Exfiltration Over Webhook",
+      "tactic": "TA0010",
+      "description": "Exfiltration Over Web Service: Exfiltration Over Webhook. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1029": {
+      "name": "Scheduled Transfer",
+      "tactic": "TA0010",
+      "description": "Scheduled Transfer. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1537": {
+      "name": "Transfer Data to Cloud Account",
+      "tactic": "TA0010",
+      "description": "Transfer Data to Cloud Account. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1531": {
+      "name": "Account Access Removal",
+      "tactic": "TA0040",
+      "description": "Account Access Removal. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1485": {
+      "name": "Data Destruction",
+      "tactic": "TA0040",
+      "description": "Data Destruction. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1486": {
+      "name": "Data Encrypted for Impact",
+      "tactic": "TA0040",
+      "description": "Data Encrypted for Impact. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1565": {
+      "name": "Data Manipulation",
+      "tactic": "TA0040",
+      "description": "Data Manipulation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1565.001": {
+      "name": "Data Manipulation: Stored Data Manipulation",
+      "tactic": "TA0040",
+      "description": "Data Manipulation: Stored Data Manipulation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1565.002": {
+      "name": "Data Manipulation: Transmitted Data Manipulation",
+      "tactic": "TA0040",
+      "description": "Data Manipulation: Transmitted Data Manipulation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1565.003": {
+      "name": "Data Manipulation: Runtime Data Manipulation",
+      "tactic": "TA0040",
+      "description": "Data Manipulation: Runtime Data Manipulation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1491": {
+      "name": "Defacement",
+      "tactic": "TA0040",
+      "description": "Defacement. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1491.001": {
+      "name": "Defacement: Internal Defacement",
+      "tactic": "TA0040",
+      "description": "Defacement: Internal Defacement. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1491.002": {
+      "name": "Defacement: External Defacement",
+      "tactic": "TA0040",
+      "description": "Defacement: External Defacement. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1561": {
+      "name": "Disk Wipe",
+      "tactic": "TA0040",
+      "description": "Disk Wipe. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1561.001": {
+      "name": "Disk Wipe: Disk Content Wipe",
+      "tactic": "TA0040",
+      "description": "Disk Wipe: Disk Content Wipe. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1561.002": {
+      "name": "Disk Wipe: Disk Structure Wipe",
+      "tactic": "TA0040",
+      "description": "Disk Wipe: Disk Structure Wipe. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1499": {
+      "name": "Endpoint Denial of Service",
+      "tactic": "TA0040",
+      "description": "Endpoint Denial of Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1499.001": {
+      "name": "Endpoint Denial of Service: OS Exhaustion Flood",
+      "tactic": "TA0040",
+      "description": "Endpoint Denial of Service: OS Exhaustion Flood. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1499.002": {
+      "name": "Endpoint Denial of Service: Service Exhaustion Flood",
+      "tactic": "TA0040",
+      "description": "Endpoint Denial of Service: Service Exhaustion Flood. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1499.003": {
+      "name": "Endpoint Denial of Service: Application Exhaustion Flood",
+      "tactic": "TA0040",
+      "description": "Endpoint Denial of Service: Application Exhaustion Flood. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1499.004": {
+      "name": "Endpoint Denial of Service: Application or System Exploitation",
+      "tactic": "TA0040",
+      "description": "Endpoint Denial of Service: Application or System Exploitation. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1495": {
+      "name": "Firmware Corruption",
+      "tactic": "TA0040",
+      "description": "Firmware Corruption. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1490": {
+      "name": "Inhibit System Recovery",
+      "tactic": "TA0040",
+      "description": "Inhibit System Recovery. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1498": {
+      "name": "Network Denial of Service",
+      "tactic": "TA0040",
+      "description": "Network Denial of Service. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1498.001": {
+      "name": "Network Denial of Service: Direct Network Flood",
+      "tactic": "TA0040",
+      "description": "Network Denial of Service: Direct Network Flood. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1498.002": {
+      "name": "Network Denial of Service: Reflection Amplification",
+      "tactic": "TA0040",
+      "description": "Network Denial of Service: Reflection Amplification. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": true
+    },
+    "T1496": {
+      "name": "Resource Hijacking",
+      "tactic": "TA0040",
+      "description": "Resource Hijacking. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1489": {
+      "name": "Service Stop",
+      "tactic": "TA0040",
+      "description": "Service Stop. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1529": {
+      "name": "System Shutdown/Reboot",
+      "tactic": "TA0040",
+      "description": "System Shutdown/Reboot. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1653": {
+      "name": "Power Settings",
+      "tactic": "TA0040",
+      "description": "Power Settings. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    },
+    "T1657": {
+      "name": "Financial Theft",
+      "tactic": "TA0040",
+      "description": "Financial Theft. Adversaries may use this technique to achieve their objectives.",
+      "is_subtechnique": false
+    }
+  },
+  "count": 622
+}

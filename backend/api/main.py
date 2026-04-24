@@ -1,83 +1,53 @@
 """
 CyberTwin SOC - FastAPI Application
 
-REST API + WebSocket that exposes the simulation platform to the frontend dashboard.
+REST API + WebSocket — enterprise-grade SOC simulation platform.
+Features: bcrypt auth, RBAC, persistent JWT, audit logging, Redis cache,
+async simulation, ML anomaly detection, TAXII sync, Sigma rules upload.
 """
 
 import asyncio
 import json
 import logging
 import os
-import secrets
+import re
 import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
-import jwt
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
-
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
-# Load environment variables
 load_dotenv()
 
-# Logging
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S'
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger("cybertwin")
 
-# Rate limiter
 limiter = Limiter(key_func=get_remote_address)
 
-# Ensure project root is on the path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from backend.orchestrator import SimulationOrchestrator
 from backend.database import init_db, save_run, get_runs, get_run, get_runs_by_scenario, delete_run, get_stats
-
-# ---------------------------------------------------------------------------
-# JWT Authentication
-# ---------------------------------------------------------------------------
-
-JWT_SECRET = os.getenv("JWT_SECRET") or secrets.token_hex(32)
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-security = HTTPBearer(auto_error=False)
-
-
-def create_token(username: str) -> str:
-    payload = {
-        "sub": username,
-        "role": "analyst",
-        "exp": datetime.utcnow() + timedelta(hours=24),
-    }
-    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-
-def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Optional auth - returns user info if token provided, None otherwise."""
-    if credentials is None:
-        return None
-    try:
-        payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        return payload
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
+from backend.auth import (
+    authenticate_user, create_token, verify_token, verify_token_optional,
+    require_permission,
+)
+from backend.audit import init_audit_table, log_action, get_audit_log
+from backend.cache import cache
 
 # ---------------------------------------------------------------------------
 # App setup
@@ -85,8 +55,8 @@ def verify_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
 
 app = FastAPI(
     title="CyberTwin SOC API",
-    description="Digital Twin platform for cyber attack simulation, detection validation, and SOC readiness assessment.",
-    version=os.getenv("APP_VERSION", "2.0.0"),
+    description="Enterprise Digital Twin platform for cyber attack simulation, detection validation, and SOC readiness.",
+    version=os.getenv("APP_VERSION", "3.0.0"),
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -99,29 +69,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rate limiter setup
 app.state.limiter = limiter
 
 
 @app.exception_handler(RateLimitExceeded)
-async def rate_limit_handler(request, exc):
-    """Return a 429 response when rate limit is exceeded."""
+async def rate_limit_handler(request: Request, exc):
     return JSONResponse(status_code=429, content={"detail": "Too many requests. Please slow down."})
 
 
-# Singleton orchestrator
 _orchestrator = SimulationOrchestrator()
-
-# Initialize database
 init_db()
-
-# Cache for last simulation result (per scenario)
-_results_cache: dict[str, dict[str, Any]] = {}
+init_audit_table()
 
 
 # ---------------------------------------------------------------------------
 # Request / Response models
 # ---------------------------------------------------------------------------
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 
 class SimulationRequest(BaseModel):
     scenario_id: str
@@ -141,61 +109,97 @@ class SimulationSummary(BaseModel):
     maturity_level: str
 
 
+class CustomScenarioRequest(BaseModel):
+    id: Optional[str] = None
+    name: str
+    description: str = ""
+    severity: str = "medium"
+    category: str = "custom"
+    phases: list = []
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _sanitise_id(cls, v):
+        if v is None:
+            return v
+        sanitised = re.sub(r"[^a-zA-Z0-9\-_]", "", str(v))[:64]
+        if not sanitised:
+            raise ValueError("Invalid scenario id")
+        return sanitised
+
+
+# ---------------------------------------------------------------------------
+# Helper: get client IP
+# ---------------------------------------------------------------------------
+
+def _client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
 
 @app.on_event("startup")
 def startup():
-    """Initialize orchestrator and log startup information."""
-    logger.info("CyberTwin SOC API v%s starting...", os.getenv("APP_VERSION", "2.0"))
-    logger.info("CORS origins: %s", os.getenv("CORS_ORIGINS", "*"))
+    logger.info("CyberTwin SOC API v%s starting...", os.getenv("APP_VERSION", "3.0"))
+    logger.info("Cache backend: %s", cache.backend)
     _orchestrator.initialise()
-    logger.info("Orchestrator initialized with %d scenarios", len(_orchestrator.attack_engine._scenarios))
+    logger.info("Orchestrator ready — %d scenarios loaded", len(_orchestrator.attack_engine._scenarios))
 
 
 @app.get("/")
 @limiter.limit("60/minute")
 def root(request: Request):
-    """Return basic API status information."""
-    return {"name": "CyberTwin SOC API", "version": os.getenv("APP_VERSION", "2.0.0"), "status": "running"}
+    return {"name": "CyberTwin SOC API", "version": os.getenv("APP_VERSION", "3.0.0"), "status": "running", "cache": cache.backend}
 
 
 @app.get("/api/health")
-@limiter.limit("60/minute")
+@limiter.limit("120/minute")
 def health(request: Request):
-    return {"status": "ok"}
+    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
 
 
 # ---- Authentication ------------------------------------------------------
 
 @app.post("/api/auth/login")
 @limiter.limit("5/minute")
-async def login(request: Request, data: dict):
-    """Simple login - accepts predefined users for demo purposes."""
-    username = data.get("username", "analyst")
-    password = data.get("password", "")
-    logger.info("Login attempt: %s", username)
-    # Load credentials from environment variables
-    valid_users = {
-        "admin": os.getenv("AUTH_ADMIN_PASSWORD", "cybertwin2024"),
-        "analyst": os.getenv("AUTH_ANALYST_PASSWORD", "soc2024"),
-        "viewer": os.getenv("AUTH_VIEWER_PASSWORD", "view2024"),
+async def login(request: Request, data: LoginRequest):
+    ip = _client_ip(request)
+    user = authenticate_user(data.username, data.password)
+    if user is None:
+        log_action("LOGIN", username=data.username, ip_address=ip, status="failure")
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    from backend.auth import ROLES
+    token = create_token(user["username"], user["role"])
+    log_action("LOGIN", username=user["username"], role=user["role"], ip_address=ip)
+    return {
+        "token": token,
+        "access_token": token,
+        "token_type": "bearer",
+        "username": user["username"],
+        "role": user["role"],
+        "permissions": sorted(ROLES.get(user["role"], set())),
+        "expires_in": int(os.getenv("JWT_EXPIRY_HOURS", "24")) * 3600,
     }
-    if username in valid_users and valid_users[username] == password:
-        token = create_token(username)
-        logger.info("Login successful: %s", username)
-        return {"token": token, "username": username, "role": "analyst", "expires_in": 86400}
-    logger.warning("Failed login attempt: %s", username)
-    raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
 @app.get("/api/auth/me")
 @limiter.limit("30/minute")
 def get_me(request: Request, user=Depends(verify_token)):
-    if user is None:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    return {"username": user["sub"], "role": user.get("role", "analyst")}
+    return {"username": user["sub"], "role": user.get("role", "viewer"), "permissions": user.get("permissions", [])}
+
+
+# ---- Audit Log (admin only) -----------------------------------------------
+
+@app.get("/api/audit")
+@limiter.limit("30/minute")
+def audit_log(request: Request, limit: int = 200, user=Depends(require_permission("view_audit_log"))):
+    log_action("VIEW_AUDIT_LOG", username=user["sub"], role=user.get("role"), ip_address=_client_ip(request))
+    return get_audit_log(limit=limit)
 
 
 # ---- Environment ---------------------------------------------------------
@@ -203,7 +207,6 @@ def get_me(request: Request, user=Depends(verify_token)):
 @app.get("/api/environment")
 @limiter.limit("60/minute")
 def get_environment(request: Request):
-    """Return the simulated environment topology."""
     return _orchestrator.environment.to_dict()
 
 
@@ -224,7 +227,6 @@ def get_users(request: Request):
 @app.get("/api/scenarios")
 @limiter.limit("60/minute")
 def list_scenarios(request: Request):
-    """List all available attack scenarios."""
     return _orchestrator.attack_engine.list_scenarios()
 
 
@@ -238,53 +240,62 @@ def get_scenario(request: Request, scenario_id: str):
 
 
 @app.post("/api/scenarios/custom")
-@limiter.limit("30/minute")
-def save_custom_scenario(request: Request, scenario: dict):
-    """Save a custom scenario to the scenarios/custom/ directory."""
+@limiter.limit("10/minute")
+def save_custom_scenario(
+    request: Request,
+    scenario: CustomScenarioRequest,
+    user=Depends(require_permission("manage_scenarios")),
+):
+    """Save a validated custom scenario. Requires analyst or admin role."""
     custom_dir = PROJECT_ROOT / "scenarios" / "custom"
     custom_dir.mkdir(parents=True, exist_ok=True)
-    sid = scenario.get("id", f"sc-custom-{len(list(custom_dir.glob('*.json'))) + 1}")
-    scenario["id"] = sid
+    sid = scenario.id or f"sc-custom-{len(list(custom_dir.glob('*.json'))) + 1:03d}"
+    data = scenario.model_dump()
+    data["id"] = sid
     filepath = custom_dir / f"{sid}.json"
     with open(filepath, "w", encoding="utf-8") as f:
-        json.dump(scenario, f, indent=2)
-    # Reload scenarios
+        json.dump(data, f, indent=2)
     _orchestrator.attack_engine.load_scenarios()
-    return {"status": "saved", "id": sid, "path": str(filepath)}
+    log_action("CREATE_SCENARIO", username=user["sub"], role=user.get("role"), resource=sid, ip_address=_client_ip(request))
+    return {"status": "saved", "id": sid}
 
 
 # ---- Simulation ----------------------------------------------------------
 
 @app.post("/api/simulate", response_model=SimulationSummary)
 @limiter.limit("10/minute")
-async def run_simulation(request: Request, req: SimulationRequest):
-    """Run a full simulation for the given scenario and return a summary."""
+async def run_simulation(
+    request: Request,
+    req: SimulationRequest,
+    user=Depends(require_permission("run_simulation")),
+):
     scenario = _orchestrator.attack_engine.get_scenario(req.scenario_id)
     if scenario is None:
         raise HTTPException(404, f"Scenario '{req.scenario_id}' not found")
 
-    logger.info("Simulation started: %s", req.scenario_id)
+    log_action("RUN_SIMULATION", username=user["sub"], role=user.get("role"), resource=req.scenario_id, ip_address=_client_ip(request))
 
-    # Create a fresh orchestrator to avoid state leakage
+    loop = asyncio.get_event_loop()
     orch = SimulationOrchestrator()
     orch.initialise()
-
-    result = orch.run_simulation(
-        scenario_id=req.scenario_id,
-        duration_minutes=req.duration_minutes,
-        normal_intensity=req.normal_intensity,
+    result = await loop.run_in_executor(
+        None,
+        lambda: orch.run_simulation(
+            scenario_id=req.scenario_id,
+            duration_minutes=req.duration_minutes,
+            normal_intensity=req.normal_intensity,
+        ),
     )
 
-    _results_cache[req.scenario_id] = result
+    cache.set(f"result:{req.scenario_id}", result, ttl=7200)
 
-    # Save to database
     try:
         save_run(req.scenario_id, scenario.get("name", ""), result)
-    except Exception as e:
-        logger.error("Could not save to database: %s", e)
+    except Exception as exc:
+        logger.error("DB save failed: %s", exc)
 
     scores = result["scores"]
-    logger.info("Simulation complete: %s (score: %.1f)", req.scenario_id, scores["overall_score"])
+    logger.info("Simulation complete: %s score=%.1f", req.scenario_id, scores["overall_score"])
     return SimulationSummary(
         scenario_id=req.scenario_id,
         scenario_name=scenario.get("name", ""),
@@ -302,14 +313,15 @@ async def run_simulation(request: Request, req: SimulationRequest):
 
 @app.websocket("/ws/simulate/{scenario_id}")
 async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None = None):
-    """Stream simulation events in real-time via WebSocket for dramatic live display."""
-    # Validate JWT token from query parameter
+    """Stream simulation events in real-time via WebSocket."""
+    from backend.auth import JWT_SECRET, JWT_ALGORITHM
+    import jwt as _jwt
     if token is None:
         await websocket.close(code=4001, reason="Missing authentication token")
         return
     try:
-        jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        ws_user = _jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except (_jwt.ExpiredSignatureError, _jwt.InvalidTokenError):
         await websocket.close(code=4001, reason="Invalid or expired token")
         return
 
@@ -322,18 +334,16 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
             await websocket.close()
             return
 
-        # Run full simulation in a thread to avoid blocking the async event loop
-        import asyncio as _aio
-        loop = _aio.get_event_loop()
+        loop = asyncio.get_event_loop()
         orch = SimulationOrchestrator()
         orch.initialise()
         result = await loop.run_in_executor(
             None,
             lambda: orch.run_simulation(scenario_id=scenario_id, duration_minutes=60)
         )
-        _results_cache[scenario_id] = result
+        cache.set(f"result:{scenario_id}", result, ttl=7200)
+        log_action("RUN_SIMULATION_WS", username=ws_user.get("sub", "?"), role=ws_user.get("role", "?"), resource=scenario_id)
 
-        # Save to database
         try:
             save_run(scenario_id, scenario.get("name", ""), result)
         except Exception:
@@ -455,97 +465,107 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
             pass
 
 
-# ---- Results -------------------------------------------------------------
+# ---- Results (cache-backed) -----------------------------------------------
+
+def _get_cached_result(scenario_id: str) -> dict:
+    result = cache.get(f"result:{scenario_id}")
+    if result is None:
+        raise HTTPException(404, "No results found. Run a simulation first.")
+    return result
+
 
 @app.get("/api/results/{scenario_id}")
 @limiter.limit("60/minute")
-def get_full_results(request: Request, scenario_id: str):
-    """Return the full simulation result for a previously run scenario."""
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]
+def get_full_results(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    return _get_cached_result(scenario_id)
 
 
 @app.get("/api/results/{scenario_id}/alerts")
 @limiter.limit("60/minute")
-def get_alerts(request: Request, scenario_id: str):
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]["alerts"]
+def get_alerts(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    return _get_cached_result(scenario_id)["alerts"]
 
 
 @app.get("/api/results/{scenario_id}/incidents")
 @limiter.limit("60/minute")
-def get_incidents(request: Request, scenario_id: str):
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]["incidents"]
+def get_incidents(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    return _get_cached_result(scenario_id)["incidents"]
 
 
 @app.get("/api/results/{scenario_id}/timeline")
 @limiter.limit("60/minute")
-def get_timeline(request: Request, scenario_id: str):
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]["timeline"]
+def get_timeline(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    return _get_cached_result(scenario_id)["timeline"]
 
 
 @app.get("/api/results/{scenario_id}/scores")
 @limiter.limit("60/minute")
-def get_scores(request: Request, scenario_id: str):
-    if scenario_id not in _results_cache:
+def get_scores(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    result = cache.get(f"result:{scenario_id}")
+    if result is None:
         raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]["scores"]
+    return result["scores"]
 
 
 @app.get("/api/results/{scenario_id}/mitre")
 @limiter.limit("60/minute")
-def get_mitre_coverage(request: Request, scenario_id: str):
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]["mitre_coverage"]
+def get_mitre_coverage(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    return _get_cached_result(scenario_id)["mitre_coverage"]
 
 
 @app.get("/api/results/{scenario_id}/report")
 @limiter.limit("60/minute")
-def get_report(request: Request, scenario_id: str):
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]["report"]
+def get_report(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    return _get_cached_result(scenario_id)["report"]
 
 
 @app.get("/api/results/{scenario_id}/logs")
 @limiter.limit("60/minute")
-def get_logs(request: Request, scenario_id: str, limit: int = 200, offset: int = 0):
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    logs = _results_cache[scenario_id]["logs"]
-    return {
-        "total": len(logs),
-        "offset": offset,
-        "limit": limit,
-        "data": logs[offset: offset + limit],
-    }
+def get_logs(request: Request, scenario_id: str, limit: int = 200, offset: int = 0, user=Depends(require_permission("view_results"))):
+    logs = _get_cached_result(scenario_id)["logs"]
+    return {"total": len(logs), "offset": offset, "limit": limit, "data": logs[offset: offset + limit]}
 
 
 @app.get("/api/results/{scenario_id}/ai-analysis")
 @limiter.limit("60/minute")
-def get_ai_analysis(request: Request, scenario_id: str):
-    """Return the AI-generated analyst narrative for a previously run scenario."""
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    ai = _results_cache[scenario_id].get("ai_analysis")
+def get_ai_analysis(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    result = _get_cached_result(scenario_id)
+    ai = result.get("ai_analysis")
     if ai is None:
-        raise HTTPException(404, "AI analysis not available for this simulation run.")
+        raise HTTPException(404, "AI analysis not available.")
     return ai
 
 
 @app.get("/api/results/{scenario_id}/statistics")
 @limiter.limit("60/minute")
-def get_statistics(request: Request, scenario_id: str):
-    if scenario_id not in _results_cache:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return _results_cache[scenario_id]["logs_statistics"]
+def get_statistics(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    return _get_cached_result(scenario_id)["logs_statistics"]
+
+
+@app.get("/api/results/{scenario_id}/benchmark")
+@limiter.limit("30/minute")
+def get_benchmark(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    """Return NIST CSF v1.1 and CIS Controls v8 benchmark ratings for this simulation."""
+    from backend.scoring import ScoringEngine
+    result = _get_cached_result(scenario_id)
+    engine = ScoringEngine()
+    scores = result["scores"]
+    return {
+        "scenario_id": scenario_id,
+        "nist_csf": engine.nist_csf_benchmark(scores),
+        "cis_controls": engine.cis_controls_benchmark(scores),
+    }
+
+
+@app.get("/api/results/{scenario_id}/anomalies")
+@limiter.limit("30/minute")
+def get_anomalies(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    """Run ML anomaly detection on the cached simulation logs."""
+    from backend.detection.anomaly import AnomalyDetector
+    result = _get_cached_result(scenario_id)
+    detector = AnomalyDetector()
+    anomalies = detector.detect(result["logs"])
+    return {"total": len(anomalies), "anomalies": anomalies}
 
 
 # ---- History (SQLite) ----------------------------------------------------
@@ -579,8 +599,9 @@ def history_by_scenario(request: Request, scenario_id: str):
 
 @app.delete("/api/history/{run_id}")
 @limiter.limit("30/minute")
-def history_delete(request: Request, run_id: int):
+def history_delete(request: Request, run_id: int, user=Depends(require_permission("delete_history"))):
     delete_run(run_id)
+    log_action("DELETE_HISTORY", username=user["sub"], role=user.get("role"), resource=str(run_id), ip_address=_client_ip(request))
     return {"status": "deleted"}
 
 
@@ -671,3 +692,73 @@ def get_mitre_tactics(request: Request):
 def get_mitre_techniques(request: Request):
     from backend.mitre.attack_data import MITRE_TECHNIQUES
     return MITRE_TECHNIQUES
+
+
+@app.get("/api/mitre/gap-analysis/{scenario_id}")
+@limiter.limit("30/minute")
+def mitre_gap_analysis(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
+    """Return full MITRE ATT&CK gap analysis: covered vs uncovered tactics and techniques."""
+    from backend.mitre.attack_data import MITRE_TACTICS, MITRE_TECHNIQUES
+    result = _get_cached_result(scenario_id)
+    detected_tids = {a.get("technique_id", "") for a in result.get("alerts", [])}
+    gap: dict = {"covered": [], "uncovered": [], "coverage_pct": 0.0, "by_tactic": {}}
+    for tid, tech in MITRE_TECHNIQUES.items():
+        tactic_id = tech.get("tactic", "")
+        tactic_name = MITRE_TACTICS.get(tactic_id, {}).get("name", tactic_id)
+        entry = {"technique_id": tid, "technique_name": tech["name"], "tactic": tactic_name}
+        if any(tid == d or d.startswith(tid + ".") or tid.startswith(d + ".") for d in detected_tids):
+            gap["covered"].append(entry)
+        else:
+            gap["uncovered"].append(entry)
+        gap["by_tactic"].setdefault(tactic_name, {"covered": 0, "total": 0})
+        gap["by_tactic"][tactic_name]["total"] += 1
+        if entry in gap["covered"]:
+            gap["by_tactic"][tactic_name]["covered"] += 1
+    total = len(MITRE_TECHNIQUES)
+    gap["coverage_pct"] = round(len(gap["covered"]) / total * 100, 1) if total else 0.0
+    return gap
+
+
+@app.post("/api/sigma/upload")
+@limiter.limit("10/minute")
+async def upload_sigma_rule(request: Request, user=Depends(require_permission("manage_scenarios"))):
+    """Upload a YAML Sigma rule and register it in the detection engine."""
+    from backend.detection.sigma_loader import SigmaLoader
+    body = await request.body()
+    try:
+        rule = SigmaLoader.load_from_yaml(body.decode("utf-8"))
+    except Exception as exc:
+        raise HTTPException(400, f"Invalid Sigma rule: {exc}")
+    sigma_dir = PROJECT_ROOT / "data" / "sigma_rules"
+    sigma_dir.mkdir(parents=True, exist_ok=True)
+    rule_file = sigma_dir / f"{rule.rule_id}.yml"
+    rule_file.write_bytes(body)
+    log_action("UPLOAD_SIGMA_RULE", username=user["sub"], role=user.get("role"), resource=rule.rule_id, ip_address=_client_ip(request))
+    return {"status": "registered", "rule_id": rule.rule_id, "name": rule.name, "severity": rule.severity}
+
+
+@app.get("/api/sigma/rules")
+@limiter.limit("30/minute")
+def list_sigma_rules(request: Request, user=Depends(require_permission("view_results"))):
+    """List all uploaded Sigma rules."""
+    sigma_dir = PROJECT_ROOT / "data" / "sigma_rules"
+    if not sigma_dir.exists():
+        return []
+    rules = []
+    for f in sigma_dir.glob("*.yml"):
+        rules.append({"filename": f.name, "rule_id": f.stem, "size": f.stat().st_size})
+    return rules
+
+
+@app.post("/api/mitre/sync-taxii")
+@limiter.limit("2/hour")
+async def sync_mitre_taxii(request: Request, user=Depends(require_permission("configure_system"))):
+    """Sync MITRE ATT&CK techniques from the official TAXII 2.1 feed."""
+    from backend.mitre.taxii_sync import sync_from_taxii
+    loop = asyncio.get_event_loop()
+    try:
+        count = await loop.run_in_executor(None, sync_from_taxii)
+        log_action("TAXII_SYNC", username=user["sub"], role=user.get("role"), ip_address=_client_ip(request), details={"techniques_synced": count})
+        return {"status": "synced", "techniques_updated": count}
+    except Exception as exc:
+        raise HTTPException(502, f"TAXII sync failed: {exc}")

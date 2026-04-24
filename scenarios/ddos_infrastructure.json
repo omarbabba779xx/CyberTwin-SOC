@@ -1,0 +1,124 @@
+{
+  "id": "sc-ddos-001",
+  "name": "DDoS + Smokescreen: Mirai Botnet + Concurrent Data Breach",
+  "description": "A sophisticated dual-track attack: a Mirai-variant botnet launches a massive volumetric DDoS (SYN flood + UDP amplification via DNS/NTP) to distract the SOC while a concurrent stealth data breach extracts sensitive data. The DDoS serves as a smokescreen to overwhelm analyst attention during the real exfiltration. Modeled on Dyn 2016 and subsequent copycat attacks.",
+  "severity": "critical",
+  "category": "ddos_and_breach",
+  "threat_actor": {
+    "name": "Killnet / Anonymous Sudan",
+    "aliases": ["Killnet", "Anonymous Sudan", "SkyNet"],
+    "origin": "Russia / Sudan",
+    "motivation": "Hacktivism, DDoS-for-hire, political disruption",
+    "active_since": "2022"
+  },
+  "mitre_techniques_summary": [
+    "T1498.001", "T1498.002", "T1499", "T1595.002",
+    "T1046", "T1110", "T1041"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1498/",
+    "https://www.cisa.gov/news-events/cybersecurity-advisories/aa22-110a",
+    "https://www.cloudflare.com/learning/ddos/famous-ddos-attacks/"
+  ],
+  "kill_chain": ["reconnaissance", "weaponization", "delivery", "actions_on_objectives"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Reconnaissance — Port Scanning for DDoS Amplifiers",
+      "description": "Botnet command node scans for open DNS resolvers (UDP/53), NTP servers (UDP/123), SSDP devices (UDP/1900), and Memcached instances (UDP/11211) to use as DDoS amplification vectors. Scanning intensity: 10,000 packets/second.",
+      "technique_id": "T1046",
+      "technique_name": "Network Service Discovery",
+      "tactic": "Discovery",
+      "target_host": "srv-dns-01",
+      "target_user": "",
+      "delay_seconds": 0,
+      "stealth_level": "low",
+      "indicators": {
+        "source_ip": "104.21.45.88",
+        "target_ip": "10.0.1.0/24",
+        "ports": [53, 123, 1900, 11211, 80, 443, 8080],
+        "scan_rate": "10000 pps"
+      },
+      "ioc": {
+        "ips": ["104.21.45.88", "198.199.120.42", "165.232.33.51"]
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Volumetric DDoS — SYN Flood (100 Gbps)",
+      "description": "Coordinated SYN flood from 50,000+ Mirai-infected IoT devices targeting the corporate web infrastructure. Bandwidth: ~100 Gbps. Connection table exhaustion causes legitimate users to be unable to connect.",
+      "technique_id": "T1498.001",
+      "technique_name": "Network Denial of Service: Direct Network Flood",
+      "tactic": "Impact",
+      "target_host": "srv-web-01",
+      "target_user": "",
+      "delay_seconds": 300,
+      "stealth_level": "none",
+      "indicators": {
+        "source_ip": "104.21.45.88",
+        "target_ip": "203.0.113.10",
+        "dst_port": 80,
+        "attack_type": "SYN Flood",
+        "bandwidth_gbps": 100
+      }
+    },
+    {
+      "phase": 3,
+      "name": "DNS Amplification Attack (UDP Reflection)",
+      "description": "Attackers use open DNS resolvers to amplify traffic 50x, spoofing source IPs to victim's IP. 10,000 DNS resolvers each receive 512-byte ANY queries and reply with 4KB+ responses to the victim, generating 40 Gbps.",
+      "technique_id": "T1498.002",
+      "technique_name": "Network Denial of Service: Reflection Amplification",
+      "tactic": "Impact",
+      "target_host": "srv-dns-01",
+      "target_user": "",
+      "delay_seconds": 120,
+      "stealth_level": "none",
+      "indicators": {
+        "source_ip": "198.199.120.42",
+        "target_ip": "203.0.113.10",
+        "dst_port": 53,
+        "protocol": "UDP",
+        "amplification_factor": "50x"
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Application Layer DDoS (Layer 7 — HTTP Flood)",
+      "description": "While volumetric attack saturates network, a coordinated HTTP flood from HTTPS-capable bots sends 500,000 requests/second targeting the login endpoint, bypassing L3/L4 mitigation.",
+      "technique_id": "T1499",
+      "technique_name": "Endpoint Denial of Service",
+      "tactic": "Impact",
+      "target_host": "ws-web-01",
+      "target_user": "",
+      "delay_seconds": 600,
+      "stealth_level": "medium",
+      "indicators": {
+        "source_ip": "165.232.33.51",
+        "url": "https://corp.local/api/login",
+        "method": "POST",
+        "request_rate": "500000/sec"
+      }
+    },
+    {
+      "phase": 5,
+      "name": "Concurrent Stealth Breach — Data Exfiltration (Smokescreen)",
+      "description": "While the SOC is overwhelmed by DDoS alerts, a concurrent breach actor uses a compromised service account to silently exfiltrate customer database backup from the secondary data center. The exfiltration traffic is dwarfed by DDoS noise.",
+      "technique_id": "T1041",
+      "technique_name": "Exfiltration Over C2 Channel",
+      "tactic": "Exfiltration",
+      "target_host": "srv-db-01",
+      "target_user": "svc.backup",
+      "delay_seconds": 900,
+      "stealth_level": "very_high",
+      "indicators": {
+        "destination_ip": "185.220.101.50",
+        "data_size_mb": 8192,
+        "external_ip": "185.220.101.50",
+        "upload_size_mb": 8192
+      },
+      "ioc": {
+        "ips": ["185.220.101.50"]
+      }
+    }
+  ]
+}

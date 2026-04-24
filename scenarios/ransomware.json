@@ -1,0 +1,204 @@
+{
+  "id": "sc-ransomware-001",
+  "name": "BlackCat/ALPHV Ransomware-as-a-Service Attack",
+  "description": "A full-chain BlackCat (ALPHV) RaaS attack: initial access via exposed RDP, credential dumping, lateral movement with PsExec, volume shadow copy deletion, NTDS.dit exfiltration for double extortion, and AES-256 file encryption across the domain. Modeled on real 2023-2024 BlackCat incidents against critical infrastructure.",
+  "severity": "critical",
+  "category": "ransomware",
+  "threat_actor": {
+    "name": "BlackCat/ALPHV",
+    "aliases": ["ALPHV", "Noberus", "Sphynx"],
+    "origin": "Russia/Eastern Europe",
+    "motivation": "Financial extortion (double extortion RaaS)",
+    "active_since": "2021"
+  },
+  "mitre_techniques_summary": [
+    "T1190", "T1110.001", "T1078", "T1003.001", "T1003.006",
+    "T1021.002", "T1490", "T1486", "T1048", "T1070.001", "T1562.001"
+  ],
+  "references": [
+    "https://attack.mitre.org/software/S1068/",
+    "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-353a",
+    "https://www.mandiant.com/resources/blog/alphv-blackcat-ransomware"
+  ],
+  "kill_chain": ["initial_access", "execution", "persistence", "privilege_escalation", "defense_evasion", "credential_access", "lateral_movement", "collection", "exfiltration", "impact"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Initial Access via Exposed RDP Brute Force",
+      "description": "BlackCat affiliates scan for internet-exposed RDP (3389) and perform credential stuffing using leaked credential databases. They succeed after ~800 attempts against a domain admin account.",
+      "technique_id": "T1110.001",
+      "technique_name": "Brute Force: Password Guessing",
+      "tactic": "Credential Access",
+      "target_host": "srv-rdp-01",
+      "target_user": "administrator",
+      "delay_seconds": 0,
+      "stealth_level": "low",
+      "indicators": {
+        "source_ip": "91.193.18.42",
+        "protocol": "RDP",
+        "total_attempts": 800,
+        "target_ip": "10.0.1.5"
+      },
+      "ioc": {
+        "ips": ["91.193.18.42", "185.220.101.45"],
+        "tools": ["Hydra", "Crowbar", "RDPBrute"]
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Credential Dumping — LSASS Memory",
+      "description": "Attacker uses a renamed procdump64.exe to dump LSASS memory, then runs Mimikatz sekurlsa::logonpasswords to extract NTLM hashes and Kerberos tickets from memory.",
+      "technique_id": "T1003.001",
+      "technique_name": "OS Credential Dumping: LSASS Memory",
+      "tactic": "Credential Access",
+      "target_host": "srv-rdp-01",
+      "target_user": "administrator",
+      "delay_seconds": 180,
+      "stealth_level": "medium",
+      "indicators": {
+        "tools": ["procdump64.exe", "mimikatz"],
+        "commands": [
+          "procdump64.exe -accepteula -ma lsass.exe C:\\Windows\\Temp\\lsass.dmp",
+          "mimikatz.exe sekurlsa::logonpasswords",
+          "mimikatz.exe lsadump::dcsync /domain:corp.local /user:krbtgt"
+        ]
+      },
+      "ioc": {
+        "file_hashes": {
+          "mimikatz_sha256": "f6da9781ae5d55fa5a16b41a5b9f3a2a9c74d2e8f4c3b2a1f0e9d8c7b6a5f4e3"
+        },
+        "tools": ["mimikatz", "procdump"]
+      }
+    },
+    {
+      "phase": 3,
+      "name": "DCSync — Domain Credential Theft",
+      "description": "Using the Domain Admin account, the attacker performs a DCSync attack to replicate all domain credentials including the KRBTGT hash, enabling golden ticket attacks.",
+      "technique_id": "T1003.006",
+      "technique_name": "OS Credential Dumping: DCSync",
+      "tactic": "Credential Access",
+      "target_host": "srv-dc-01",
+      "target_user": "administrator",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "indicators": {
+        "commands": [
+          "mimikatz.exe lsadump::dcsync /domain:corp.local /all /csv",
+          "secretsdump.py corp.local/administrator@10.0.1.2 -just-dc"
+        ]
+      },
+      "ioc": {
+        "tools": ["mimikatz", "secretsdump.py", "impacket"]
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Lateral Movement via PsExec and WMI",
+      "description": "BlackCat spreads laterally across the domain using PsExec and WMIC with the stolen domain admin credentials, deploying the ransomware payload to every reachable host.",
+      "technique_id": "T1021.002",
+      "technique_name": "Remote Services: SMB/Windows Admin Shares",
+      "tactic": "Lateral Movement",
+      "target_host": "srv-file-01",
+      "target_user": "administrator",
+      "source_host": "srv-rdp-01",
+      "delay_seconds": 300,
+      "stealth_level": "low",
+      "indicators": {
+        "source_internal_ip": "10.0.1.5",
+        "target_ip": "10.0.1.10",
+        "commands": [
+          "PsExec.exe \\\\10.0.1.10 -u administrator -p P@ssw0rd! cmd.exe",
+          "wmic /node:10.0.1.10 process call create 'cmd.exe /c ...'"
+        ]
+      },
+      "ioc": {
+        "tools": ["PsExec", "WMIC"]
+      }
+    },
+    {
+      "phase": 5,
+      "name": "Defense Evasion — Disable Security Tools",
+      "description": "Ransomware disables Windows Defender, Veeam backup services, and stops SQL/Exchange services to maximize encryption impact.",
+      "technique_id": "T1562.001",
+      "technique_name": "Impair Defenses: Disable or Modify Tools",
+      "tactic": "Defense Evasion",
+      "target_host": "srv-file-01",
+      "target_user": "administrator",
+      "delay_seconds": 60,
+      "stealth_level": "low",
+      "indicators": {
+        "commands": [
+          "Set-MpPreference -DisableRealtimeMonitoring $true",
+          "sc stop WinDefend",
+          "net stop VeeamBackupSvc",
+          "net stop MSSQLSERVER",
+          "vssadmin delete shadows /all /quiet"
+        ]
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Volume Shadow Copy Deletion",
+      "description": "All VSS snapshots and backup catalog entries are deleted to prevent recovery without paying the ransom.",
+      "technique_id": "T1490",
+      "technique_name": "Inhibit System Recovery",
+      "tactic": "Impact",
+      "target_host": "srv-file-01",
+      "target_user": "administrator",
+      "delay_seconds": 60,
+      "stealth_level": "low",
+      "indicators": {
+        "commands": [
+          "vssadmin.exe delete shadows /all /quiet",
+          "wmic shadowcopy delete",
+          "bcdedit /set {default} recoveryenabled No",
+          "wbadmin delete catalog -quiet"
+        ]
+      }
+    },
+    {
+      "phase": 7,
+      "name": "Data Exfiltration for Double Extortion",
+      "description": "Before encrypting, BlackCat exfiltrates ~150GB of sensitive data (financial records, PII, IP) to the Tor-based exfiltration server for double-extortion leverage.",
+      "technique_id": "T1048",
+      "technique_name": "Exfiltration Over Alternative Protocol",
+      "tactic": "Exfiltration",
+      "target_host": "srv-file-01",
+      "target_user": "administrator",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "indicators": {
+        "destination_ip": "185.220.101.47",
+        "data_size_mb": 153600,
+        "protocol": "HTTPS/Tor",
+        "external_ip": "185.220.101.47"
+      },
+      "ioc": {
+        "ips": ["185.220.101.47"],
+        "domains": ["alphvmmm27o3abo3r2mlmjrpdmzle3rykajqc5xsj7j7ejksbpsa36ad.onion"]
+      }
+    },
+    {
+      "phase": 8,
+      "name": "File Encryption — AES-256 + RSA-4096",
+      "description": "BlackCat ransomware encrypts all files using AES-256 symmetric keys wrapped with RSA-4096. Files are renamed with .blackcat extension. Ransom note README.txt dropped in every directory.",
+      "technique_id": "T1486",
+      "technique_name": "Data Encrypted for Impact",
+      "tactic": "Impact",
+      "target_host": "srv-file-01",
+      "target_user": "administrator",
+      "delay_seconds": 300,
+      "stealth_level": "none",
+      "indicators": {
+        "ransom_extension": ".blackcat",
+        "ransom_note": "RECOVER-FILES.txt",
+        "encrypted_extensions": [".doc", ".docx", ".xls", ".xlsx", ".pdf", ".mdb", ".sql", ".bak"]
+      },
+      "ioc": {
+        "file_hashes": {
+          "blackcat_payload_sha256": "3d4a5b6c7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b"
+        }
+      }
+    }
+  ]
+}

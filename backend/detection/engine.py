@@ -18,6 +18,8 @@ from .rules import DETECTION_RULES, DetectionRule
 
 logger = logging.getLogger("cybertwin.detection")
 
+_CORRELATION_WINDOW_SECONDS = 900  # 15-minute temporal proximity window
+
 
 class DetectionEngine:
     """Analyses log events, applies detection rules, and correlates incidents.
@@ -29,15 +31,39 @@ class DetectionEngine:
         incidents = engine.correlate_incidents(alerts)
     """
 
-    def __init__(self, rules: list[DetectionRule] | None = None):
-        """Initialize the detection engine with a set of detection rules.
+    def __init__(self, rules: list[DetectionRule] | None = None, load_sigma: bool = True):
+        """Initialize the detection engine.
 
         Args:
             rules: Custom rule list. Defaults to the built-in DETECTION_RULES.
+            load_sigma: If True, auto-load Sigma rules from data/sigma_rules/.
         """
-        self._rules = rules or DETECTION_RULES
+        self._rules = list(rules or DETECTION_RULES)
         self._alerts: list[dict[str, Any]] = []
         self._incidents: list[dict[str, Any]] = []
+        if load_sigma:
+            self._load_sigma_rules()
+
+    def _load_sigma_rules(self) -> None:
+        """Auto-load any .yml Sigma rules from data/sigma_rules/."""
+        from pathlib import Path
+        sigma_dir = Path(__file__).resolve().parent.parent.parent / "data" / "sigma_rules"
+        if not sigma_dir.exists():
+            return
+        try:
+            from backend.detection.sigma_loader import SigmaLoader
+            sigma_rules = SigmaLoader.load_directory(sigma_dir)
+            existing_ids = {r.rule_id for r in self._rules}
+            added = 0
+            for rule in sigma_rules:
+                if rule.rule_id not in existing_ids:
+                    self._rules.append(rule)
+                    existing_ids.add(rule.rule_id)
+                    added += 1
+            if added:
+                logger.info("Loaded %d Sigma rules into DetectionEngine", added)
+        except Exception as exc:
+            logger.warning("Sigma rules loading failed: %s", exc)
 
     # ------------------------------------------------------------------
     # Analysis
@@ -176,13 +202,45 @@ class DetectionEngine:
 
     @staticmethod
     def _alerts_related(a: dict, b: dict) -> bool:
-        """Heuristic: two alerts are related if they share a host or user."""
+        """Two alerts are related if they share a host/user AND occur within 15 minutes."""
         hosts_a = set(a.get("affected_hosts", []))
         hosts_b = set(b.get("affected_hosts", []))
         users_a = set(a.get("affected_users", []))
         users_b = set(b.get("affected_users", []))
 
-        return bool(hosts_a & hosts_b) or bool(users_a & users_b)
+        shares_entity = bool(hosts_a & hosts_b) or bool(users_a & users_b)
+        if not shares_entity:
+            return False
+
+        ts_a_str = a.get("timestamp", "")
+        ts_b_str = b.get("timestamp", "")
+        if not ts_a_str or not ts_b_str:
+            return True  # No timestamps — accept if entities match
+
+        try:
+            from datetime import datetime
+            _TS_FMTS = ["%Y-%m-%dT%H:%M:%S.%f", "%Y-%m-%dT%H:%M:%S",
+                        "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"]
+            ts_a: datetime | None = None
+            ts_b: datetime | None = None
+            for fmt in _TS_FMTS:
+                try:
+                    ts_a = datetime.strptime(ts_a_str, fmt)
+                    break
+                except ValueError:
+                    pass
+            for fmt in _TS_FMTS:
+                try:
+                    ts_b = datetime.strptime(ts_b_str, fmt)
+                    break
+                except ValueError:
+                    pass
+            if ts_a is None or ts_b is None:
+                return True
+            delta = abs((ts_b - ts_a).total_seconds())
+            return delta <= _CORRELATION_WINDOW_SECONDS
+        except Exception:
+            return True
 
     @staticmethod
     def _create_incident(alerts: list[dict]) -> dict[str, Any]:
@@ -196,11 +254,20 @@ class DetectionEngine:
         sev_order = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
         max_sev = max(severities, key=lambda s: sev_order.get(s, 0))
 
+        severity_weights = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
+        tactic_diversity = len(all_tactics) / 14.0  # 14 ATT&CK tactics
+        confidence = min(98, int(
+            30
+            + min(len(alerts), 10) * 5
+            + tactic_diversity * 25
+            + min(len(all_techniques), 8) * 3
+            + (10 if max_sev == "critical" else 5 if max_sev == "high" else 0)
+        ))
         return {
             "incident_id": f"INC-{uuid.uuid4().hex[:8].upper()}",
             "name": f"Correlated Incident — {', '.join(all_tactics[:3])}",
             "severity": max_sev,
-            "confidence_score": min(95, 50 + len(alerts) * 10),
+            "confidence_score": confidence,
             "alert_count": len(alerts),
             "alerts": [a.get("alert_id") for a in alerts],
             "affected_hosts": all_hosts,

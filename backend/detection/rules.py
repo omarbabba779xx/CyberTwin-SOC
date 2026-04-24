@@ -765,6 +765,272 @@ def _robocopy_bulk_copy(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return matched
 
 
+def _kerberoasting(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect Kerberoasting: TGS ticket requests with RC4 encryption (0x17) or Rubeus/GetUserSPNs."""
+    kerberoast_re = re.compile(
+        r"(kerberoast|GetUserSPNs|Rubeus.*kerberoast"
+        r"|0x17.*RC4|RC4.*kerberos"
+        r"|SPN.*ticket|ServicePrincipalName.*request"
+        r"|T1558\.003)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        tags = " ".join(e.get("tags", []))
+        if (kerberoast_re.search(desc) or kerberoast_re.search(cmd)
+                or "kerberoasting" in tags or "T1558.003" in tags):
+            matched.append(e)
+    return matched
+
+
+def _pass_the_hash(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect Pass-the-Hash attacks: NTLM auth from non-standard hosts, sekurlsa::pth."""
+    pth_re = re.compile(
+        r"(sekurlsa::pth|Pass.the.Hash|pass.the.hash"
+        r"|pth.*\/ntlm|ntlm.*hash.*logon"
+        r"|overpass.the.hash|T1550\.002"
+        r"|NTHash.*logon|wce\.exe.*\-s|mimikatz.*pth)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        if pth_re.search(desc) or pth_re.search(cmd):
+            matched.append(e)
+    return matched
+
+
+def _process_injection(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect process injection: hollowing, reflective DLL, APC injection."""
+    injection_re = re.compile(
+        r"(process.hollow|reflective.*dll|dll.inject"
+        r"|VirtualAllocEx|WriteProcessMemory|CreateRemoteThread"
+        r"|NtMapViewOfSection|QueueUserAPC|NtCreateThreadEx"
+        r"|shellcode.inject|mavinject|T1055"
+        r"|inject.*memory|memory.*inject)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        tags = " ".join(e.get("tags", []))
+        if (injection_re.search(desc) or injection_re.search(cmd)
+                or "process_injection" in tags):
+            matched.append(e)
+    return matched
+
+
+def _lolbas_execution(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect Living off the Land Binaries (LOLBAS) abuse for execution/download."""
+    lolbas_re = re.compile(
+        r"(mshta\.exe.*http|regsvr32.*scrobj"
+        r"|certutil.*-decode|certutil.*urlcache"
+        r"|bitsadmin.*\/transfer|wscript.*http"
+        r"|cscript.*http|rundll32.*javascript"
+        r"|msiexec.*\/q.*http|forfiles.*\/p.*\/m"
+        r"|ieexec\.exe|msbuild\.exe.*tasks"
+        r"|installutil\.exe|odbcconf.*REGSVR"
+        r"|regasm|regsvcs|cmstp|msconfig.*autorun"
+        r"|wmic.*process.*create.*http)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        if e.get("event_type") not in ("process", "security"):
+            continue
+        cmd = e.get("command_line", "")
+        desc = e.get("description", "")
+        if lolbas_re.search(cmd) or lolbas_re.search(desc):
+            matched.append(e)
+    return matched
+
+
+def _dga_detection(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect DGA (Domain Generation Algorithm) by identifying high-entropy domain labels."""
+    import math
+
+    def _shannon_entropy(s: str) -> float:
+        if not s:
+            return 0.0
+        freq = {c: s.count(c) / len(s) for c in set(s)}
+        return -sum(p * math.log2(p) for p in freq.values())
+
+    suspicious_tlds = {".xyz", ".top", ".club", ".online", ".site", ".info",
+                       ".biz", ".tk", ".pw", ".cc", ".io", ".to", ".ru"}
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        if e.get("event_type") not in ("dns",):
+            continue
+        domain: str = e.get("domain", "") or ""
+        if not domain or "." not in domain:
+            continue
+        labels = domain.split(".")
+        longest_label = max(labels[:-1], key=len, default="")
+        tld = "." + labels[-1] if labels else ""
+        entropy = _shannon_entropy(longest_label)
+        is_suspicious = (
+            (entropy > 3.5 and len(longest_label) > 12)
+            or tld in suspicious_tlds
+            or len(domain) > 52
+        )
+        if is_suspicious:
+            matched.append(e)
+    return matched
+
+
+def _dns_tunneling_entropy(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect DNS tunneling via long/high-entropy subdomains used as data channels."""
+    import math
+
+    def _shannon_entropy(s: str) -> float:
+        if not s:
+            return 0.0
+        freq = {c: s.count(c) / len(s) for c in set(s)}
+        return -sum(p * math.log2(p) for p in freq.values())
+
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        if e.get("event_type") not in ("dns",):
+            continue
+        domain: str = e.get("domain", "") or ""
+        if not domain or "." not in domain:
+            continue
+        subdomain = ".".join(domain.split(".")[:-2]) if len(domain.split(".")) > 2 else ""
+        if not subdomain:
+            continue
+        entropy = _shannon_entropy(subdomain.replace(".", ""))
+        query_type = e.get("query_type", "")
+        if (len(subdomain) > 40 and entropy > 3.2) or (query_type in ("TXT", "NULL", "CNAME") and entropy > 3.0):
+            matched.append(e)
+    return matched
+
+
+def _as_rep_roasting(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect AS-REP Roasting: Kerberos AS requests without pre-authentication."""
+    asrep_re = re.compile(
+        r"(AS-REP.roast|asreproast|GetNPUsers"
+        r"|DoesNotRequirePreAuth|DONT_REQ_PREAUTH"
+        r"|asrep.*hash|T1558\.004"
+        r"|Rubeus.*asreproast|kerberospreauth.*disabled)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        if asrep_re.search(desc) or asrep_re.search(cmd):
+            matched.append(e)
+    return matched
+
+
+def _container_escape(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect container escape attempts: nsenter, privileged container abuse, Docker socket."""
+    escape_re = re.compile(
+        r"(nsenter.*--target.*1|nsenter.*--pid.*host"
+        r"|docker.*--privileged|mount.*\/dev\/sda"
+        r"|chroot.*\/mnt|cgroup.*release_agent"
+        r"|docker\.sock.*curl|kubectl.*exec.*nsenter"
+        r"|T1611|container.*escape|escape.*container"
+        r"|deepce|cdk.*exploit)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        tags = " ".join(e.get("tags", []))
+        if escape_re.search(desc) or escape_re.search(cmd) or "container_escape" in tags:
+            matched.append(e)
+    return matched
+
+
+def _cloud_imds_abuse(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect abuse of cloud instance metadata service (IMDS) for credential theft."""
+    imds_re = re.compile(
+        r"(169\.254\.169\.254"
+        r"|metadata\.google\.internal"
+        r"|metadata\.azure\.com"
+        r"|imds\/latest\/meta-data"
+        r"|iam\/security-credentials"
+        r"|T1552\.005"
+        r"|instance.metadata.*credential)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        url = e.get("url", "")
+        cmd = e.get("command_line", "")
+        if imds_re.search(desc) or imds_re.search(url) or imds_re.search(cmd):
+            matched.append(e)
+    return matched
+
+
+def _ransomware_indicators(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect ransomware activity: mass file extension changes, ransom note drops, encryption."""
+    ransomware_re = re.compile(
+        r"(ransom.*note|RECOVER.*FILES|README.*DECRYPT"
+        r"|\.locked$|\.encrypt|\.blackcat|\.crypt"
+        r"|vssadmin.*delete.*shadows"
+        r"|wbadmin.*delete.*catalog"
+        r"|bcdedit.*recoveryenabled.*No"
+        r"|net.*stop.*veeam|net.*stop.*MSSQL"
+        r"|Set-MpPreference.*DisableRealtime"
+        r"|T1486|data.*encrypted.*impact)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        tags = " ".join(e.get("tags", []))
+        if ransomware_re.search(desc) or ransomware_re.search(cmd) or "ransomware" in tags:
+            matched.append(e)
+    return matched
+
+
+def _shadow_copy_deletion(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect Volume Shadow Copy deletion — strong ransomware/wiper indicator."""
+    vss_re = re.compile(
+        r"(vssadmin.*delete|wmic.*shadowcopy.*delete"
+        r"|shadow.*copy.*delet|Delete.*ShadowCopy"
+        r"|WMIC.*delete.*shadow|T1490"
+        r"|Inhibit.*System.*Recovery)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        if vss_re.search(desc) or vss_re.search(cmd):
+            matched.append(e)
+    return matched
+
+
+def _golden_ticket(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Detect Golden Ticket and Silver Ticket Kerberos forgery."""
+    golden_re = re.compile(
+        r"(golden.*ticket|silver.*ticket"
+        r"|kerberos::golden|kerberos::silver"
+        r"|kerberos::ptt.*kirbi"
+        r"|krbtgt.*hash.*forge"
+        r"|T1558\.001|T1558\.002"
+        r"|Mimikatz.*kerberos.*golden)",
+        re.IGNORECASE,
+    )
+    matched: list[dict[str, Any]] = []
+    for e in events:
+        desc = e.get("description", "")
+        cmd = e.get("command_line", "")
+        if golden_re.search(desc) or golden_re.search(cmd):
+            matched.append(e)
+    return matched
+
+
 def _account_creation(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Detect new account creation, especially domain admin accounts."""
     account_patterns = re.compile(
@@ -1144,5 +1410,128 @@ DETECTION_RULES: list[DetectionRule] = [
         technique_id="T1136",
         technique_name="Create Account",
         condition=_account_creation,
+    ),
+
+    # --- ENTERPRISE RULES (RULE-035 to RULE-046) ---
+
+    DetectionRule(
+        rule_id="RULE-035",
+        name="Kerberoasting Attack Detected",
+        description="TGS ticket requests with RC4 encryption or Rubeus/GetUserSPNs tooling detected — Kerberoasting in progress.",
+        severity="critical",
+        tactic="Credential Access",
+        technique_id="T1558.003",
+        technique_name="Steal or Forge Kerberos Tickets: Kerberoasting",
+        condition=_kerberoasting,
+    ),
+    DetectionRule(
+        rule_id="RULE-036",
+        name="Pass-the-Hash Attack Detected",
+        description="NTLM hash used directly for authentication without knowing the plaintext password (Pass-the-Hash / Overpass-the-Hash).",
+        severity="critical",
+        tactic="Lateral Movement",
+        technique_id="T1550.002",
+        technique_name="Use Alternate Authentication Material: Pass the Hash",
+        condition=_pass_the_hash,
+    ),
+    DetectionRule(
+        rule_id="RULE-037",
+        name="Process Injection Detected",
+        description="Process hollowing, reflective DLL injection, or APC queue injection techniques detected via memory operation APIs.",
+        severity="critical",
+        tactic="Defense Evasion",
+        technique_id="T1055",
+        technique_name="Process Injection",
+        condition=_process_injection,
+    ),
+    DetectionRule(
+        rule_id="RULE-038",
+        name="LOLBAS Execution (Living off the Land)",
+        description="Abuse of legitimate Windows binaries (mshta, certutil, regsvr32, bitsadmin, etc.) for malicious code execution or download.",
+        severity="high",
+        tactic="Execution",
+        technique_id="T1218",
+        technique_name="System Binary Proxy Execution",
+        condition=_lolbas_execution,
+    ),
+    DetectionRule(
+        rule_id="RULE-039",
+        name="DGA Domain Activity Detected",
+        description="High-entropy domain labels or suspicious TLDs indicate Domain Generation Algorithm (DGA) malware communication.",
+        severity="high",
+        tactic="Command and Control",
+        technique_id="T1568.002",
+        technique_name="Dynamic Resolution: Domain Generation Algorithms",
+        condition=_dga_detection,
+    ),
+    DetectionRule(
+        rule_id="RULE-040",
+        name="DNS Tunneling Detected",
+        description="Long high-entropy subdomain labels or TXT/NULL DNS record abuse indicate DNS tunneling for C2 data exfiltration.",
+        severity="critical",
+        tactic="Command and Control",
+        technique_id="T1071.004",
+        technique_name="Application Layer Protocol: DNS",
+        condition=_dns_tunneling_entropy,
+    ),
+    DetectionRule(
+        rule_id="RULE-041",
+        name="AS-REP Roasting Detected",
+        description="Kerberos AS-REQ requests for accounts with pre-authentication disabled — offline hash cracking attempt.",
+        severity="high",
+        tactic="Credential Access",
+        technique_id="T1558.004",
+        technique_name="Steal or Forge Kerberos Tickets: AS-REP Roasting",
+        condition=_as_rep_roasting,
+    ),
+    DetectionRule(
+        rule_id="RULE-042",
+        name="Container Escape Attempt",
+        description="nsenter targeting host PID 1, privileged container abuse, or Docker socket exploitation detected.",
+        severity="critical",
+        tactic="Privilege Escalation",
+        technique_id="T1611",
+        technique_name="Escape to Host",
+        condition=_container_escape,
+    ),
+    DetectionRule(
+        rule_id="RULE-043",
+        name="Cloud IMDS Credential Theft",
+        description="Access to AWS/Azure/GCP instance metadata service endpoint to steal IAM role credentials.",
+        severity="critical",
+        tactic="Credential Access",
+        technique_id="T1552.005",
+        technique_name="Unsecured Credentials: Cloud Instance Metadata API",
+        condition=_cloud_imds_abuse,
+    ),
+    DetectionRule(
+        rule_id="RULE-044",
+        name="Ransomware Activity Detected",
+        description="Ransom note creation, mass file encryption, backup service termination, or defender disabling — strong ransomware indicators.",
+        severity="critical",
+        tactic="Impact",
+        technique_id="T1486",
+        technique_name="Data Encrypted for Impact",
+        condition=_ransomware_indicators,
+    ),
+    DetectionRule(
+        rule_id="RULE-045",
+        name="Volume Shadow Copy Deletion",
+        description="vssadmin/wmic delete shadows command detected — ransomware or wiper attempting to prevent recovery.",
+        severity="critical",
+        tactic="Impact",
+        technique_id="T1490",
+        technique_name="Inhibit System Recovery",
+        condition=_shadow_copy_deletion,
+    ),
+    DetectionRule(
+        rule_id="RULE-046",
+        name="Golden / Silver Ticket Forging",
+        description="Mimikatz kerberos::golden or kerberos::silver command detected — complete domain compromise via forged Kerberos tickets.",
+        severity="critical",
+        tactic="Privilege Escalation",
+        technique_id="T1558.001",
+        technique_name="Steal or Forge Kerberos Tickets: Golden Ticket",
+        condition=_golden_ticket,
     ),
 ]

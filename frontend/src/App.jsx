@@ -25,6 +25,8 @@ const RiskMatrix = React.lazy(() => import('./pages/RiskMatrix'))
 const Maturity = React.lazy(() => import('./pages/Maturity'))
 const Analytics = React.lazy(() => import('./pages/Analytics'))
 const AttackTree = React.lazy(() => import('./pages/AttackTree'))
+const Benchmark = React.lazy(() => import('./pages/Benchmark'))
+const Anomaly = React.lazy(() => import('./pages/Anomaly'))
 
 // ─── Loading Fallback for Suspense ───
 function LoadingFallback() {
@@ -55,6 +57,8 @@ export default function App() {
   const [threatIntel, setThreatIntel] = useState(null)
   const [lang, setLang] = useState(() => localStorage.getItem('lang') || 'fr')
   const i18n = useMemo(() => createI18n(lang), [lang])
+  const [llmStatus, setLlmStatus] = useState(null)
+  const token = localStorage.getItem('cybertwin_token') || ''
 
   const [history, setHistory] = useState(() => {
     try {
@@ -112,6 +116,9 @@ export default function App() {
     setSimResult(result)
     setLiveSimId(null)
     setHistory(prev => [...prev, { ...result, _timestamp: new Date().toISOString() }])
+    const src = result?.ai_analysis?.source
+    if (src === 'llm_ollama') setLlmStatus('ollama')
+    else if (src === 'nlg_fallback') setLlmStatus('nlg')
     setPage('dashboard')
   }
 
@@ -139,11 +146,13 @@ export default function App() {
     analytics: <Analytics />,
     comparison: <Comparison history={history} />,
     'attack-tree': <AttackTree result={simResult} scenario={simResult?.scenario} i18n={i18n} />,
+    benchmark: <Benchmark scenarioId={simResult?.scenario?.id} token={token} />,
+    anomaly: <Anomaly scenarioId={simResult?.scenario?.id} token={token} />,
   }
 
   return (
     <div className="flex h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      <Sidebar page={page} setPage={setPage} hasResult={!!simResult} onLogout={handleLogout} i18n={i18n} onLangChange={setLang} />
+      <Sidebar page={page} setPage={setPage} hasResult={!!simResult} onLogout={handleLogout} i18n={i18n} onLangChange={setLang} llmStatus={llmStatus} />
       <main className="flex-1 overflow-y-auto p-6 flex flex-col min-h-screen">
         <Suspense fallback={<LoadingFallback />}>
           <div key={page} className="page-transition flex-1">

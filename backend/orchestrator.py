@@ -60,7 +60,8 @@ class SimulationOrchestrator:
     def initialise(self) -> None:
         """Load environment data and scenario definitions."""
         self.environment.load()
-        self.normal_gen = NormalActivityGenerator(self.environment, seed=42)
+        import random as _rnd
+        self.normal_gen = NormalActivityGenerator(self.environment, seed=_rnd.randint(0, 2**31))
         self.attack_engine.load_scenarios()
 
     # ------------------------------------------------------------------
@@ -164,16 +165,31 @@ class SimulationOrchestrator:
             timeline=timeline,
         )
 
-        # Step 7 — AI Analyst narrative generation
-        ai_analysis = self.ai_analyst.analyse_incident(
-            scenario=scenario,
-            alerts=alerts,
-            incidents=incidents,
-            scores=scores,
-            mitre_coverage=mitre_coverage,
-            timeline=timeline,
-            logs_stats=logs_stats,
-        )
+        # Step 7 — AI Analyst narrative generation (LLM or NLG fallback)
+        _result_for_llm = {
+            "scenario": scenario,
+            "alerts": alerts,
+            "incidents": incidents,
+            "scores": scores,
+            "mitre_coverage": mitre_coverage,
+            "timeline": timeline[:50],
+            "logs_statistics": logs_stats,
+        }
+        try:
+            from backend.llm_analyst import analyse_with_llm
+            ai_analysis = analyse_with_llm(_result_for_llm)
+        except Exception as _llm_err:
+            import logging as _log
+            _log.getLogger("cybertwin.orchestrator").warning("LLM analyst failed (%s), using built-in NLG", _llm_err)
+            ai_analysis = self.ai_analyst.analyse_incident(
+                scenario=scenario,
+                alerts=alerts,
+                incidents=incidents,
+                scores=scores,
+                mitre_coverage=mitre_coverage,
+                timeline=timeline,
+                logs_stats=logs_stats,
+            )
 
         self._last_result = {
             "scenario": scenario,

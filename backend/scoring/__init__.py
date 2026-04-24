@@ -348,3 +348,63 @@ class ScoringEngine:
             })
 
         return recs
+
+    # ------------------------------------------------------------------
+    # NIST CSF / CIS Controls benchmarking
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def nist_csf_benchmark(scores: dict) -> dict:
+        """Map detection scores to NIST Cybersecurity Framework function ratings."""
+        overall = scores.get("overall_score", 0)
+        detection = scores.get("detection_score", 0)
+        coverage = scores.get("coverage_score", 0)
+        response = scores.get("response_score", 0)
+        visibility = scores.get("visibility_score", 0)
+
+        def _tier(score: float) -> str:
+            if score >= 80: return "Tier 4 — Adaptive"
+            if score >= 60: return "Tier 3 — Repeatable"
+            if score >= 40: return "Tier 2 — Risk Informed"
+            return "Tier 1 — Partial"
+
+        return {
+            "framework": "NIST CSF v1.1",
+            "overall_tier": _tier(overall),
+            "functions": {
+                "IDENTIFY":  {"score": round(visibility * 0.9 + coverage * 0.1, 1),  "tier": _tier(visibility)},
+                "PROTECT":   {"score": round(coverage * 0.6 + detection * 0.4, 1),   "tier": _tier(coverage)},
+                "DETECT":    {"score": round(detection * 0.5 + coverage * 0.5, 1),   "tier": _tier(detection)},
+                "RESPOND":   {"score": round(response, 1),                            "tier": _tier(response)},
+                "RECOVER":   {"score": round(response * 0.7 + overall * 0.3, 1),     "tier": _tier(response)},
+            },
+        }
+
+    @staticmethod
+    def cis_controls_benchmark(scores: dict) -> dict:
+        """Map detection scores to CIS Controls v8 implementation groups."""
+        overall = scores.get("overall_score", 0)
+        detection = scores.get("detection_score", 0)
+        coverage = scores.get("coverage_score", 0)
+        visibility = scores.get("visibility_score", 0)
+
+        def _ig(score: float) -> str:
+            if score >= 75: return "IG3 — Large Enterprise"
+            if score >= 50: return "IG2 — Mid-size Enterprise"
+            return "IG1 — SMB (Essential)"
+
+        controls = [
+            {"id": "CIS-01", "name": "Inventory and Control of Enterprise Assets", "score": round(visibility * 0.8, 1)},
+            {"id": "CIS-03", "name": "Data Protection", "score": round(coverage * 0.7 + detection * 0.3, 1)},
+            {"id": "CIS-06", "name": "Access Control Management", "score": round(detection * 0.6, 1)},
+            {"id": "CIS-08", "name": "Audit Log Management", "score": round(visibility, 1)},
+            {"id": "CIS-10", "name": "Malware Defenses", "score": round(detection * 0.8, 1)},
+            {"id": "CIS-13", "name": "Network Monitoring and Defense", "score": round(visibility * 0.7 + detection * 0.3, 1)},
+            {"id": "CIS-17", "name": "Incident Response Management", "score": round(scores.get("response_score", 0), 1)},
+        ]
+        return {
+            "framework": "CIS Controls v8",
+            "implementation_group": _ig(overall),
+            "controls": controls,
+            "avg_score": round(sum(c["score"] for c in controls) / len(controls), 1),
+        }
