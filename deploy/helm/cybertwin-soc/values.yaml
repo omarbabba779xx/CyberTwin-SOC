@@ -1,0 +1,96 @@
+## CyberTwin SOC -- default Helm values
+##
+## Override with `--values my-values.yaml` or `--set key=value`.
+
+backend:
+  image:
+    repository: ghcr.io/omarbabba779xx/cybertwin-soc-backend
+    tag: "3.0.0"
+    pullPolicy: IfNotPresent
+  replicas: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 384Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  env:
+    ENV: production
+    PYTHONUNBUFFERED: "1"
+    REDIS_URL: redis://cybertwin-redis:6379
+    ENABLE_JSON_LOGS: "1"
+    LOG_LEVEL: INFO
+  # Secret references (created separately or via existingSecret)
+  existingSecret: cybertwin-secrets
+  service:
+    type: ClusterIP
+    port: 8000
+
+frontend:
+  image:
+    repository: ghcr.io/omarbabba779xx/cybertwin-soc-frontend
+    tag: "3.0.0"
+    pullPolicy: IfNotPresent
+  replicas: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  service:
+    type: ClusterIP
+    port: 80
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  host: cybertwin.example.com
+  tls:
+    enabled: true
+    secretName: cybertwin-tls
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+  resources:
+    requests: {cpu: 50m,  memory: 64Mi}
+    limits:   {cpu: 200m, memory: 256Mi}
+
+postgres:
+  enabled: false      # opt-in
+  image: postgres:16-alpine
+  persistence:
+    enabled: true
+    size: 20Gi
+    storageClass: ""
+  resources:
+    requests: {cpu: 250m, memory: 512Mi}
+    limits:   {cpu: 1,    memory: 2Gi}
+
+# Pod-level security defaults
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: ["ALL"]
+
+# ServiceMonitor for kube-prometheus-stack
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /api/metrics
+
+# NetworkPolicy: deny-by-default + allow ingress + allow egress to deps
+networkPolicy:
+  enabled: false

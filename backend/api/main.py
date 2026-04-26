@@ -35,6 +35,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("cybertwin")
 
+# Phase 5 - Observability: opt-in JSON logging via ENABLE_JSON_LOGS=1
+from backend.observability.logging_setup import auto_configure as _setup_logs
+_setup_logs()
+
 limiter = Limiter(key_func=get_remote_address)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -89,6 +93,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Phase 5 - request_id correlation + Prometheus request duration
+from backend.observability.middleware import RequestIdMiddleware
+from backend.observability.metrics import MetricsMiddleware
+app.add_middleware(MetricsMiddleware)
+app.add_middleware(RequestIdMiddleware)
 
 app.state.limiter = limiter
 
@@ -174,6 +184,60 @@ def root(request: Request):
 @limiter.limit("120/minute")
 def health(request: Request):
     return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+
+@app.get("/api/health/deep")
+@limiter.limit("60/minute")
+def health_deep(request: Request):
+    """Deep health probe: report dependency status (cache, DB, ingestion)."""
+    from fastapi.responses import JSONResponse
+    checks: dict[str, dict] = {}
+
+    # Cache backend
+    try:
+        cache.set("__health__", "ok", ttl=10) if hasattr(cache, "set") else None
+        checks["cache"] = {"status": "ok", "backend": cache.backend}
+    except Exception as exc:
+        checks["cache"] = {"status": "degraded", "error": str(exc)}
+
+    # Database
+    try:
+        from backend.database import get_stats
+        get_stats()
+        checks["database"] = {"status": "ok"}
+    except Exception as exc:
+        checks["database"] = {"status": "degraded", "error": str(exc)}
+
+    # Ingestion pipeline
+    try:
+        from backend.ingestion import get_pipeline
+        pipe = get_pipeline()
+        checks["ingestion"] = {
+            "status": "ok",
+            "buffer_size": pipe.buffer_size(),
+            "events_total": pipe.stats.total_events_received,
+        }
+    except Exception as exc:
+        checks["ingestion"] = {"status": "degraded", "error": str(exc)}
+
+    overall = "ok" if all(c["status"] == "ok" for c in checks.values()) else "degraded"
+    body = {
+        "status": overall,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "version": os.getenv("APP_VERSION", "3.0.0"),
+        "checks": checks,
+    }
+    return JSONResponse(body, status_code=200 if overall == "ok" else 503)
+
+
+@app.get("/api/metrics")
+@limiter.limit("60/minute")
+def metrics_endpoint(request: Request):
+    """Prometheus exposition format for scraping by Prometheus / Grafana Agent."""
+    from fastapi.responses import Response as FastAPIResponse
+    from backend.observability.metrics import render_metrics
+    body, content_type = render_metrics()
+    return FastAPIResponse(body, media_type=content_type)
 
 
 # ---- Authentication ------------------------------------------------------
@@ -1204,6 +1268,180 @@ def delete_suppression_endpoint(
                role=user.get("role"), resource=str(suppression_id),
                ip_address=_client_ip(request))
     return {"status": "deleted", "suppression_id": suppression_id}
+
+
+# ---- Enterprise Connectors registry (Phase 5) ----------------------------
+
+@app.get("/api/connectors")
+@limiter.limit("60/minute")
+def list_enterprise_connectors(request: Request,
+                               user=Depends(require_permission("view_results"))):
+    """Catalog of registered SIEM/SOAR/EDR/ITSM/TI connectors."""
+    from backend.connectors import list_connectors
+    return {"connectors": list_connectors()}
+
+
+@app.get("/api/connectors/{kind}/{name}/check")
+@limiter.limit("30/minute")
+def check_enterprise_connector(kind: str, name: str, request: Request,
+                               user=Depends(require_permission("view_results"))):
+    """Run check_connection() against a registered connector. Stubs return 501."""
+    from backend.connectors import get_connector
+    from backend.connectors.base import ConnectorError
+    try:
+        conn = get_connector(kind, name)
+    except ConnectorError as exc:
+        raise HTTPException(404, str(exc))
+    try:
+        return conn.check_connection().__dict__
+    except NotImplementedError as exc:
+        raise HTTPException(501, str(exc))
+
+
+# ---- Live Log Ingestion (Phase 4) ----------------------------------------
+
+class IngestEventRequest(BaseModel):
+    event: dict[str, Any]
+    source_type: Optional[str] = None
+    tenant_id: Optional[str] = None
+
+
+class IngestBatchRequest(BaseModel):
+    events: list[dict[str, Any]]
+    source_type: Optional[str] = None
+    tenant_id: Optional[str] = None
+
+    @field_validator("events")
+    @classmethod
+    def _events_size_cap(cls, v):
+        if len(v) > 5000:
+            raise ValueError("Batch capped at 5000 events.")
+        return v
+
+
+class IngestSyslogRequest(BaseModel):
+    lines: list[str]
+    tenant_id: Optional[str] = None
+
+
+@app.post("/api/ingest/event")
+@limiter.limit("600/minute")
+def ingest_event(payload: IngestEventRequest, request: Request,
+                 user=Depends(require_permission("run_simulation"))):
+    """Submit one event for normalisation + buffering."""
+    from backend.ingestion import get_pipeline
+    try:
+        ocsf = get_pipeline().ingest_one(
+            payload.event, source_type=payload.source_type,
+            tenant_id=payload.tenant_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return {"status": "accepted", "event": ocsf}
+
+
+@app.post("/api/ingest/batch")
+@limiter.limit("60/minute")
+def ingest_batch(payload: IngestBatchRequest, request: Request,
+                 user=Depends(require_permission("run_simulation"))):
+    """Submit a batch of events (capped at 5000)."""
+    from backend.ingestion import get_pipeline
+    return get_pipeline().ingest_batch(
+        payload.events, source_type=payload.source_type,
+        tenant_id=payload.tenant_id,
+    )
+
+
+@app.post("/api/ingest/syslog")
+@limiter.limit("60/minute")
+def ingest_syslog(payload: IngestSyslogRequest, request: Request,
+                  user=Depends(require_permission("run_simulation"))):
+    """Ingest raw RFC 3164 / 5424 syslog text lines."""
+    from backend.ingestion import get_pipeline
+    return get_pipeline().ingest_syslog_lines(payload.lines, tenant_id=payload.tenant_id)
+
+
+@app.post("/api/ingest/upload")
+@limiter.limit("10/minute")
+async def ingest_upload(request: Request,
+                        user=Depends(require_permission("run_simulation"))):
+    """Accept a newline-delimited JSON file (NDJSON) upload."""
+    body = await request.body()
+    if not body:
+        raise HTTPException(400, "Empty body")
+    if len(body) > 25 * 1024 * 1024:  # 25 MB max
+        raise HTTPException(413, "File too large (max 25 MB)")
+    from backend.ingestion import get_pipeline
+    pipeline = get_pipeline()
+    accepted = rejected = 0
+    for line in body.decode("utf-8", errors="replace").splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            evt = json.loads(line)
+            pipeline.ingest_one(evt)
+            accepted += 1
+        except Exception:
+            rejected += 1
+    log_action("INGEST_UPLOAD", username=user["sub"], role=user.get("role"),
+               ip_address=_client_ip(request),
+               details={"accepted": accepted, "rejected": rejected})
+    return {"accepted": accepted, "rejected": rejected}
+
+
+@app.get("/api/ingest/stats")
+@limiter.limit("60/minute")
+def ingest_stats(request: Request,
+                 user=Depends(require_permission("view_results"))):
+    """Counters: throughput, by source type, drops by reason."""
+    from backend.ingestion import get_pipeline
+    pipe = get_pipeline()
+    return {**pipe.stats.to_dict(), "buffer_size": pipe.buffer_size()}
+
+
+@app.get("/api/ingest/sources")
+@limiter.limit("60/minute")
+def ingest_supported_sources(request: Request,
+                             user=Depends(require_permission("view_results"))):
+    """List all source_type identifiers the normaliser knows about."""
+    from backend.normalization import list_supported
+    return {"supported": list_supported()}
+
+
+@app.get("/api/ingest/health")
+@limiter.limit("120/minute")
+def ingest_health(request: Request):
+    """Public health probe. Reports buffer size and event throughput."""
+    from backend.ingestion import get_pipeline
+    pipe = get_pipeline()
+    return {
+        "status": "ok",
+        "buffer_size": pipe.buffer_size(),
+        "events_total": pipe.stats.total_events_received,
+        "alerts_total": pipe.stats.total_alerts_generated,
+    }
+
+
+@app.post("/api/ingest/detect")
+@limiter.limit("10/minute")
+def ingest_detect(request: Request,
+                  user=Depends(require_permission("view_results"))):
+    """Run the detection engine over the current buffer."""
+    from backend.ingestion import get_pipeline
+    return get_pipeline().detect()
+
+
+@app.delete("/api/ingest/buffer")
+@limiter.limit("10/minute")
+def ingest_clear(request: Request,
+                 user=Depends(require_permission("configure_system"))):
+    """Empty the in-memory ingestion buffer (admin)."""
+    from backend.ingestion import get_pipeline
+    get_pipeline().clear()
+    log_action("INGEST_CLEAR", username=user["sub"], role=user.get("role"),
+               ip_address=_client_ip(request))
+    return {"status": "cleared"}
 
 
 # ---- Evidence-first AI Analysis (Phase 3) --------------------------------

@@ -1,0 +1,23 @@
+apiVersion: v2
+name: cybertwin-soc
+description: |
+  CyberTwin SOC - Enterprise digital twin platform for cyber attack
+  simulation, MITRE ATT&CK detection coverage measurement, SOC workflow
+  automation, and SOAR integration.
+type: application
+version: 0.1.0
+appVersion: "3.0.0"
+icon: https://raw.githubusercontent.com/omarbabba779xx/CyberTwin-SOC/master/docs/logo.png
+keywords:
+  - cybersecurity
+  - soc
+  - mitre-attack
+  - detection-engineering
+  - simulation
+  - digital-twin
+home: https://github.com/omarbabba779xx/CyberTwin-SOC
+sources:
+  - https://github.com/omarbabba779xx/CyberTwin-SOC
+maintainers:
+  - name: Omar Babba
+    url: https://github.com/omarbabba779xx

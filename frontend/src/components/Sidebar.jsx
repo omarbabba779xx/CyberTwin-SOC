@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import {
   Shield, LayoutDashboard, Target, AlertTriangle, Clock, Grid3X3,
   FileText, Network, Brain, Radar, GitCompare, PenTool, Sun, Moon, LogOut,
-  Globe, BarChart3, GitBranch, Cpu, BookOpen, Zap, Briefcase, ShieldOff
+  Globe, BarChart3, GitBranch, Cpu, BookOpen, Zap, Briefcase, ShieldOff, Upload
 } from 'lucide-react'
 import { LANGUAGES } from '../i18n'
 
@@ -43,6 +43,7 @@ const NAV_SECTIONS = [
       { id: 'alert-queue',  label: 'Alert Queue',  labelKey: 'nav.alertQueue',   icon: AlertTriangle, tag: 'NEW' },
       { id: 'cases',        label: 'Cases',        labelKey: 'nav.cases',        icon: Briefcase,     tag: 'NEW' },
       { id: 'suppressions', label: 'Suppressions', labelKey: 'nav.suppressions', icon: ShieldOff,     tag: 'NEW' },
+      { id: 'ingestion',    label: 'Live Ingestion', labelKey: 'nav.ingestion',  icon: Upload,        tag: 'NEW' },
     ]
   },
   {
@@ -58,7 +59,7 @@ const NAV_SECTIONS = [
   }
 ]
 
-const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark', 'soar', 'coverage', 'alert-queue', 'cases', 'suppressions']
+const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark', 'soar', 'coverage', 'alert-queue', 'cases', 'suppressions', 'ingestion']
 
 export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLangChange, llmStatus }) {
   const t = i18n?.t || ((k) => k)

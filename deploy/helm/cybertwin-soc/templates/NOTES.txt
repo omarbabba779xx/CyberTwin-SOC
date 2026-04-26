@@ -1,0 +1,19 @@
+CyberTwin SOC v{{ .Chart.AppVersion }} has been installed.
+
+Steps:
+  1. Make sure the secret '{{ .Values.backend.existingSecret }}' exists with
+     JWT_SECRET, AUTH_ADMIN_PASSWORD, AUTH_ANALYST_PASSWORD, AUTH_VIEWER_PASSWORD.
+  2. Tail logs:
+       kubectl logs -l app.kubernetes.io/component=backend -f
+  3. Health probes:
+       kubectl port-forward svc/cybertwin-backend 8000:8000
+       curl http://localhost:8000/api/health/deep | jq
+  4. Prometheus metrics scraped at: /api/metrics
+{{- if .Values.ingress.enabled }}
+  5. Public URL: https://{{ .Values.ingress.host }}
+{{- end }}
+
+Roles available out of the box (Phase 5 RBAC):
+  - admin / analyst / viewer (legacy)
+  - platform_admin, soc_manager, senior_analyst, tier1_analyst,
+    detection_engineer, threat_hunter, auditor, read_executive, service_account

@@ -692,6 +692,19 @@ Content-Type: application/json
 | `GET` | `/api/suppressions` | List active suppressions |
 | `DELETE` | `/api/suppressions/{id}` | Soft-delete a suppression (admin) |
 | `GET` | `/api/results/{id}/ai-evidence` | **Evidence-first** AI analysis (PII-masked) |
+| `POST` | `/api/ingest/event` | **Live SOC** — submit one OCSF event |
+| `POST` | `/api/ingest/batch` | Submit a batch (≤ 5000 events) |
+| `POST` | `/api/ingest/syslog` | Ingest RFC 3164/5424 syslog lines |
+| `POST` | `/api/ingest/upload` | Upload NDJSON file (≤ 25 MB) |
+| `GET` | `/api/ingest/stats` | Ingestion counters by source/category |
+| `GET` | `/api/ingest/sources` | Supported source_type identifiers |
+| `GET` | `/api/ingest/health` | Public ingestion health probe |
+| `POST` | `/api/ingest/detect` | Run detection on the buffer |
+| `DELETE` | `/api/ingest/buffer` | Clear the buffer (admin) |
+| `GET` | `/api/connectors` | **Enterprise** — registered SIEM/SOAR/EDR/ITSM/TI |
+| `GET` | `/api/connectors/{kind}/{name}/check` | Connectivity probe per connector |
+| `GET` | `/api/health/deep` | Deep probe (cache + DB + ingestion status) |
+| `GET` | `/api/metrics` | Prometheus exposition format |
 | `POST` | `/api/mitre/sync-taxii` | Live TAXII 2.1 sync |
 | `GET` | `/api/sigma/rules` | Loaded Sigma rules |
 | `POST` | `/api/sigma/upload` | Upload new Sigma rule |
@@ -979,6 +992,11 @@ The **Global Detection Coverage Score** (0..100) is a weighted average:
 - [x] Phase 10 — Unit test suite (128 tests, 100% passing)
 - [x] Phase 11 — Docker Compose production deployment (multi-stage + nginx)
 - [x] Phase 12 — SOAR integration (TheHive 5 + Cortex 3)
+- [x] Phase 13 — Stabilization (CI fixes, governance, secret guards, doc honesty)
+- [x] Phase 14 — Detection Coverage Center (8-state honest status, 622-technique table)
+- [x] Phase 15 — SOC Workflow (alert feedback, case management, suppressions, AI evidence-first)
+- [x] Phase 16 — Live SOC (OCSF normalisation: Win/Sysmon/syslog/CloudTrail + ingestion pipeline)
+- [x] Phase 17 — Enterprise (Prometheus + JSON logs + 9-role RBAC + connectors + Helm/K8s + benchmarks)
 
 ---
 

@@ -7,6 +7,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (Phase 5 — Enterprise readiness)
+
+- **Observability** (`backend/observability/`):
+    - **Prometheus `/api/metrics`** endpoint with `cybertwin_*` counters and
+      histograms (`events_ingested_total`, `detection_latency_seconds`,
+      `rules_matched_total`, `api_request_duration_seconds`,
+      `simulation_duration_seconds`, `ai_analysis_duration_seconds`,
+      `connector_errors_total`, `case_sla_breaches_total`).
+    - **`MetricsMiddleware`** auto-records every API request duration.
+    - **`RequestIdMiddleware`** propagates an `X-Request-ID` header (honors
+      incoming, generates UUID4 otherwise) into a contextvar so logs can
+      correlate.
+    - **Structured JSON logging** (opt-in via `ENABLE_JSON_LOGS=1`).
+    - **`/api/health/deep`** reports cache + database + ingestion status
+      and returns 503 on degraded dependencies.
+- **Granular RBAC** (`backend/auth.py`):
+    - 9 enterprise roles in addition to legacy admin/analyst/viewer:
+      `platform_admin`, `soc_manager`, `senior_analyst`, `tier1_analyst`,
+      `detection_engineer`, `threat_hunter`, `auditor`, `read_executive`,
+      `service_account`.
+    - Scoped permissions: `case:*`, `rule:*`, `simulation:*`, `ingestion:*`,
+      `audit:*`, `connector:*`, `tenant:admin`, `ai:*`, `feedback:*`,
+      `suppression:*`. Legacy permission strings remain valid.
+- **Enterprise connectors** (`backend/connectors/`):
+    - Abstract interfaces for `SIEMConnector`, `SOARConnector`,
+      `EDRConnector`, `ITSMConnector`, `TIConnector`.
+    - 5 production-ready Mock connectors (deterministic, offline).
+    - Stubs registered for Splunk, Sentinel, Elastic, TheHive, Defender,
+      CrowdStrike, Jira, ServiceNow, MISP, OpenCTI.
+    - 2 new endpoints: `GET /api/connectors`,
+      `GET /api/connectors/{kind}/{name}/check`.
+- **Benchmarks** (`benchmarks/`): k6 HTTP test (`k6_api_test.js`) +
+  Locust ingestion stress test (`locust_ingestion.py`) + README with
+  PromQL examples and target SLOs.
+- **Helm chart + K8s** (`deploy/helm/cybertwin-soc/`): backend + frontend
+  Deployments with liveness/readiness/startup probes, Service, Ingress
+  with TLS, optional Redis sidecar, optional ServiceMonitor for
+  kube-prometheus-stack, NOTES.txt with operator instructions, secret
+  template (kept commented). Production defaults: non-root user,
+  drop-all capabilities, `ENV=production`, `ENABLE_JSON_LOGS=1`.
+- **21 new tests** in `tests/test_phase5.py` covering granular RBAC,
+  observability headers and metrics, connector registry, mock behaviour,
+  stub `NotImplementedError`. Total: **223/223 passing**.
+
+### Added (Phase 4 — Live SOC)
+
+- **Event normalization** (`backend/normalization/`): an OCSF-shaped
+  `NormalizedEvent` schema with reference objects (`UserRef`,
+  `EndpointRef`, `ProcessRef`, `FileRef`, `NetworkRef`, `CloudRef`).
+  Mappers shipped for **Windows EventLog** (4624/4625/4634/4648/4672/4688/
+  4720/4732/4740/4768/4769/7045/1102), **Sysmon** (EID 1/3/7/8/10/11/12/13/22/23),
+  **Linux syslog** (RFC 3164/5424 with auth-pattern recognition),
+  **AWS CloudTrail**, plus a generic JSON fallback. New mappers can be
+  added at runtime via `register_mapper()`.
+- **Ingestion pipeline** (`backend/ingestion/`): bounded ring buffer
+  (50k events default), per-source-type counters, drop-reason tracking,
+  thread-safe `IngestionStats`. A single `get_pipeline()` singleton
+  feeds the existing `DetectionEngine` via `to_engine_dict()` translation
+  so all 46 detection rules work on real, normalised events.
+- **9 new ingestion endpoints**: `POST /api/ingest/event`,
+  `POST /api/ingest/batch` (≤ 5000), `POST /api/ingest/syslog`,
+  `POST /api/ingest/upload` (NDJSON, ≤ 25 MB), `POST /api/ingest/detect`,
+  `GET /api/ingest/stats`, `GET /api/ingest/sources`,
+  `GET /api/ingest/health`, `DELETE /api/ingest/buffer`.
+- **Frontend page** `pages/Ingestion.jsx`: 3-tab UI (single event / batch /
+  syslog), live counters, source-type breakdown, on-demand "run detection
+  on buffer" button. Wired into the SOC Workflow sidebar section.
+- **25 new tests** in `tests/test_ingestion.py` with realistic Windows
+  EID 4625/4688, Sysmon EID 1, syslog SSH-failure, and CloudTrail
+  ConsoleLogin failure fixtures. Validates secret-redaction, OCSF shape,
+  auth, batch caps, and end-to-end ingestion → detection.
+
 ### Added (Phase 3 — SOC Operational Workflow)
 
 - New module `backend/soc/` with persistent SQLite tables and business logic for:

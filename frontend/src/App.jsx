@@ -32,6 +32,7 @@ const CoverageCenter = React.lazy(() => import('./pages/CoverageCenter'))
 const AlertQueue      = React.lazy(() => import('./pages/AlertQueue'))
 const CaseManagement  = React.lazy(() => import('./pages/CaseManagement'))
 const SuppressionsPage = React.lazy(() => import('./pages/Suppressions'))
+const Ingestion       = React.lazy(() => import('./pages/Ingestion'))
 
 // ─── Loading Fallback for Suspense ───
 function LoadingFallback() {
@@ -158,6 +159,7 @@ export default function App() {
     'alert-queue': <AlertQueue       simResult={simResult}        token={token} />,
     cases:         <CaseManagement   simResult={simResult}        token={token} />,
     suppressions:  <SuppressionsPage                              token={token} />,
+    ingestion:     <Ingestion                                     token={token} />,
   }
 
   return (
