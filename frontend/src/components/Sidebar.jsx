@@ -39,16 +39,17 @@ const NAV_SECTIONS = [
   {
     label: 'Tools',
     items: [
-      { id: 'benchmark', label: 'Benchmark', labelKey: 'nav.benchmark', icon: BookOpen, tag: 'NEW' },
+      { id: 'benchmark', label: 'Benchmark',   labelKey: 'nav.benchmark',  icon: BookOpen,      tag: 'NEW'  },
+      { id: 'soar',      label: 'SOAR',         labelKey: 'nav.soar',       icon: Shield,        tag: 'NEW'  },
       { id: 'risk-matrix', label: 'Risk Matrix', labelKey: 'nav.riskMatrix', icon: AlertTriangle },
-      { id: 'report', label: 'Report', labelKey: 'nav.report', icon: FileText },
-      { id: 'comparison', label: 'Compare', labelKey: 'nav.comparison', icon: GitCompare },
-      { id: 'builder', label: 'Builder', labelKey: 'nav.builder', icon: PenTool },
+      { id: 'report',    label: 'Report',       labelKey: 'nav.report',     icon: FileText       },
+      { id: 'comparison', label: 'Compare',     labelKey: 'nav.comparison', icon: GitCompare     },
+      { id: 'builder',   label: 'Builder',      labelKey: 'nav.builder',    icon: PenTool        },
     ]
   }
 ]
 
-const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark']
+const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark', 'soar']
 
 export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLangChange, llmStatus }) {
   const t = i18n?.t || ((k) => k)

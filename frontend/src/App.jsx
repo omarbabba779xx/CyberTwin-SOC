@@ -26,7 +26,8 @@ const Maturity = React.lazy(() => import('./pages/Maturity'))
 const Analytics = React.lazy(() => import('./pages/Analytics'))
 const AttackTree = React.lazy(() => import('./pages/AttackTree'))
 const Benchmark = React.lazy(() => import('./pages/Benchmark'))
-const Anomaly = React.lazy(() => import('./pages/Anomaly'))
+const Anomaly   = React.lazy(() => import('./pages/Anomaly'))
+const SOAR      = React.lazy(() => import('./pages/SOAR'))
 
 // ─── Loading Fallback for Suspense ───
 function LoadingFallback() {
@@ -147,7 +148,8 @@ export default function App() {
     comparison: <Comparison history={history} />,
     'attack-tree': <AttackTree result={simResult} scenario={simResult?.scenario} i18n={i18n} />,
     benchmark: <Benchmark scenarioId={simResult?.scenario?.id} token={token} />,
-    anomaly: <Anomaly scenarioId={simResult?.scenario?.id} token={token} />,
+    anomaly:   <Anomaly   scenarioId={simResult?.scenario?.id} token={token} />,
+    soar:      <SOAR      simResult={simResult}                 token={token} />,
   }
 
   return (

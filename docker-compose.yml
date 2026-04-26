@@ -1,29 +1,151 @@
+# CyberTwin SOC — Production Docker Compose
+# Usage:
+#   docker-compose up -d                         # start all services
+#   docker-compose up -d --profile soar          # + TheHive & Cortex
+#   docker-compose logs -f backend               # stream backend logs
+#   docker-compose down -v                       # stop & remove volumes
+
 version: "3.9"
 
+networks:
+  cybertwin-net:
+    driver: bridge
+
+volumes:
+  redis-data:
+  backend-data:
+  thehive-data:
+  elasticsearch-data:
+
 services:
+
+  # ── Redis cache ──────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: cybertwin-redis
+    restart: unless-stopped
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - cybertwin-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── FastAPI Backend ──────────────────────────────────────────────────────
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
+    container_name: cybertwin-backend
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/app/backend
-      - ./data:/app/data
-      - ./scenarios:/app/scenarios
+      - backend-data:/app/data
+      - ./scenarios:/app/scenarios:ro
+    env_file:
+      - .env
     environment:
-      - PYTHONUNBUFFERED=1
-    command: uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
+      PYTHONUNBUFFERED: "1"
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: "http://localhost,http://localhost:80,http://frontend"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - cybertwin-net
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 20s
+      retries: 3
 
+  # ── React Frontend (nginx) ───────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ""
+    container_name: cybertwin-frontend
+    restart: unless-stopped
     ports:
-      - "3000:3000"
-    volumes:
-      - ./frontend/src:/app/src
+      - "80:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+    networks:
+      - cybertwin-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── TheHive (SOAR) — optional, start with: --profile soar ───────────────
+  elasticsearch:
+    image: elasticsearch:7.17.18
+    container_name: cybertwin-elasticsearch
+    restart: unless-stopped
+    profiles: ["soar"]
     environment:
-      - VITE_API_URL=http://backend:8000
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - cybertwin-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  thehive:
+    image: strangebee/thehive:5.3
+    container_name: cybertwin-thehive
+    restart: unless-stopped
+    profiles: ["soar"]
+    ports:
+      - "9000:9000"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      JVM_OPTS: "-Xms512m -Xmx512m"
+    volumes:
+      - thehive-data:/opt/thehive/data
+    networks:
+      - cybertwin-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/v1/status"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
+
+  cortex:
+    image: thehiveproject/cortex:3.1.8
+    container_name: cybertwin-cortex
+    restart: unless-stopped
+    profiles: ["soar"]
+    ports:
+      - "9001:9001"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - cybertwin-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9001/api/status"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 5
