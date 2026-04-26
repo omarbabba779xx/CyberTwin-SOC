@@ -88,23 +88,74 @@ jobs:
   security:
     runs-on: ubuntu-latest
     name: Security Scans (non-blocking)
+    permissions:
+      contents: read
+      security-events: write   # for SARIF upload
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # gitleaks needs full history
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
-      - name: Install scanners
-        run: pip install bandit pip-audit --quiet
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Bandit (Python static security analysis)
-        run: bandit -r backend/ -ll --skip B101,B104 || true
+      - name: Install Python scanners
+        run: pip install bandit pip-audit cyclonedx-bom semgrep --quiet
 
-      - name: pip-audit (CVE scan on Python dependencies)
+      - name: Bandit — Python static security analysis
+        run: bandit -r backend/ -ll --skip B101,B104 -f txt || true
+
+      - name: pip-audit — CVE scan on Python dependencies
         run: pip-audit -r requirements.txt --strict || true
+
+      - name: Semgrep — multi-language SAST (Python + JS)
+        run: semgrep --config=p/security-audit --config=p/python --config=p/javascript --error || true
+
+      - name: Gitleaks — secret scanning
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm audit — frontend dependencies
+        working-directory: frontend
+        run: npm audit --audit-level=high || true
+
+      - name: Trivy — filesystem vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: CycloneDX SBOM — Python
+        run: cyclonedx-py requirements -i requirements.txt -o sbom-python.json --output-format json || true
+
+      - name: CycloneDX SBOM — Frontend
+        working-directory: frontend
+        run: |
+          npx --yes @cyclonedx/cyclonedx-npm --output-file ../sbom-frontend.json || true
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sbom-${{ github.sha }}
+          path: |
+            sbom-python.json
+            sbom-frontend.json
+          retention-days: 30
 
   docker:
     runs-on: ubuntu-latest

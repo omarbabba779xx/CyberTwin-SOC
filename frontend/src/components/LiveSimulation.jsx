@@ -43,7 +43,17 @@ export default function LiveSimulation({ scenarioId, onComplete, onCancel }) {
 
   // ---- WebSocket connection ----
   useEffect(() => {
-    const wsUrl = `ws://localhost:8000/ws/simulate/${scenarioId}`
+    // Build a WebSocket URL that works in:
+    //   - dev (Vite on :5173, backend on :8000)            -> VITE_API_URL=http://localhost:8000
+    //   - prod behind nginx (same origin, /ws/* proxied)   -> VITE_API_URL empty -> relative URL
+    const apiBase = import.meta.env.VITE_API_URL || ''
+    let wsUrl
+    if (apiBase) {
+      wsUrl = apiBase.replace(/^http/, 'ws') + `/ws/simulate/${scenarioId}`
+    } else {
+      const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      wsUrl = `${wsScheme}://${window.location.host}/ws/simulate/${scenarioId}`
+    }
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
 

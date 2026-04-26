@@ -617,7 +617,7 @@ CORTEX_API_KEY=your-cortex-api-key
 ```bash
 # 1. Clone
 git clone https://github.com/omarbabba779xx/CyberTwin-SOC.git
-cd "CyberTwin SOC"
+cd CyberTwin-SOC
 
 # 2. Configure environment
 cp .env.example .env          # edit passwords, JWT secret
@@ -675,7 +675,7 @@ Content-Type: application/json
 | `POST` | `/api/mitre/sync-taxii` | Live TAXII 2.1 sync |
 | `GET` | `/api/sigma/rules` | Loaded Sigma rules |
 | `POST` | `/api/sigma/upload` | Upload new Sigma rule |
-| `WS` | `/ws/simulation/{id}` | Live simulation stream |
+| `WS` | `/ws/simulate/{scenario_id}?token={jwt}` | Live simulation stream (auth via query token) |
 | `GET` | `/api/audit` | Audit log (admin only) |
 | `GET` | `/docs` | Interactive Swagger UI |
 
@@ -728,8 +728,8 @@ Content-Type: application/json
 
 ```bash
 # Clone the repository
-git clone https://github.com/YOUR_USERNAME/CyberTwin-SOC.git
-cd "CyberTwin SOC"
+git clone https://github.com/omarbabba779xx/CyberTwin-SOC.git
+cd CyberTwin-SOC
 
 # Create virtual environment
 python -m venv .venv

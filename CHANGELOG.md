@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (Phase 1.5 — Documentation & deployment honesty)
+
+- README documented the WebSocket as `/ws/simulation/{id}` but the actual
+  endpoint is `/ws/simulate/{scenario_id}`. Aligned README, kept code stable.
+- Quick Start instructions used `cd "CyberTwin SOC"` (with a space) right
+  after `git clone`, which always failed because `git clone` creates the
+  directory `CyberTwin-SOC` (with a hyphen). Fixed in two locations.
+- Replaced the `YOUR_USERNAME` placeholder in the second Quick Start block
+  with the real `omarbabba779xx` org.
+- `frontend/src/components/LiveSimulation.jsx` had a hardcoded
+  `ws://localhost:8000/ws/simulate/...` URL, which broke the live feed when
+  the app was served behind nginx in production. Now derives the URL from
+  `VITE_API_URL` if set, otherwise from `window.location` (relative URL,
+  works through any reverse proxy with `wss://` upgrade).
+
+### Added (Phase 1.5)
+
+- `CODE_OF_CONDUCT.md` — Contributor Covenant 2.1.
+- `docker-compose.yml`: new `postgres` service under the opt-in
+  `--profile prod-db` (PostgreSQL 16, named volume, healthcheck), plus a
+  `postgres-data` named volume. Documented in the file's header.
+- `.env.example`: new `POSTGRES_PASSWORD` variable, commented `DATABASE_URL`
+  example, and clearer profile documentation.
+- CI security job extended with non-blocking scanners:
+  `semgrep` (multi-language SAST), `gitleaks` (secret scanning),
+  `npm audit` (frontend deps), `trivy` (filesystem CVE scan), and
+  CycloneDX SBOM generation for both Python and JS, uploaded as a
+  CI artifact tagged with the commit SHA.
+
 ### Fixed
 
 - **Critical**: `/api/soar/push/{id}` and `/api/soar/analyze-iocs/{id}` were
