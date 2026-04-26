@@ -12,8 +12,11 @@
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-622%20Techniques-red?style=flat-square)](https://attack.mitre.org)
 [![Detection Rules](https://img.shields.io/badge/Detection%20Rules-46-orange?style=flat-square)](backend/detection/rules.py)
 [![Attack Scenarios](https://img.shields.io/badge/Attack%20Scenarios-11-critical?style=flat-square)](scenarios/)
+[![Tests](https://img.shields.io/badge/Tests-128%20passing-brightgreen?style=flat-square)](tests/)
 [![NIST CSF](https://img.shields.io/badge/NIST%20CSF-v1.1-blue?style=flat-square)](https://www.nist.gov/cyberframework)
 [![CIS Controls](https://img.shields.io/badge/CIS%20Controls-v8-purple?style=flat-square)](https://www.cisecurity.org/controls)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&style=flat-square)](docker-compose.yml)
+[![SOAR](https://img.shields.io/badge/SOAR-TheHive%20%2B%20Cortex-8B5CF6?style=flat-square)](backend/soar/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 
 </div>
@@ -32,6 +35,8 @@
 - [Scoring & Benchmarking](#-scoring--benchmarking)
 - [Attack Scenarios](#-attack-scenarios)
 - [Frontend Dashboard](#-frontend-dashboard)
+- [SOAR Integration](#-soar-integration)
+- [Docker Deployment](#-docker-deployment)
 - [API Reference](#-api-reference)
 - [Installation](#-installation)
 - [Configuration](#-configuration)
@@ -495,6 +500,155 @@ The AI analyst generates natural-language incident reports automatically:
 
 ---
 
+## 🔗 SOAR Integration
+
+CyberTwin SOC connects to **TheHive 5** and **Cortex 3** to automate incident response after every simulation.
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                       SOAR Automation Flow                             │
+│                                                                        │
+│  CyberTwin Simulation                                                  │
+│        │                                                               │
+│        │  POST /api/soar/push/{scenario_id}                            │
+│        ▼                                                               │
+│  ┌─────────────────────────────────────────────────────┐              │
+│  │                   TheHive 5                          │              │
+│  │                                                      │              │
+│  │  Case created automatically with:                    │              │
+│  │  ├─ Title      : [CyberTwin] Scenario — Score/Risk  │              │
+│  │  ├─ Description: Full simulation report (Markdown)   │              │
+│  │  ├─ Severity   : Low / Medium / High / Critical      │              │
+│  │  ├─ Observables: IOCs extracted by AI analyst        │              │
+│  │  ├─ Tasks      : Recommendations as response tasks   │              │
+│  │  └─ Tags       : cybertwin, simulation, risk level   │              │
+│  └──────────────────────┬──────────────────────────────┘              │
+│                          │                                             │
+│                          │  POST /api/soar/analyze-iocs/{id}          │
+│                          ▼                                             │
+│  ┌─────────────────────────────────────────────────────┐              │
+│  │                   Cortex 3                           │              │
+│  │                                                      │              │
+│  │  IOCs analyzed automatically by:                     │              │
+│  │  ├─ VirusTotal_GetReport_3_1  (hashes, domains)      │              │
+│  │  ├─ AbuseIPDB_1_0             (IP addresses)         │              │
+│  │  ├─ Shodan_DNSResolve_1_0     (domains)              │              │
+│  │  └─ URLhaus_2_0               (URLs)                 │              │
+│  │                                                      │              │
+│  │  Job reports available via GET /api/soar/analyzers  │              │
+│  └─────────────────────────────────────────────────────┘              │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### SOAR API Endpoints
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/soar/status` | TheHive + Cortex connectivity check |
+| `POST` | `/api/soar/push/{id}` | Push simulation → TheHive case |
+| `POST` | `/api/soar/analyze-iocs/{id}` | Submit IOCs → Cortex analyzers |
+| `GET` | `/api/soar/analyzers` | List available Cortex analyzers |
+
+### Enable SOAR (Docker)
+
+```bash
+# Start with TheHive 5 + Cortex 3 + Elasticsearch
+docker-compose --profile soar up -d
+
+# TheHive UI  →  http://localhost:9000
+# Cortex UI   →  http://localhost:9001
+```
+
+### Configure in `.env`
+
+```env
+THEHIVE_URL=http://thehive:9000
+THEHIVE_API_KEY=your-thehive-api-key
+THEHIVE_ORG=cybertwin
+CORTEX_URL=http://cortex:9001
+CORTEX_API_KEY=your-cortex-api-key
+```
+
+---
+
+## 🐳 Docker Deployment
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                   Production Docker Architecture                        │
+│                                                                         │
+│  Browser                                                                │
+│    │  :80                                                               │
+│    ▼                                                                    │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                    nginx:1.27-alpine                              │  │
+│  │  (frontend container)                                            │  │
+│  │                                                                  │  │
+│  │  /          → React SPA (built dist/)                            │  │
+│  │  /api/*     → proxy_pass http://backend:8000                     │  │
+│  │  /ws/*      → proxy_pass http://backend:8000 (WebSocket upgrade) │  │
+│  │  /health    → 200 OK (nginx healthcheck)                         │  │
+│  └─────────────────────────┬────────────────────────────────────────┘  │
+│                             │ :8000                                     │
+│  ┌──────────────────────────▼───────────────────────────────────────┐  │
+│  │              python:3.12-slim  (backend container)               │  │
+│  │                                                                  │  │
+│  │  uvicorn — 2 workers — non-root user                             │  │
+│  │  MITRE ATT&CK bundle pre-generated at build time                 │  │
+│  │  Healthcheck: GET /api/health every 30s                          │  │
+│  └──────────┬──────────────────────────────────────────────────────┘  │
+│             │ :6379                                                     │
+│  ┌──────────▼──────────────┐                                           │
+│  │  redis:7-alpine          │  256 MB RAM, LRU eviction               │
+│  │  (cache container)       │  Persisted to named volume              │
+│  └─────────────────────────┘                                           │
+│                                                                         │
+│  ── optional --profile soar ─────────────────────────────────────────  │
+│  ┌───────────────┐  ┌───────────────┐  ┌────────────────────────────┐  │
+│  │ strangebee/   │  │ thehiveproject │  │  elasticsearch:7.17        │  │
+│  │ thehive:5.3   │  │ /cortex:3.1.8 │  │  (shared index store)      │  │
+│  │ :9000         │  │ :9001         │  │                            │  │
+│  └───────────────┘  └───────────────┘  └────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Quick Start
+
+```bash
+# 1. Clone
+git clone https://github.com/omarbabba779xx/CyberTwin-SOC.git
+cd "CyberTwin SOC"
+
+# 2. Configure environment
+cp .env.example .env          # edit passwords, JWT secret
+
+# 3. Start production stack (Redis + FastAPI + nginx)
+docker-compose up -d
+
+# 4. Access
+#    Dashboard  →  http://localhost
+#    API docs   →  http://localhost/api/docs  (proxied via nginx)
+#    Direct API →  http://localhost:8000/docs
+
+# 5. With SOAR (TheHive + Cortex)
+docker-compose --profile soar up -d
+```
+
+### Container Summary
+
+| Container | Image | Port | Role |
+|---|---|---|---|
+| `cybertwin-frontend` | `nginx:1.27-alpine` | **80** | React SPA + API reverse proxy |
+| `cybertwin-backend` | `python:3.12-slim` | 8000 | FastAPI — 2 uvicorn workers |
+| `cybertwin-redis` | `redis:7-alpine` | 6379 | Session cache + rate limiting |
+| `cybertwin-thehive` ⚙️ | `strangebee/thehive:5.3` | 9000 | Case management |
+| `cybertwin-cortex` ⚙️ | `thehiveproject/cortex:3.1.8` | 9001 | IOC analyzers |
+| `cybertwin-elasticsearch` ⚙️ | `elasticsearch:7.17` | 9200 | SOAR data store |
+
+> ⚙️ = optional, started with `--profile soar`
+
+---
+
 ## 📡 API Reference
 
 ### Authentication
@@ -745,26 +899,72 @@ CyberTwin SOC/
 - [x] Phase 6 — MITRE ATT&CK 622 techniques + TAXII sync
 - [x] Phase 7 — Infrastructure (Redis cache, WebSocket, async)
 - [x] Phase 8 — NIST CSF v1.1 + CIS Controls v8 benchmarking
-- [x] Phase 9 — Frontend: Benchmark, Anomaly, LLM status pages
-- [ ] Phase 10 — Unit test suite
-- [ ] Phase 11 — Docker Compose production deployment
-- [ ] Phase 12 — SOAR integration (TheHive, Cortex)
+- [x] Phase 9 — Frontend: Benchmark, Anomaly, SOAR, LLM status pages
+- [x] Phase 10 — Unit test suite (128 tests, 100% passing)
+- [x] Phase 11 — Docker Compose production deployment (multi-stage + nginx)
+- [x] Phase 12 — SOAR integration (TheHive 5 + Cortex 3)
 
 ---
 
-## 👤 Author
+## 👤 About
+
+<table>
+<tr>
+<td>
 
 **Omar Babba**  
-MSc Cybersecurity Student  
-CyberTwin SOC — Enterprise Digital Twin for SOC Readiness Evaluation
+MSc Cybersecurity — Université Paris-Saclay  
+
+> *"CyberTwin SOC demonstrates the application of the Digital Twin concept to operational cybersecurity, providing a concrete tool for continuous evaluation and improvement of organizational security posture."*
+
+</td>
+</tr>
+</table>
+
+### What is a Cyber Digital Twin?
+
+A **Cyber Digital Twin** is a faithful virtual replica of an IT infrastructure — its hosts, users, services and network flows — used to safely simulate cyber attacks and measure defense effectiveness **without any risk to the real environment**.
+
+```
+  Real Organization                    CyberTwin SOC
+  ────────────────────                 ─────────────────────────────
+  Corporate network        ──model──►  Simulated hosts & services
+  Real employees           ──model──►  Synthetic users & behaviors
+  Production workloads     ──model──►  Simulated processes & logs
+  Unknown threats          ──model──►  622 MITRE ATT&CK techniques
+  Manual security reviews  ──model──►  Automated simulation engine
+  Guesswork risk scores    ──model──►  NIST CSF + CIS Controls scoring
+  Slow incident response   ──model──►  AI analyst + SOAR automation
+```
+
+### Academic Context
+
+This project was developed as part of an MSc Cybersecurity thesis on **"Digital Twin Applications for SOC Readiness Evaluation"**. It integrates:
+
+- Concepts from **NIST SP 800-61** (Computer Security Incident Handling)
+- The **MITRE ATT&CK** framework (Enterprise v14)
+- **NIST CSF v1.1** and **CIS Controls v8** compliance benchmarking
+- Machine Learning (Isolation Forest, UEBA) for behavioral anomaly detection
+- Large Language Models (Ollama) for automated incident narration
+
+### Connect
+
+[![GitHub](https://img.shields.io/badge/GitHub-omarbabba779xx-181717?logo=github&style=flat-square)](https://github.com/omarbabba779xx)
 
 ---
 
 <div align="center">
 
-Built with ❤️ for the cybersecurity community
+```
+  ╔═══════════════════════════════════════════════════════════╗
+  ║              🛡️  CyberTwin SOC  v3.0                     ║
+  ║       Simulate · Detect · Analyze · Respond              ║
+  ╚═══════════════════════════════════════════════════════════╝
+```
 
-**[⭐ Star this repo](https://github.com/YOUR_USERNAME/CyberTwin-SOC)** if you find it useful!
+**[⭐ Star this repo](https://github.com/omarbabba779xx/CyberTwin-SOC)** if you find it useful!
+
+Built with ❤️ for the cybersecurity community
 
 </div>
 
