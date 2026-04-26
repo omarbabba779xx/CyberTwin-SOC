@@ -906,65 +906,11 @@ CyberTwin SOC/
 
 ---
 
-## 👤 About
-
-<table>
-<tr>
-<td>
-
-**Omar Babba**  
-MSc Cybersecurity — Université Paris-Saclay  
-
-> *"CyberTwin SOC demonstrates the application of the Digital Twin concept to operational cybersecurity, providing a concrete tool for continuous evaluation and improvement of organizational security posture."*
-
-</td>
-</tr>
-</table>
-
-### What is a Cyber Digital Twin?
-
-A **Cyber Digital Twin** is a faithful virtual replica of an IT infrastructure — its hosts, users, services and network flows — used to safely simulate cyber attacks and measure defense effectiveness **without any risk to the real environment**.
-
-```
-  Real Organization                    CyberTwin SOC
-  ────────────────────                 ─────────────────────────────
-  Corporate network        ──model──►  Simulated hosts & services
-  Real employees           ──model──►  Synthetic users & behaviors
-  Production workloads     ──model──►  Simulated processes & logs
-  Unknown threats          ──model──►  622 MITRE ATT&CK techniques
-  Manual security reviews  ──model──►  Automated simulation engine
-  Guesswork risk scores    ──model──►  NIST CSF + CIS Controls scoring
-  Slow incident response   ──model──►  AI analyst + SOAR automation
-```
-
-### Academic Context
-
-This project was developed as part of an MSc Cybersecurity thesis on **"Digital Twin Applications for SOC Readiness Evaluation"**. It integrates:
-
-- Concepts from **NIST SP 800-61** (Computer Security Incident Handling)
-- The **MITRE ATT&CK** framework (Enterprise v14)
-- **NIST CSF v1.1** and **CIS Controls v8** compliance benchmarking
-- Machine Learning (Isolation Forest, UEBA) for behavioral anomaly detection
-- Large Language Models (Ollama) for automated incident narration
-
-### Connect
-
-[![GitHub](https://img.shields.io/badge/GitHub-omarbabba779xx-181717?logo=github&style=flat-square)](https://github.com/omarbabba779xx)
-
----
-
 <div align="center">
 
-```
-  ╔═══════════════════════════════════════════════════════════╗
-  ║              🛡️  CyberTwin SOC  v3.0                     ║
-  ║       Simulate · Detect · Analyze · Respond              ║
-  ╚═══════════════════════════════════════════════════════════╝
-```
+Built with ❤️ for the cybersecurity community
 
 **[⭐ Star this repo](https://github.com/omarbabba779xx/CyberTwin-SOC)** if you find it useful!
-
-Built with ❤️ for the cybersecurity community
 
 </div>
 
