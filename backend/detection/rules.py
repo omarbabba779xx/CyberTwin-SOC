@@ -64,6 +64,7 @@ _TS_FORMATS = [
 
 _ts_cache: dict[str, datetime] = {}
 
+
 def _parse_ts(ts_str: str) -> datetime:
     """Best-effort timestamp parsing with cache."""
     if ts_str in _ts_cache:
@@ -138,7 +139,7 @@ def _multiple_failed_logins(events: list[dict[str, Any]]) -> list[dict[str, Any]
         e for e in events
         if e.get("log_source") == "authentication"
         and e.get("event_type", "").lower() in ("login_failure", "failed_login",
-                                                  "authentication_failure", "logon_failure")
+                                                "authentication_failure", "logon_failure")
     ]
     # Group by user
     by_user: dict[str, list[dict[str, Any]]] = {}
@@ -184,7 +185,7 @@ def _login_external_ip(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         e for e in events
         if e.get("log_source") == "authentication"
         and e.get("event_type", "").lower() in ("login_success", "successful_login",
-                                                  "authentication_success", "logon_success")
+                                                "authentication_success", "logon_success")
         and _is_external_ip(e.get("src_ip", ""))
     ]
 
@@ -234,7 +235,7 @@ def _ssh_brute_force(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         e for e in events
         if e.get("log_source") == "authentication"
         and e.get("event_type", "").lower() in ("login_failure", "failed_login",
-                                                  "authentication_failure", "logon_failure")
+                                                "authentication_failure", "logon_failure")
         and (
             e.get("raw_data", {}).get("protocol", "").lower() == "ssh"
             or e.get("raw_data", {}).get("service", "").lower() == "ssh"
@@ -331,7 +332,7 @@ def _usb_device(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         e for e in events
         if (
             e.get("event_type", "").lower() in ("usb_connect", "usb_device",
-                                                  "device_connected")
+                                                "device_connected")
             or "usb" in " ".join(e.get("tags", [])).lower()
             or "usb" in e.get("description", "").lower()
         )
@@ -412,7 +413,7 @@ def _bulk_file_deletion(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         e for e in events
         if e.get("log_source") in ("file_access", "security")
         and e.get("event_type", "").lower() in ("file_delete", "file_deletion",
-                                                  "delete", "removed")
+                                                "delete", "removed")
     ]
     by_user: dict[str, list[dict[str, Any]]] = {}
     for e in deletes:
@@ -437,7 +438,7 @@ def _phishing_email(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
         if e.get("log_source") != "email":
             continue
         raw = e.get("raw_data", {})
-        desc = e.get("description", "").lower()
+        e.get("description", "").lower()
         # Check for suspicious indicators
         spf_fail = raw.get("SPF", "").lower() == "fail"
         dkim_fail = raw.get("DKIM", "").lower() == "fail"

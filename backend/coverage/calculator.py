@@ -224,8 +224,8 @@ class CoverageCalculator:
                 if r.required_logs:
                     required_logs = sorted(set(required_logs) | set(r.required_logs))
                     break
-            missing_logs = [l for l in required_logs if l not in self._available_logs]
-            available_logs = [l for l in required_logs if l in self._available_logs]
+            missing_logs = [log_name for log_name in required_logs if log_name not in self._available_logs]
+            available_logs = [log_name for log_name in required_logs if log_name in self._available_logs]
 
             # Confidence: weighted average of rule confidences * severity weight
             conf = 0.0
@@ -318,9 +318,11 @@ class CoverageCalculator:
         s.by_status = dict(by_status)
 
         s.validated = by_status.get(TechniqueStatus.TESTED_DETECTED.value, 0)
-        s.failed    = by_status.get(TechniqueStatus.TESTED_FAILED.value, 0)
-        s.untested  = by_status.get(TechniqueStatus.RULE_UNTESTED.value, 0) \
-                    + by_status.get(TechniqueStatus.RULE_EXISTS.value, 0)
+        s.failed = by_status.get(TechniqueStatus.TESTED_FAILED.value, 0)
+        s.untested = (
+            by_status.get(TechniqueStatus.RULE_UNTESTED.value, 0)
+            + by_status.get(TechniqueStatus.RULE_EXISTS.value, 0)
+        )
         s.not_covered = by_status.get(TechniqueStatus.NOT_COVERED.value, 0)
 
         s.tested = s.validated + s.failed

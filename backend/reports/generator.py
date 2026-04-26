@@ -5,7 +5,6 @@ Produces comprehensive incident reports with scoring, MITRE mapping, and recomme
 
 import json
 from datetime import datetime
-from typing import Any
 from pathlib import Path
 
 
@@ -337,7 +336,7 @@ class ReportGenerator:
 
         lines = [
             "=" * 70,
-            f"  CYBERTWIN SOC - INCIDENT REPORT",
+            "  CYBERTWIN SOC - INCIDENT REPORT",
             f"  {self.report_data.get('title', '')}",
             "=" * 70,
             "",

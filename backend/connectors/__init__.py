@@ -21,7 +21,7 @@ from .base import (
     ITSMConnector, TIConnector, ConnectorError, ConnectorResult,
 )
 from .registry import register, get_connector, list_connectors
-from . import mock, stubs   # populate the registry on import
+from . import mock, stubs   # noqa: F401  -- side-effect: populate registry
 
 __all__ = [
     "BaseConnector", "SIEMConnector", "SOARConnector", "EDRConnector",

@@ -12,39 +12,39 @@ from typing import Any, Optional
 # ---------------------------------------------------------------------------
 
 class AlertVerdict(str, Enum):
-    TRUE_POSITIVE   = "true_positive"
-    FALSE_POSITIVE  = "false_positive"
+    TRUE_POSITIVE = "true_positive"
+    FALSE_POSITIVE = "false_positive"
     BENIGN_POSITIVE = "benign_positive"
-    DUPLICATE       = "duplicate"
+    DUPLICATE = "duplicate"
     NEEDS_MORE_DATA = "needs_more_data"
-    ESCALATED       = "escalated"
-    CLOSED          = "closed"
+    ESCALATED = "escalated"
+    CLOSED = "closed"
 
 
 class CaseStatus(str, Enum):
-    NEW         = "new"
-    OPEN        = "open"
+    NEW = "new"
+    OPEN = "open"
     IN_PROGRESS = "in_progress"
-    PENDING     = "pending"
-    RESOLVED    = "resolved"
-    CLOSED      = "closed"
+    PENDING = "pending"
+    RESOLVED = "resolved"
+    CLOSED = "closed"
     FALSE_POSITIVE = "false_positive"
 
 
 class CaseSeverity(str, Enum):
-    LOW      = "low"
-    MEDIUM   = "medium"
-    HIGH     = "high"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
     CRITICAL = "critical"
 
 
 class SuppressionScope(str, Enum):
-    RULE    = "rule"
-    USER    = "user"
-    HOST    = "host"
-    IP      = "ip"
+    RULE = "rule"
+    USER = "user"
+    HOST = "host"
+    IP = "ip"
     PROCESS = "process"
-    TENANT  = "tenant"
+    TENANT = "tenant"
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +154,7 @@ class Suppression:
 
 SLA_HOURS = {
     CaseSeverity.CRITICAL.value: 1,
-    CaseSeverity.HIGH.value:     4,
-    CaseSeverity.MEDIUM.value:  24,
-    CaseSeverity.LOW.value:     72,
+    CaseSeverity.HIGH.value: 4,
+    CaseSeverity.MEDIUM.value: 24,
+    CaseSeverity.LOW.value: 72,
 }

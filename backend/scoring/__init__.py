@@ -196,7 +196,7 @@ class ScoringEngine:
 
     @staticmethod
     def _observed_sources(logs: list[dict]) -> set[str]:
-        return {l.get("log_source", "") for l in logs if l.get("log_source")}
+        return {log.get("log_source", "") for log in logs if log.get("log_source")}
 
     @staticmethod
     def _mean_ttd(
@@ -224,11 +224,11 @@ class ScoringEngine:
 
         # Earliest malicious log per technique
         first_log: dict[str, datetime] = {}
-        for l in logs:
-            tid = l.get("technique_id")
+        for log in logs:
+            tid = log.get("technique_id")
             if tid not in technique_ids:
                 continue
-            ts = _parse(l.get("timestamp", ""))
+            ts = _parse(log.get("timestamp", ""))
             if ts and (tid not in first_log or ts < first_log[tid]):
                 first_log[tid] = ts
 
@@ -363,20 +363,23 @@ class ScoringEngine:
         visibility = scores.get("visibility_score", 0)
 
         def _tier(score: float) -> str:
-            if score >= 80: return "Tier 4 — Adaptive"
-            if score >= 60: return "Tier 3 — Repeatable"
-            if score >= 40: return "Tier 2 — Risk Informed"
+            if score >= 80:
+                return "Tier 4 — Adaptive"
+            if score >= 60:
+                return "Tier 3 — Repeatable"
+            if score >= 40:
+                return "Tier 2 — Risk Informed"
             return "Tier 1 — Partial"
 
         return {
             "framework": "NIST CSF v1.1",
             "overall_tier": _tier(overall),
             "functions": {
-                "IDENTIFY":  {"score": round(visibility * 0.9 + coverage * 0.1, 1),  "tier": _tier(visibility)},
-                "PROTECT":   {"score": round(coverage * 0.6 + detection * 0.4, 1),   "tier": _tier(coverage)},
-                "DETECT":    {"score": round(detection * 0.5 + coverage * 0.5, 1),   "tier": _tier(detection)},
-                "RESPOND":   {"score": round(response, 1),                            "tier": _tier(response)},
-                "RECOVER":   {"score": round(response * 0.7 + overall * 0.3, 1),     "tier": _tier(response)},
+                "IDENTIFY": {"score": round(visibility * 0.9 + coverage * 0.1, 1), "tier": _tier(visibility)},
+                "PROTECT": {"score": round(coverage * 0.6 + detection * 0.4, 1), "tier": _tier(coverage)},
+                "DETECT": {"score": round(detection * 0.5 + coverage * 0.5, 1), "tier": _tier(detection)},
+                "RESPOND": {"score": round(response, 1), "tier": _tier(response)},
+                "RECOVER": {"score": round(response * 0.7 + overall * 0.3, 1), "tier": _tier(response)},
             },
         }
 
@@ -389,8 +392,10 @@ class ScoringEngine:
         visibility = scores.get("visibility_score", 0)
 
         def _ig(score: float) -> str:
-            if score >= 75: return "IG3 — Large Enterprise"
-            if score >= 50: return "IG2 — Mid-size Enterprise"
+            if score >= 75:
+                return "IG3 — Large Enterprise"
+            if score >= 50:
+                return "IG2 — Mid-size Enterprise"
             return "IG1 — SMB (Essential)"
 
         controls = [

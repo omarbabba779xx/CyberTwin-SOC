@@ -27,7 +27,6 @@ _ML_OK = False
 try:
     import numpy as np
     from sklearn.ensemble import IsolationForest
-    from sklearn.preprocessing import LabelEncoder
     _ML_OK = True
 except ImportError:
     logger.warning("scikit-learn/numpy not available — ML anomaly detection disabled. Run: pip install scikit-learn numpy")
@@ -38,7 +37,7 @@ except ImportError:
 # ---------------------------------------------------------------------------
 
 _LOG_TYPES = ["authentication", "process", "file_access", "network",
-               "firewall", "dns", "web_access", "email", "database", "security"]
+              "firewall", "dns", "web_access", "email", "database", "security"]
 _TYPE_IDX = {t: i for i, t in enumerate(_LOG_TYPES)}
 
 _HOURS = list(range(24))
@@ -160,7 +159,7 @@ class UEBAEngine:
         if b > 0 and p["bytes_out"]:
             mean_b = sum(p["bytes_out"]) / len(p["bytes_out"])
             if b > mean_b * 10 and b > 10 * 1024 * 1024:
-                flags.append(f"Data volume {b/1024/1024:.1f}MB is {b/max(mean_b,1):.0f}x above baseline")
+                flags.append(f"Data volume {b / 1024 / 1024:.1f}MB is {b / max(mean_b, 1):.0f}x above baseline")
                 score += 50.0
 
         return {"ueba_score": min(score, 100.0), "ueba_flags": flags}

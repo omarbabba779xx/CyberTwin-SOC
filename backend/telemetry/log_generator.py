@@ -15,7 +15,7 @@ import json
 import random
 import uuid
 from collections import Counter
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -106,8 +106,8 @@ _PORTS = {
 
 def _rand_ip(internal: bool = True) -> str:
     if internal:
-        return f"10.{random.randint(0,255)}.{random.randint(1,254)}.{random.randint(1,254)}"
-    return f"{random.randint(1,223)}.{random.randint(0,255)}.{random.randint(0,255)}.{random.randint(1,254)}"
+        return f"10.{random.randint(0, 255)}.{random.randint(1, 254)}.{random.randint(1, 254)}"
+    return f"{random.randint(1, 223)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
 
 
 def _rand_pid() -> int:
@@ -121,7 +121,7 @@ def _rand_port(ephemeral: bool = False) -> int:
 
 
 def _rand_mac() -> str:
-    return ":".join(f"{random.randint(0,255):02x}" for _ in range(6))
+    return ":".join(f"{random.randint(0, 255):02x}" for _ in range(6))
 
 
 def _rand_bytes() -> int:
@@ -182,25 +182,25 @@ class TelemetryEngine:
         """Return all stored logs whose *log_source* matches *log_type*
         (case-insensitive)."""
         lt = log_type.lower()
-        return [l for l in self._logs if l.log_source.lower() == lt]
+        return [log for log in self._logs if log.log_source.lower() == lt]
 
     def get_logs_by_severity(self, severity: str) -> list[LogEvent]:
         """Return all stored logs matching the given severity level."""
         sv = severity.lower()
-        return [l for l in self._logs if l.severity.lower() == sv]
+        return [log for log in self._logs if log.severity.lower() == sv]
 
     def get_logs_by_host(self, host_id: str) -> list[LogEvent]:
         """Return all stored logs where *src_host* or *dst_host* matches
         *host_id* (case-insensitive)."""
         hid = host_id.lower()
         return [
-            l for l in self._logs
-            if l.src_host.lower() == hid or l.dst_host.lower() == hid
+            log for log in self._logs
+            if log.src_host.lower() == hid or log.dst_host.lower() == hid
         ]
 
     def get_timeline(self) -> list[LogEvent]:
         """Return all stored logs sorted chronologically by timestamp."""
-        return sorted(self._logs, key=lambda l: l.timestamp)
+        return sorted(self._logs, key=lambda log: log.timestamp)
 
     def export_logs(self, format: str = "json") -> str:  # noqa: A002
         """Serialise all stored logs.  Currently supports ``json``."""
@@ -228,8 +228,8 @@ class TelemetryEngine:
 
         return {
             "total_logs": len(self._logs),
-            "malicious_logs": sum(1 for l in self._logs if l.is_malicious),
-            "benign_logs": sum(1 for l in self._logs if not l.is_malicious),
+            "malicious_logs": sum(1 for log in self._logs if log.is_malicious),
+            "benign_logs": sum(1 for log in self._logs if not log.is_malicious),
             "by_type": dict(by_type),
             "by_severity": dict(by_severity),
             "by_host": dict(by_host),
@@ -277,8 +277,8 @@ class TelemetryEngine:
         user = event.get("user", random.choice(_USERNAMES))
         src_ip = event.get("src_ip", _rand_ip(not is_mal))
         dst_ip = event.get("dst_ip", _rand_ip(True))
-        src_host = event.get("src_host", f"WKS-{random.randint(100,999)}")
-        dst_host = event.get("dst_host", f"DC-{random.randint(1,3):02d}")
+        src_host = event.get("src_host", f"WKS-{random.randint(100, 999)}")
+        dst_host = event.get("dst_host", f"DC-{random.randint(1, 3):02d}")
         success = event.get("success", not is_mal)
         auth_method = event.get("auth_method", random.choice(
             ["Kerberos", "NTLM", "LDAP", "Local", "SSO"]))
@@ -334,7 +334,7 @@ class TelemetryEngine:
         technique: Optional[str], scenario: Optional[str],
     ) -> list[LogEvent]:
         user = event.get("user", random.choice(_USERNAMES))
-        host = event.get("src_host", f"SRV-{random.randint(1,50):03d}")
+        host = event.get("src_host", f"SRV-{random.randint(1, 50):03d}")
         host_ip = event.get("src_ip", _rand_ip(True))
 
         if is_mal:
@@ -376,7 +376,7 @@ class TelemetryEngine:
                 "ParentImage": random.choice(_WINDOWS_PROCESSES),
                 "IntegrityLevel": random.choice(["Low", "Medium", "High", "System"]),
                 "Hashes": f"SHA256={uuid.uuid4().hex}{uuid.uuid4().hex[:32]}",
-                "FileVersion": f"{random.randint(1,10)}.{random.randint(0,9)}.{random.randint(0,9999)}",
+                "FileVersion": f"{random.randint(1, 10)}.{random.randint(0, 9)}.{random.randint(0, 9999)}",
                 "TerminalSessionId": random.randint(0, 5),
                 "CurrentDirectory": f"C:\\Users\\{user}\\",
             },
@@ -391,7 +391,7 @@ class TelemetryEngine:
         technique: Optional[str], scenario: Optional[str],
     ) -> list[LogEvent]:
         user = event.get("user", random.choice(_USERNAMES))
-        host = event.get("src_host", f"WKS-{random.randint(100,999)}")
+        host = event.get("src_host", f"WKS-{random.randint(100, 999)}")
         host_ip = event.get("src_ip", _rand_ip(True))
         action = event.get("action", random.choice(
             ["read", "write", "delete", "rename", "create"]))
@@ -402,7 +402,7 @@ class TelemetryEngine:
             severity = LogSeverity.MEDIUM.value
         else:
             filepath = event.get("file_path",
-                                 f"C:\\Users\\{user}\\Documents\\report_{random.randint(1,100)}.docx")
+                                 f"C:\\Users\\{user}\\Documents\\report_{random.randint(1, 100)}.docx")
             severity = LogSeverity.INFO.value
 
         desc = f"File {action}: {filepath} by user '{user}' on {host}"
@@ -453,8 +453,8 @@ class TelemetryEngine:
     ) -> list[LogEvent]:
         src_ip = event.get("src_ip", _rand_ip(True))
         dst_ip = event.get("dst_ip", _rand_ip(not is_mal))
-        src_host = event.get("src_host", f"WKS-{random.randint(100,999)}")
-        dst_host = event.get("dst_host", f"SRV-{random.randint(1,50):03d}")
+        src_host = event.get("src_host", f"WKS-{random.randint(100, 999)}")
+        dst_host = event.get("dst_host", f"SRV-{random.randint(1, 50):03d}")
         protocol = event.get("protocol", random.choice(
             ["TCP", "UDP", "TCP", "TCP"]))
         dst_port = event.get("dst_port", _rand_port())
@@ -554,7 +554,7 @@ class TelemetryEngine:
                 "DestinationPort": dst_port,
                 "dst_port": dst_port,
                 "destination_port": dst_port,
-                "Rule": event.get("rule", f"Rule-{random.randint(1,500)}"),
+                "Rule": event.get("rule", f"Rule-{random.randint(1, 500)}"),
                 "Zone": event.get("zone", random.choice(
                     ["DMZ", "Internal", "External", "Management"])),
                 "Interface": random.choice(["eth0", "eth1", "bond0", "vlan10"]),
@@ -590,7 +590,7 @@ class TelemetryEngine:
             log_source=LogSource.DNS.value,
             event_type="dns_query",
             severity=severity,
-            src_host=event.get("src_host", f"WKS-{random.randint(100,999)}"),
+            src_host=event.get("src_host", f"WKS-{random.randint(100, 999)}"),
             src_ip=src_ip,
             dst_host=event.get("dst_host", "DNS-01"),
             dst_ip=event.get("dst_ip", "10.0.0.53"),
@@ -611,7 +611,7 @@ class TelemetryEngine:
                 "AnswerCount": random.randint(0, 5),
                 "ResolvedIP": _rand_ip(False) if response_code == "NOERROR" else "",
                 "TTL": random.choice([60, 300, 600, 3600, 86400]),
-                "TransactionId": f"0x{random.randint(0,65535):04x}",
+                "TransactionId": f"0x{random.randint(0, 65535):04x}",
                 "ServerIP": "10.0.0.53",
             },
             tags=["dns"] + (["dga", "suspicious_domain"] if is_mal else []),
@@ -646,7 +646,7 @@ class TelemetryEngine:
             log_source=LogSource.WEB_ACCESS.value,
             event_type="http_request",
             severity=severity,
-            src_host=event.get("src_host", f"WKS-{random.randint(100,999)}"),
+            src_host=event.get("src_host", f"WKS-{random.randint(100, 999)}"),
             src_ip=src_ip,
             dst_host=event.get("dst_host", "PROXY-01"),
             dst_ip=event.get("dst_ip", _rand_ip(False)),
@@ -787,7 +787,7 @@ class TelemetryEngine:
                           else "SELECT * FROM users; DROP TABLE audit_log;--")
         db_name = event.get("database", random.choice(
             ["production", "hr_db", "inventory", "auth_db"]))
-        host = event.get("src_host", f"DB-{random.randint(1,5):02d}")
+        host = event.get("src_host", f"DB-{random.randint(1, 5):02d}")
 
         severity = LogSeverity.HIGH.value if is_mal else LogSeverity.INFO.value
         desc = f"Database query on '{db_name}' by '{user}': {query[:80]}"
@@ -833,7 +833,7 @@ class TelemetryEngine:
         alert_name = event.get("alert_name",
                                "Privilege Escalation Detected" if is_mal
                                else "Security Policy Applied")
-        host = event.get("src_host", f"SRV-{random.randint(1,50):03d}")
+        host = event.get("src_host", f"SRV-{random.randint(1, 50):03d}")
         user = event.get("user", random.choice(_USERNAMES))
 
         severity = LogSeverity.CRITICAL.value if is_mal else LogSeverity.INFO.value
@@ -879,7 +879,7 @@ class TelemetryEngine:
         action = event.get("action", random.choice([
             "login", "data_export", "config_change", "api_call"]))
         user = event.get("user", random.choice(_USERNAMES))
-        host = event.get("src_host", f"APP-{random.randint(1,10):02d}")
+        host = event.get("src_host", f"APP-{random.randint(1, 10):02d}")
 
         severity = LogSeverity.MEDIUM.value if is_mal else LogSeverity.INFO.value
         desc = f"Application '{app}' event: {action} by user '{user}'"
@@ -904,7 +904,7 @@ class TelemetryEngine:
                 "Action": action,
                 "SessionDuration": random.randint(1, 7200),
                 "RequestId": str(uuid.uuid4()),
-                "ClientVersion": f"{random.randint(1,5)}.{random.randint(0,9)}.{random.randint(0,99)}",
+                "ClientVersion": f"{random.randint(1, 5)}.{random.randint(0, 9)}.{random.randint(0, 99)}",
                 "Module": event.get("module", "core"),
                 "ResponseCode": 200 if not is_mal else random.choice([200, 403, 500]),
             },

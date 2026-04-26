@@ -20,12 +20,12 @@ from .models import (
 
 # Risk tier per (tactic, status). Lower priority number = higher urgency.
 _BASE_RISK: dict[TechniqueStatus, str] = {
-    TechniqueStatus.NOT_COVERED:         "high",
-    TechniqueStatus.NEEDS_DATA_SOURCE:   "high",
-    TechniqueStatus.RULE_UNTESTED:       "medium",
-    TechniqueStatus.RULE_EXISTS:         "medium",
-    TechniqueStatus.TESTED_FAILED:       "critical",
-    TechniqueStatus.NOISY:               "medium",
+    TechniqueStatus.NOT_COVERED: "high",
+    TechniqueStatus.NEEDS_DATA_SOURCE: "high",
+    TechniqueStatus.RULE_UNTESTED: "medium",
+    TechniqueStatus.RULE_EXISTS: "medium",
+    TechniqueStatus.TESTED_FAILED: "critical",
+    TechniqueStatus.NOISY: "medium",
 }
 
 

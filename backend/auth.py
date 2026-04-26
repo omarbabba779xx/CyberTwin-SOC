@@ -12,9 +12,6 @@ Roles hierarchy:
 
 from __future__ import annotations
 
-import hashlib
-import hmac
-import json
 import logging
 import os
 import secrets
@@ -24,7 +21,7 @@ from typing import Any, Optional
 
 import bcrypt as _bcrypt
 import jwt
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 logger = logging.getLogger("cybertwin.auth")
@@ -159,7 +156,7 @@ ROLES: dict[str, set[str]] = {
     # ---- New enterprise roles -------------------------------------------
     "platform_admin": _all_perms(),
 
-    "soc_manager":    _SOC_MANAGER_BASE,
+    "soc_manager": _SOC_MANAGER_BASE,
     "senior_analyst": _SOC_MANAGER_BASE | {"rule:approve"},
 
     "tier1_analyst": {
@@ -279,9 +276,9 @@ def require_permission(permission: str):
 def _build_user_store() -> dict[str, dict[str, str]]:
     """Build the user store with bcrypt-hashed passwords from environment."""
     defaults = {
-        "admin":   (os.getenv("AUTH_ADMIN_PASSWORD",   "changeme-admin"),   "admin"),
+        "admin": (os.getenv("AUTH_ADMIN_PASSWORD", "changeme-admin"), "admin"),
         "analyst": (os.getenv("AUTH_ANALYST_PASSWORD", "changeme-analyst"), "analyst"),
-        "viewer":  (os.getenv("AUTH_VIEWER_PASSWORD",  "changeme-viewer"),  "viewer"),
+        "viewer": (os.getenv("AUTH_VIEWER_PASSWORD", "changeme-viewer"), "viewer"),
     }
     store: dict[str, dict[str, str]] = {}
     for username, (password, role) in defaults.items():

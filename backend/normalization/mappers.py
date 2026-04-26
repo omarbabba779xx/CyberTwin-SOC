@@ -7,10 +7,8 @@ to None / empty.
 
 from __future__ import annotations
 
-import json
 import re
 import uuid
-from typing import Any, Optional
 
 from .schema import (
     CloudRef, EndpointRef, EventCategory, EventSeverity, FileRef,
@@ -44,20 +42,20 @@ def _ensure_ts(raw: dict, *fields: str) -> str:
 
 # Subset of EventIDs we care about. Map -> (category, activity, severity).
 _WINDOWS_EID_MAP = {
-    4624: (EventCategory.AUTHENTICATION, "logon_success",   EventSeverity.INFO),
-    4625: (EventCategory.AUTHENTICATION, "logon_failure",   EventSeverity.MEDIUM),
-    4634: (EventCategory.AUTHENTICATION, "logoff",          EventSeverity.INFO),
-    4648: (EventCategory.AUTHENTICATION, "logon_explicit",  EventSeverity.LOW),
-    4672: (EventCategory.SECURITY,       "special_logon",   EventSeverity.LOW),
-    4688: (EventCategory.PROCESS,        "process_create",  EventSeverity.INFO),
-    4689: (EventCategory.PROCESS,        "process_terminate", EventSeverity.INFO),
-    4720: (EventCategory.SECURITY,       "user_created",    EventSeverity.MEDIUM),
-    4732: (EventCategory.SECURITY,       "group_member_add", EventSeverity.MEDIUM),
-    4740: (EventCategory.SECURITY,       "account_locked",  EventSeverity.MEDIUM),
-    4768: (EventCategory.AUTHENTICATION, "kerberos_tgt",    EventSeverity.LOW),
-    4769: (EventCategory.AUTHENTICATION, "kerberos_tgs",    EventSeverity.LOW),
-    7045: (EventCategory.SECURITY,       "service_install", EventSeverity.HIGH),
-    1102: (EventCategory.AUDIT,          "audit_log_cleared", EventSeverity.HIGH),
+    4624: (EventCategory.AUTHENTICATION, "logon_success", EventSeverity.INFO),
+    4625: (EventCategory.AUTHENTICATION, "logon_failure", EventSeverity.MEDIUM),
+    4634: (EventCategory.AUTHENTICATION, "logoff", EventSeverity.INFO),
+    4648: (EventCategory.AUTHENTICATION, "logon_explicit", EventSeverity.LOW),
+    4672: (EventCategory.SECURITY, "special_logon", EventSeverity.LOW),
+    4688: (EventCategory.PROCESS, "process_create", EventSeverity.INFO),
+    4689: (EventCategory.PROCESS, "process_terminate", EventSeverity.INFO),
+    4720: (EventCategory.SECURITY, "user_created", EventSeverity.MEDIUM),
+    4732: (EventCategory.SECURITY, "group_member_add", EventSeverity.MEDIUM),
+    4740: (EventCategory.SECURITY, "account_locked", EventSeverity.MEDIUM),
+    4768: (EventCategory.AUTHENTICATION, "kerberos_tgt", EventSeverity.LOW),
+    4769: (EventCategory.AUTHENTICATION, "kerberos_tgs", EventSeverity.LOW),
+    7045: (EventCategory.SECURITY, "service_install", EventSeverity.HIGH),
+    1102: (EventCategory.AUDIT, "audit_log_cleared", EventSeverity.HIGH),
 }
 
 
@@ -125,16 +123,16 @@ def map_windows_event(raw: dict) -> NormalizedEvent:
 # ---------------------------------------------------------------------------
 
 _SYSMON_EID_MAP = {
-    1:  (EventCategory.PROCESS,  "process_create",         EventSeverity.INFO),
-    3:  (EventCategory.NETWORK,  "network_connection",     EventSeverity.LOW),
-    7:  (EventCategory.PROCESS,  "image_loaded",           EventSeverity.LOW),
-    8:  (EventCategory.PROCESS,  "remote_thread_create",   EventSeverity.HIGH),
-    10: (EventCategory.PROCESS,  "process_access",         EventSeverity.HIGH),
-    11: (EventCategory.FILE,     "file_create",            EventSeverity.LOW),
-    12: (EventCategory.PROCESS,  "registry_event",         EventSeverity.LOW),
-    13: (EventCategory.PROCESS,  "registry_value_set",     EventSeverity.LOW),
-    22: (EventCategory.DNS,      "dns_query",              EventSeverity.INFO),
-    23: (EventCategory.FILE,     "file_delete",            EventSeverity.MEDIUM),
+    1: (EventCategory.PROCESS, "process_create", EventSeverity.INFO),
+    3: (EventCategory.NETWORK, "network_connection", EventSeverity.LOW),
+    7: (EventCategory.PROCESS, "image_loaded", EventSeverity.LOW),
+    8: (EventCategory.PROCESS, "remote_thread_create", EventSeverity.HIGH),
+    10: (EventCategory.PROCESS, "process_access", EventSeverity.HIGH),
+    11: (EventCategory.FILE, "file_create", EventSeverity.LOW),
+    12: (EventCategory.PROCESS, "registry_event", EventSeverity.LOW),
+    13: (EventCategory.PROCESS, "registry_value_set", EventSeverity.LOW),
+    22: (EventCategory.DNS, "dns_query", EventSeverity.INFO),
+    23: (EventCategory.FILE, "file_delete", EventSeverity.MEDIUM),
 }
 
 
@@ -168,7 +166,7 @@ def map_sysmon(raw: dict) -> NormalizedEvent:
         parent_name=event_data.get("ParentImage"),
         parent_pid=int(event_data["ParentProcessId"]) if str(event_data.get("ParentProcessId", "")).isdigit() else None,
         hash_sha256=event_data.get("Hashes", "").split("SHA256=")[-1].split(",")[0]
-                    if "SHA256=" in (event_data.get("Hashes") or "") else None,
+        if "SHA256=" in (event_data.get("Hashes") or "") else None,
     )
     network = NetworkRef(
         src_ip=event_data.get("SourceIp"),
@@ -233,8 +231,8 @@ def map_syslog(raw: dict) -> NormalizedEvent:
     m = _SYSLOG_RE.match(line.strip()) if line else None
 
     host = (m.group("host") if m else None) or raw.get("host", "")
-    app  = (m.group("app") if m else None) or raw.get("app", "")
-    msg  = (m.group("msg") if m else None) or line
+    app = (m.group("app") if m else None) or raw.get("app", "")
+    msg = (m.group("msg") if m else None) or line
 
     cat = EventCategory.AUDIT
     activity = "syslog"
@@ -243,7 +241,7 @@ def map_syslog(raw: dict) -> NormalizedEvent:
     network_ref = NetworkRef()
 
     auth_fail = _SYSLOG_AUTH_FAIL.search(msg) if msg else None
-    auth_ok   = _SYSLOG_AUTH_OK.search(msg)   if msg else None
+    auth_ok = _SYSLOG_AUTH_OK.search(msg) if msg else None
 
     if auth_fail:
         cat = EventCategory.AUTHENTICATION

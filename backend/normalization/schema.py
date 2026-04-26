@@ -11,23 +11,23 @@ from typing import Any, Optional
 class EventCategory(str, Enum):
     """Top-level OCSF activity categories used in detection rules."""
 
-    AUTHENTICATION    = "authentication"
-    PROCESS           = "process"
-    FILE              = "file"
-    NETWORK           = "network"
-    DNS               = "dns"
-    EMAIL             = "email"
-    SECURITY          = "security"
-    AUDIT             = "audit"
-    CLOUD             = "cloud"
-    UNKNOWN           = "unknown"
+    AUTHENTICATION = "authentication"
+    PROCESS = "process"
+    FILE = "file"
+    NETWORK = "network"
+    DNS = "dns"
+    EMAIL = "email"
+    SECURITY = "security"
+    AUDIT = "audit"
+    CLOUD = "cloud"
+    UNKNOWN = "unknown"
 
 
 class EventSeverity(str, Enum):
-    INFO     = "info"
-    LOW      = "low"
-    MEDIUM   = "medium"
-    HIGH     = "high"
+    INFO = "info"
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
     CRITICAL = "critical"
 
 
@@ -178,12 +178,12 @@ class NormalizedEvent:
         ingestion and the existing detection pipeline.
         """
         d: dict[str, Any] = {
-            "event_id":   self.event_id,
-            "timestamp":  self.timestamp,
-            "category":   self.category,
+            "event_id": self.event_id,
+            "timestamp": self.timestamp,
+            "category": self.category,
             "event_type": self.activity or self.category,
             "description": self.message,
-            "tenant_id":  self.tenant_id,
+            "tenant_id": self.tenant_id,
         }
         if self.user.name:
             d["user"] = self.user.name

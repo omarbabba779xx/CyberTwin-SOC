@@ -83,7 +83,16 @@ jobs:
         continue-on-error: true
 
       - name: Lint (flake8)
-        run: flake8 backend/ --max-line-length=120 --ignore=E501,W503,E402 --count
+        # Ignored:
+        #   E501 long line (handled separately via max-line-length)
+        #   W503 line break before binary operator (PEP8 reversed its stance)
+        #   E402 module-level import not at top (needed for sys.path setup)
+        #   E241 multiple spaces after ',' (intentional in tabular MITRE catalog)
+        #   E231 missing whitespace after ',' (intentional in mitre/generate_bundle)
+        #   E704 statement on same line as def (intentional for abstract method stubs)
+        #   E704/E241/E231 flagged code is reviewed and intentional;
+        #   real bugs (F4xx/F5xx/F6xx/F8xx, E741) ARE enforced.
+        run: flake8 backend/ --max-line-length=120 --ignore=E501,W503,E402,E241,E231,E704 --count
 
   security:
     runs-on: ubuntu-latest
@@ -108,7 +117,7 @@ jobs:
           node-version: '20'
 
       - name: Install Python scanners
-        run: pip install bandit pip-audit cyclonedx-bom semgrep --quiet
+        run: pip install bandit pip-audit cyclonedx-bom --quiet
 
       - name: Bandit — Python static security analysis
         run: bandit -r backend/ -ll --skip B101,B104 -f txt || true
@@ -117,7 +126,13 @@ jobs:
         run: pip-audit -r requirements.txt --strict || true
 
       - name: Semgrep — multi-language SAST (Python + JS)
-        run: semgrep --config=p/security-audit --config=p/python --config=p/javascript --error || true
+        continue-on-error: true
+        run: |
+          docker run --rm -v "$PWD:/src" semgrep/semgrep:latest \
+            semgrep --config=p/security-audit \
+                    --config=p/python \
+                    --config=p/javascript \
+                    --error || true
 
       - name: Gitleaks — secret scanning
         uses: gitleaks/gitleaks-action@v2

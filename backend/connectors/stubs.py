@@ -7,7 +7,7 @@ Calling any operation raises NotImplementedError with a clear hint.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from .base import (
     ConnectorResult, EDRConnector, ITSMConnector, SIEMConnector,
@@ -33,8 +33,10 @@ class SplunkSIEM(SIEMConnector):
 
     def check_connection(self) -> ConnectorResult:
         _todo(self.name)
+
     def search(self, query: str, *, limit: int = 100) -> ConnectorResult:
         _todo(self.name)
+
     def push_alert(self, alert: dict[str, Any]) -> ConnectorResult:
         _todo(self.name)
 
@@ -46,8 +48,10 @@ class SentinelSIEM(SIEMConnector):
 
     def check_connection(self) -> ConnectorResult:
         _todo(self.name)
+
     def search(self, query: str, *, limit: int = 100) -> ConnectorResult:
         _todo(self.name)
+
     def push_alert(self, alert: dict[str, Any]) -> ConnectorResult:
         _todo(self.name)
 
@@ -59,8 +63,10 @@ class ElasticSIEM(SIEMConnector):
 
     def check_connection(self) -> ConnectorResult:
         _todo(self.name)
+
     def search(self, query: str, *, limit: int = 100) -> ConnectorResult:
         _todo(self.name)
+
     def push_alert(self, alert: dict[str, Any]) -> ConnectorResult:
         _todo(self.name)
 
@@ -79,6 +85,7 @@ class TheHiveSOAR(SOARConnector):
 
     def check_connection(self) -> ConnectorResult:
         _todo(self.name)
+
     def create_case(self, **kw): _todo(self.name)
     def add_observable(self, *a, **kw): _todo(self.name)
     def add_task(self, *a, **kw): _todo(self.name)

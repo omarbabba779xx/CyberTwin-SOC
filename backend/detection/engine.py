@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import uuid
 from collections import defaultdict
-from datetime import datetime
 from typing import Any
 
 from .rules import DETECTION_RULES, DetectionRule
@@ -278,7 +277,6 @@ class DetectionEngine:
         sev_order = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
         max_sev = max(severities, key=lambda s: sev_order.get(s, 0))
 
-        severity_weights = {"critical": 4, "high": 3, "medium": 2, "low": 1, "info": 0}
         tactic_diversity = len(all_tactics) / 14.0  # 14 ATT&CK tactics
         confidence = min(98, int(
             30

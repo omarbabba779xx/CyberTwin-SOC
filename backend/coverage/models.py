@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field, asdict
-from datetime import datetime
 from enum import Enum
 from typing import Any, Optional
 
@@ -15,14 +14,14 @@ class TechniqueStatus(str, Enum):
     evidence becomes available (lowest = worst, highest = best).
     """
 
-    NOT_COVERED          = "not_covered"
-    NEEDS_DATA_SOURCE    = "needs_data_source"
-    RULE_EXISTS          = "rule_exists"
-    RULE_UNTESTED        = "rule_exists_untested"
-    TESTED_FAILED        = "tested_but_failed"
-    NOISY                = "noisy"
-    TESTED_DETECTED      = "tested_and_detected"
-    NOT_APPLICABLE       = "not_applicable"
+    NOT_COVERED = "not_covered"
+    NEEDS_DATA_SOURCE = "needs_data_source"
+    RULE_EXISTS = "rule_exists"
+    RULE_UNTESTED = "rule_exists_untested"
+    TESTED_FAILED = "tested_but_failed"
+    NOISY = "noisy"
+    TESTED_DETECTED = "tested_and_detected"
+    NOT_APPLICABLE = "not_applicable"
 
     def is_validated(self) -> bool:
         return self is TechniqueStatus.TESTED_DETECTED

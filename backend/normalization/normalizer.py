@@ -14,13 +14,13 @@ logger = logging.getLogger("cybertwin.normalization")
 # Registry: source_type -> mapper(raw) -> NormalizedEvent
 _REGISTRY: dict[str, Callable[[dict], NormalizedEvent]] = {
     "windows_event": mappers.map_windows_event,
-    "windows":       mappers.map_windows_event,
-    "sysmon":        mappers.map_sysmon,
-    "syslog":        mappers.map_syslog,
-    "cloudtrail":    mappers.map_cloudtrail,
+    "windows": mappers.map_windows_event,
+    "sysmon": mappers.map_sysmon,
+    "syslog": mappers.map_syslog,
+    "cloudtrail": mappers.map_cloudtrail,
     "aws_cloudtrail": mappers.map_cloudtrail,
-    "json":          mappers.map_generic_json,
-    "generic":       mappers.map_generic_json,
+    "json": mappers.map_generic_json,
+    "generic": mappers.map_generic_json,
 }
 
 

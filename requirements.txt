@@ -1,17 +1,18 @@
-fastapi==0.109.2
-uvicorn[standard]==0.27.1
-pydantic==2.6.1
-python-multipart==0.0.9
-PyJWT==2.8.0
-python-dotenv==1.0.1
+# All pins reflect fixes for CVEs found by `pip-audit` (Apr 2026 audit).
+fastapi==0.136.1                 # latest, pulls starlette >= 0.49 (CVE-2025-62727 patched)
+uvicorn[standard]==0.32.1
+pydantic==2.10.3
+python-multipart==0.0.26         # CVE-2024-53981 / CVE-2026-24486 / CVE-2026-40347
+PyJWT==2.12.0                    # CVE-2026-32597
+python-dotenv==1.2.2             # CVE-2026-28684
 slowapi==0.1.9
-bcrypt==4.1.3
-redis==5.0.3
-httpx==0.27.0
-pyyaml==6.0.1
-scikit-learn==1.4.1.post1
-numpy==1.26.4
-scipy==1.12.0
+bcrypt==4.2.1
+redis==5.2.1
+httpx==0.28.1
+pyyaml==6.0.2
+scikit-learn==1.5.2              # PYSEC-2024-110
+numpy==2.2.0
+scipy==1.14.1
 taxii2-client==2.3.0
 stix2==3.0.1
-prometheus_client==0.20.0
+prometheus_client==0.21.1

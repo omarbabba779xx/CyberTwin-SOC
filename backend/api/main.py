@@ -48,8 +48,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from backend.orchestrator import SimulationOrchestrator
 from backend.database import init_db, save_run, get_runs, get_run, get_runs_by_scenario, delete_run, get_stats
 from backend.auth import (
-    authenticate_user, create_token, verify_token, verify_token_optional,
-    require_permission,
+    authenticate_user, create_token, verify_token, require_permission,
 )
 from backend.audit import init_audit_table, log_action, get_audit_log
 from backend.cache import cache
@@ -57,6 +56,7 @@ from backend.cache import cache
 # ---------------------------------------------------------------------------
 # App setup
 # ---------------------------------------------------------------------------
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -316,6 +316,23 @@ def get_scenario(request: Request, scenario_id: str):
     return scenario
 
 
+# Strict identifier pattern used to defeat path traversal on every endpoint
+# that derives a filename from user-supplied data.
+_SAFE_ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
+
+
+def _safe_path(base: Path, name: str, suffix: str) -> Path:
+    """Compose ``base / (name + suffix)`` while guaranteeing the resolved
+    path stays inside ``base``. Raises HTTP 400 on any traversal attempt.
+    """
+    if not _SAFE_ID_RE.match(name) or ".." in name:
+        raise HTTPException(400, f"Invalid identifier: {name!r}")
+    candidate = (base / f"{name}{suffix}").resolve()
+    if base.resolve() not in candidate.parents:
+        raise HTTPException(400, "Path traversal detected")
+    return candidate
+
+
 @app.post("/api/scenarios/custom")
 @limiter.limit("10/minute")
 def save_custom_scenario(
@@ -327,9 +344,9 @@ def save_custom_scenario(
     custom_dir = PROJECT_ROOT / "scenarios" / "custom"
     custom_dir.mkdir(parents=True, exist_ok=True)
     sid = scenario.id or f"sc-custom-{len(list(custom_dir.glob('*.json'))) + 1:03d}"
+    filepath = _safe_path(custom_dir, sid, ".json")
     data = scenario.model_dump()
     data["id"] = sid
-    filepath = custom_dir / f"{sid}.json"
     with open(filepath, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     _orchestrator.attack_engine.load_scenarios()
@@ -796,19 +813,26 @@ def mitre_gap_analysis(request: Request, scenario_id: str, user=Depends(require_
     return gap
 
 
+_MAX_SIGMA_BYTES = 256 * 1024  # 256 KB
+
+
 @app.post("/api/sigma/upload")
 @limiter.limit("10/minute")
 async def upload_sigma_rule(request: Request, user=Depends(require_permission("manage_scenarios"))):
     """Upload a YAML Sigma rule and register it in the detection engine."""
     from backend.detection.sigma_loader import SigmaLoader
     body = await request.body()
+    if len(body) > _MAX_SIGMA_BYTES:
+        raise HTTPException(413, f"Sigma rule too large (>{_MAX_SIGMA_BYTES} bytes)")
     try:
         rule = SigmaLoader.load_from_yaml(body.decode("utf-8"))
     except Exception as exc:
         raise HTTPException(400, f"Invalid Sigma rule: {exc}")
     sigma_dir = PROJECT_ROOT / "data" / "sigma_rules"
     sigma_dir.mkdir(parents=True, exist_ok=True)
-    rule_file = sigma_dir / f"{rule.rule_id}.yml"
+    # _safe_path validates rule_id matches an identifier pattern AND the
+    # resolved path stays inside sigma_dir.
+    rule_file = _safe_path(sigma_dir, rule.rule_id, ".yml")
     rule_file.write_bytes(body)
     log_action("UPLOAD_SIGMA_RULE", username=user["sub"], role=user.get("role"), resource=rule.rule_id, ip_address=_client_ip(request))
     return {"status": "registered", "rule_id": rule.rule_id, "name": rule.name, "severity": rule.severity}
@@ -1065,7 +1089,7 @@ def post_alert_feedback(
 @app.get("/api/alerts/feedback/summary")
 @limiter.limit("60/minute")
 def get_feedback_summary(request: Request,
-                        user=Depends(require_permission("view_results"))):
+                         user=Depends(require_permission("view_results"))):
     from backend.soc import feedback_summary
     return feedback_summary()
 
@@ -1480,10 +1504,10 @@ def soar_status(request: Request, user=Depends(require_permission("view_results"
     """Check connectivity to TheHive and Cortex."""
     from backend.soar import TheHiveClient, CortexClient
     thehive = TheHiveClient().check_connection()
-    cortex  = CortexClient().check_connection()
+    cortex = CortexClient().check_connection()
     return {
         "thehive": thehive,
-        "cortex":  cortex,
+        "cortex": cortex,
         "soar_available": thehive["connected"] or cortex["connected"],
     }
 

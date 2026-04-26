@@ -400,7 +400,7 @@ class NormalActivityGenerator:
                 "query": domain,
                 "query_type": query_type,
                 "response": f"10.0.1.{self._rng.randint(1, 254)}" if ".local" in domain
-                            else f"{self._rng.randint(1, 223)}.{self._rng.randint(0, 255)}.{self._rng.randint(0, 255)}.{self._rng.randint(1, 254)}",
+                else f"{self._rng.randint(1, 223)}.{self._rng.randint(0, 255)}.{self._rng.randint(0, 255)}.{self._rng.randint(1, 254)}",
                 "ttl": self._rng.choice([60, 300, 600, 3600]),
                 "server": "10.0.1.5",
             },

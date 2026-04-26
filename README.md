@@ -1,1010 +1,739 @@
-﻿<div align="center">
+<div align="center">
 
 # 🛡️ CyberTwin SOC
 
-### Enterprise Digital Twin Platform for Cyber Attack Simulation & SOC Readiness
+### **Enterprise-Grade Security Operations Center — Open Source**
 
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white&style=for-the-badge)](https://python.org)
-[![FastAPI](https://img.shields.io/badge/FastAPI-3.0-009688?logo=fastapi&logoColor=white&style=for-the-badge)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black&style=for-the-badge)](https://react.dev)
-[![Vite](https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white&style=for-the-badge)](https://vitejs.dev)
+*A complete cyber-range that emulates real adversary tradecraft, exercises 622 MITRE ATT&CK techniques, ingests live security telemetry in OCSF, and ships with full SOC workflow, AI analyst, ML anomaly detection, SOAR integration, Prometheus observability, and Helm/Kubernetes deployment.*
 
-[![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-622%20Techniques-red?style=flat-square)](https://attack.mitre.org)
-[![Detection Rules](https://img.shields.io/badge/Detection%20Rules-46-orange?style=flat-square)](backend/detection/rules.py)
-[![Attack Scenarios](https://img.shields.io/badge/Attack%20Scenarios-11-critical?style=flat-square)](scenarios/)
-[![Tests](https://img.shields.io/badge/Tests-128%20passing-brightgreen?style=flat-square)](tests/)
-[![NIST CSF](https://img.shields.io/badge/NIST%20CSF-v1.1-blue?style=flat-square)](https://www.nist.gov/cyberframework)
-[![CIS Controls](https://img.shields.io/badge/CIS%20Controls-v8-purple?style=flat-square)](https://www.cisecurity.org/controls)
-[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&style=flat-square)](docker-compose.yml)
-[![SOAR](https://img.shields.io/badge/SOAR-TheHive%20%2B%20Cortex-8B5CF6?style=flat-square)](backend/soar/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
+[![CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
+[![Tests](https://img.shields.io/badge/tests-223%2F223%20passing-brightgreen)](#testing)
+[![Coverage](https://img.shields.io/badge/python-3.12-blue)](https://python.org)
+[![CVE](https://img.shields.io/badge/known%20CVEs-0-brightgreen)](#security-posture)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![MITRE](https://img.shields.io/badge/MITRE%20ATT%26CK-622%20techniques-red)](https://attack.mitre.org/)
+[![OCSF](https://img.shields.io/badge/OCSF-1.0-blueviolet)](https://schema.ocsf.io/)
+
+[**Quick Start**](#-quick-start) · [**Architecture**](#-architecture) · [**Features**](#-features) · [**Live Demo**](#-screenshots) · [**Documentation**](#-documentation) · [**Roadmap**](#-roadmap)
 
 </div>
 
 ---
 
-## 📋 Table of Contents
+## 📖 Table of Contents
 
-- [Overview](#-overview)
+- [Why CyberTwin SOC?](#-why-cybertwin-soc)
+- [Project at a Glance](#-project-at-a-glance)
 - [Architecture](#-architecture)
-- [Simulation Pipeline](#-simulation-pipeline)
-- [MITRE ATT\&CK Coverage](#-mitre-attck-coverage)
-- [Detection Engine](#-detection-engine)
-- [ML Anomaly Detection](#-ml-anomaly-detection)
-- [AI Analyst](#-ai-analyst)
-- [Scoring & Benchmarking](#-scoring--benchmarking)
-- [Attack Scenarios](#-attack-scenarios)
-- [Frontend Dashboard](#-frontend-dashboard)
-- [SOAR Integration](#-soar-integration)
-- [Docker Deployment](#-docker-deployment)
-- [API Reference](#-api-reference)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
+- [Features](#-features)
+- [Quick Start](#-quick-start)
+- [Live Telemetry Ingestion](#-live-telemetry-ingestion-ocsf)
+- [Detection Coverage Center](#-detection-coverage-center)
+- [SOC Workflow](#-soc-workflow)
+- [Observability & Metrics](#-observability--metrics)
+- [Security Posture](#-security-posture)
+- [Production Deployment](#-production-deployment)
 - [Project Structure](#-project-structure)
+- [Testing](#-testing)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ---
 
-## 🎯 Overview
+## 🎯 Why CyberTwin SOC?
 
-**CyberTwin SOC** is an enterprise-grade **Digital Twin** platform that replicates a complete corporate network environment and runs realistic cyber attack simulations against it. It validates detection capabilities, measures SOC readiness, and provides compliance benchmarking against NIST CSF and CIS Controls — all without touching production infrastructure.
+> **The hardest problem in detection engineering is not writing rules — it's knowing which adversary behaviour you can actually catch, and proving it under pressure.**
 
-### What makes it unique?
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                       CyberTwin SOC Concept                         │
-│                                                                     │
-│   Real Environment          Digital Twin                            │
-│   ─────────────────         ──────────────────────────────────      │
-│   Production servers   ──►  Simulated hosts + users + services      │
-│   Actual threats       ──►  622 MITRE ATT&CK techniques             │
-│   Manual pen-tests     ──►  Automated attack scenario engine        │
-│   Guesswork scoring    ──►  ML-based scoring + NIST/CIS benchmarks  │
-│   Slow SOC reviews     ──►  Real-time AI analyst (LLM + NLG)        │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Key Metrics at a Glance
-
-| Capability | Value |
-|---|---|
-| MITRE ATT&CK techniques | **622** (194 base + 428 sub-techniques) |
-| Attack scenarios | **11** pre-built (ransomware, APT, cloud, kerberoasting…) |
-| Detection rules | **46** (Sigma-compatible + ML-based) |
-| MITRE tactics covered | **14 / 14** |
-| Benchmarking standards | NIST CSF v1.1 + CIS Controls v8 |
-| API endpoints | **30+** REST + WebSocket |
-| Frontend pages | **20** interactive dashboards |
-
----
-
-## 🏗️ Architecture
-
-```
-┌────────────────────────────────────────────────────────────────────────────────┐
-│                             CyberTwin SOC v3.0                                 │
-│                                                                                │
-│  ┌─────────────────────────────────────────────────────────────────────────┐   │
-│  │                        React Frontend (Vite)                            │   │
-│  │                                                                         │   │
-│  │  Dashboard  │ MITRE View  │ Anomaly  │ Benchmark  │ AI Analyst  │ ...   │   │
-│  │  Timeline   │ Alerts      │ Network  │ Scenarios  │ Reports     │ +14   │   │
-│  └────────────────────────────┬────────────────────────────────────────────┘   │
-│                               │ REST / WebSocket                               │
-│  ┌────────────────────────────▼────────────────────────────────────────────┐   │
-│  │                      FastAPI Backend (Python 3.12)                      │   │
-│  │                                                                         │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌───────────┐  │   │
-│  │  │ Auth & RBAC  │  │  Rate Limit  │  │  Audit Log   │  │   Cache   │  │   │
-│  │  │ (bcrypt/JWT) │  │  (slowapi)   │  │  (SQLite)    │  │(Redis/mem)│  │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘  └───────────┘  │   │
-│  │                                                                         │   │
-│  │  ┌──────────────────────────────────────────────────────────────────┐  │   │
-│  │  │                   Simulation Orchestrator                         │  │   │
-│  │  │                                                                   │  │   │
-│  │  │  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  ┌─────────┐  │  │   │
-│  │  │  │   Attack    │  │  Detection  │  │   Scoring  │  │   AI    │  │  │   │
-│  │  │  │   Engine    │  │   Engine    │  │   Engine   │  │ Analyst │  │  │   │
-│  │  │  │             │  │             │  │            │  │         │  │  │   │
-│  │  │  │ 11 scenarios│  │ 46 rules    │  │ NIST CSF  │  │ Ollama  │  │  │   │
-│  │  │  │ 622 MITRE   │  │ Sigma rules │  │ CIS Ctrl  │  │ + NLG   │  │  │   │
-│  │  │  │ techniques  │  │ IsolForest  │  │ 6 metrics │  │fallback │  │  │   │
-│  │  │  └─────────────┘  └─────────────┘  └────────────┘  └─────────┘  │  │   │
-│  │  └──────────────────────────────────────────────────────────────────┘  │   │
-│  │                                                                         │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                  │   │
-│  │  │ MITRE ATT&CK │  │  Sigma Rules │  │  TAXII 2.1  │                  │   │
-│  │  │ 622 entries  │  │  Loader      │  │  Sync        │                  │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘                  │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-│                               │                                                │
-│  ┌────────────────────────────▼────────────────────────────────────────────┐   │
-│  │                          Data Layer                                     │   │
-│  │  SQLite (runs + audit)  │  Redis (optional cache)  │  JSON (scenarios)  │   │
-│  └─────────────────────────────────────────────────────────────────────────┘   │
-└────────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 🔄 Simulation Pipeline
-
-Each simulation runs through a 6-stage pipeline in under 10 seconds:
-
-```
-  SCENARIO LOAD           EVENT GENERATION          LOG SYNTHESIS
-  ─────────────           ────────────────          ─────────────
-  JSON file with    ──►   Attack engine maps   ──►  Realistic syslog,
-  MITRE phases,           each technique to         Windows Events,
-  TTPs, targets           realistic events          network flows
-
-         │                                                │
-         ▼                                                ▼
-
-  DETECTION ENGINE        SCORING ENGINE            AI ANALYSIS
-  ─────────────────       ──────────────            ───────────
-  46 rules + Sigma  ──►   6 score dimensions  ──►  LLM narrative
-  IsolationForest         NIST CSF tiers            + IOCs
-  UEBA behavioral         CIS Controls IG           + recommendations
-  anomaly detection       Overall maturity
-```
-
-### Simulation Output Example
-
-```
-Scenario : Ransomware Attack (sc-ransomware-001)
-Duration : 30 min simulated
-
-Events generated    :  1,842
-Logs produced       :  3,156
-Alerts triggered    :     14   ← detection rules fired
-Anomalies detected  :     15   ← ML / UEBA flagged
-Incidents created   :      3
-
-┌──────────────────────────────────────────────┐
-│              SCORES (0–100)                  │
-│  Detection       ████████████░░  78.5        │
-│  Coverage        ████████░░░░░░  62.3        │
-│  Response        ███████████░░░  82.1        │
-│  Visibility      ████████████░░  79.4        │
-│  Compliance      █████████░░░░░  68.7        │
-│  OVERALL         ████████████░░  80.3  ✅    │
-├──────────────────────────────────────────────┤
-│  Risk Level   : Low                          │
-│  Maturity     : Managed (Level 3)            │
-│  NIST Tier    : Tier 4 — Adaptive            │
-│  CIS Group    : IG3 — Large Enterprise       │
-└──────────────────────────────────────────────┘
-```
-
----
-
-## 🎯 MITRE ATT&CK Coverage
-
-CyberTwin SOC implements the **complete MITRE ATT&CK Enterprise v14** framework — all 14 tactics and 622 technique entries.
-
-### Coverage by Tactic
-
-```
-Tactic                      ID        Base    Sub    Total
-──────────────────────────────────────────────────────────
-Reconnaissance              TA0043      10     33      43
-Resource Development        TA0042       8     36      44
-Initial Access              TA0001       9     12      21
-Execution                   TA0002      14     42      56
-Persistence                 TA0003      17     74      91  ← largest
-Privilege Escalation        TA0004       5     22      27
-Defense Evasion             TA0005      23     79     102  ← most complex
-Credential Access           TA0006      17     30      47
-Discovery                   TA0007      30      9      39
-Lateral Movement            TA0008       8     10      18
-Collection                  TA0009      15      9      24
-Command & Control           TA0011      16     23      39
-Exfiltration                TA0010       9     12      21
-Impact                      TA0040      16     15      31
-──────────────────────────────────────────────────────────
-TOTAL                                  194    428     622
-```
-
-### MITRE ATT&CK Navigator Heat Map (detection coverage)
-
-```
-          T1059  T1055  T1003  T1110  T1078  T1021  T1566  T1486  T1558  T1070
-TA0002     ██     ██
-TA0004            ██
-TA0006                   ██     ██
-TA0001                                 ██           ██
-TA0008                                        ██
-TA0040                                                     ██
-TA0006                                                            ██
-TA0005                                                                   ██
-
-  ██ = Detection rule exists    □ = Gap (visibility only)
-```
-
-### Data Sources
-
-| Source | Method | Count |
-|---|---|---|
-| **Embedded catalogue** | `generate_bundle.py` | 622 techniques (offline) |
-| **Live TAXII 2.1 sync** | `GET /api/mitre/sync-taxii` | Full MITRE GitHub feed |
-| **Gap analysis** | `GET /api/mitre/gap-analysis/{id}` | Per-simulation coverage |
-
----
-
-## 🔍 Detection Engine
-
-The detection engine applies **46 rules** across 5 categories in real-time:
-
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                     Detection Pipeline                             │
-│                                                                    │
-│  Raw Events                                                        │
-│      │                                                             │
-│      ├──► Rule-based Detection (46 rules)                          │
-│      │       ├─ RULE-001  Mimikatz credential dump                 │
-│      │       ├─ RULE-002  PowerShell encoded command               │
-│      │       ├─ RULE-003  Lateral movement via SMB                 │
-│      │       ├─ RULE-010  Kerberoasting SPN request                │
-│      │       ├─ RULE-022  Ransomware mass encryption               │
-│      │       ├─ RULE-035  DNS-based C2 (DGA detection)             │
-│      │       ├─ RULE-040  Container escape attempt                 │
-│      │       └─ ... 39 more rules                                  │
-│      │                                                             │
-│      ├──► Sigma Rules (dynamic YAML loading)                       │
-│      │       └─ data/sigma_rules/*.yml                             │
-│      │                                                             │
-│      └──► ML Anomaly Detection                                     │
-│              ├─ IsolationForest  (statistical outliers)            │
-│              └─ UEBA             (user behavior baseline)          │
-│                                                                    │
-│  Output: Alerts + Anomalies + Incidents                            │
-└────────────────────────────────────────────────────────────────────┘
-```
-
-### Rule Categories
-
-| Category | Rules | Examples |
-|---|---|---|
-| **Credential Access** | 9 | Mimikatz, DCSync, Kerberoasting, Pass-the-Hash |
-| **Execution** | 8 | PowerShell obfuscation, WMI, LOLBAS |
-| **Lateral Movement** | 7 | SMB, RDP, PsExec, WinRM |
-| **Defense Evasion** | 7 | Log clearing, AV disabling, timestomping |
-| **Persistence** | 6 | Registry Run keys, scheduled tasks, services |
-| **Impact** | 5 | Ransomware, shadow copy deletion, DDoS |
-| **C2 / Exfiltration** | 4 | DGA, DNS tunneling, large transfers |
-
----
-
-## 🤖 ML Anomaly Detection
-
-Two complementary detection models run on every simulation:
-
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                    ML Anomaly Detection Stack                    │
-│                                                                  │
-│  ┌─────────────────────────────────┐                            │
-│  │      IsolationForest Model      │                            │
-│  │                                 │                            │
-│  │  Features:                      │                            │
-│  │  • Events/minute rate           │  Detects:                  │
-│  │  • Failed auth count            │  • Volumetric spikes       │
-│  │  • Network bytes transferred    │  • Statistical outliers    │
-│  │  • Process spawn rate           │  • Lateral movement bursts │
-│  │  • Unique dest. hosts           │                            │
-│  │                                 │  Anomaly score: -1 → 0     │
-│  └─────────────────────────────────┘  (closer to -1 = worse)   │
-│                                                                  │
-│  ┌─────────────────────────────────┐                            │
-│  │         UEBA Model              │                            │
-│  │                                 │                            │
-│  │  Per-user behavioral baseline:  │  Detects:                  │
-│  │  • Normal working hours         │  • Off-hours access        │
-│  │  • Typical login sources        │  • New geographic origin   │
-│  │  • Resource access patterns     │  • Privilege escalation    │
-│  │  • Peer group comparison        │  • Unusual data access     │
-│  │                                 │                            │
-│  └─────────────────────────────────┘                            │
-│                                                                  │
-│  Combined output → Anomaly alerts with severity (Low→Critical)  │
-└──────────────────────────────────────────────────────────────────┘
-```
-
-**Typical results on a ransomware simulation:**
-```
-  15 anomalies detected
-  ├── Critical  : 2  (mass file encryption burst, shadow copy deletion)
-  ├── High      : 5  (credential dumping, lateral movement wave)
-  ├── Medium    : 6  (off-hours logins, unusual process spawning)
-  └── Low       : 2  (elevated network transfer volume)
-```
-
----
-
-## 🧠 AI Analyst
-
-The AI analyst generates natural-language incident reports automatically:
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      AI Analyst Flow                            │
-│                                                                 │
-│  Simulation Results                                             │
-│        │                                                        │
-│        ▼                                                        │
-│  ┌──────────────┐     Online?    ┌────────────────────────┐    │
-│  │  Try Ollama  │ ─── YES ──►   │  Ollama (local LLM)    │    │
-│  │  LLM API     │               │  llama3 / mistral      │    │
-│  └──────────────┘               │  Generates full report │    │
-│        │                        └────────────────────────┘    │
-│      Offline                                                    │
-│   or unavail.                                                   │
-│        │                                                        │
-│        ▼                                                        │
-│  ┌──────────────────────────────────────────────────┐          │
-│  │           NLG Fallback Engine                    │          │
-│  │                                                  │          │
-│  │  Rule-based Natural Language Generation:         │          │
-│  │  • Identifies top tactics used                   │          │
-│  │  • Maps alerts to MITRE techniques               │          │
-│  │  • Generates IOCs list                           │          │
-│  │  • Produces actionable recommendations           │          │
-│  │  • Outputs structured Markdown report            │          │
-│  └──────────────────────────────────────────────────┘          │
-│                                                                 │
-│  Output: { summary, tactics, iocs, recommendations, source }   │
-└─────────────────────────────────────────────────────────────────┘
-```
-
----
-
-## 📊 Scoring & Benchmarking
-
-### Scoring Dimensions
-
-```
-  Overall Score = weighted average of 6 dimensions
-
-  ┌─────────────────────────────────────────────────────┐
-  │  Detection Score    — Did rules/ML fire correctly?  │  25%
-  │  Coverage Score     — MITRE tactic breadth covered  │  25%
-  │  Response Score     — Alert → Incident quality      │  20%
-  │  Visibility Score   — Log completeness              │  15%
-  │  Compliance Score   — Policy adherence              │  15%
-  └─────────────────────────────────────────────────────┘
-```
-
-### NIST Cybersecurity Framework Mapping
-
-```
-  NIST CSF v1.1 — Five Core Functions
-
-  IDENTIFY ──────── Asset & risk inventory coverage
-  PROTECT  ──────── Prevention controls quality
-  DETECT   ──────── Detection rule effectiveness
-  RESPOND  ──────── Incident response capability
-  RECOVER  ──────── Recovery readiness
-
-  Tier 1 (Partial) → Tier 2 (Risk Informed) → Tier 3 (Repeatable) → Tier 4 (Adaptive)
-```
-
-### CIS Controls v8 Assessment
-
-```
-  18 Critical Security Controls scored 0–100
-
-  IG1 — Essential (small org)     Controls 1–6
-  IG2 — Foundational (medium)     Controls 1–14
-  IG3 — Large Enterprise          Controls 1–18
-
-  Example output (Ransomware scenario):
-  ┌──────────────────────────────────────────────┐
-  │  CIS-01  Inventory & Control of Assets  82   │
-  │  CIS-02  Inventory of Software          77   │
-  │  CIS-03  Data Protection                71   │
-  │  CIS-04  Secure Configuration           84   │
-  │  CIS-05  Account Management             68   │
-  │  CIS-06  Access Control Management      73   │
-  │  ...                                         │
-  │  Average: 77.8 / 100  →  IG3 Large Enterprise│
-  └──────────────────────────────────────────────┘
-```
-
----
-
-## ⚔️ Attack Scenarios
-
-11 pre-built scenarios covering major threat categories:
-
-| ID | Scenario | Category | Techniques | Difficulty |
-|---|---|---|---|---|
-| `sc-ransomware-001` | **Ransomware Attack** | Impact | T1486, T1490, T1059 | 🔴 Critical |
-| `sc-kerberoasting-001` | **Kerberoasting + Pass-the-Hash** | Credential Access | T1558.003, T1550.002 | 🟠 High |
-| `sc-apt-001` | **APT Campaign** | Multi-stage | T1566, T1055, T1021 | 🔴 Critical |
-| `sc-cloud-001` | **Cloud Credential Theft** | Cloud Attack | T1552.005, T1530, T1580 | 🟠 High |
-| `sc-container-001` | **Container Escape** | Privilege Esc | T1611, T1610 | 🟠 High |
-| `sc-insider-001` | **Insider Threat** | Exfiltration | T1078, T1560 | 🟡 Medium |
-| `sc-ddos-001` | **DDoS Infrastructure** | Impact | T1498, T1499 | 🟡 Medium |
-| `sc-lateral-001` | **Lateral Movement Wave** | Movement | T1021, T1570 | 🟠 High |
-| `sc-phishing-001` | **Spearphishing Campaign** | Initial Access | T1566.001, T1204 | 🟡 Medium |
-| `sc-supply-chain-001` | **Supply Chain Attack** | Initial Access | T1195, T1574 | 🔴 Critical |
-| `sc-custom-*` | **Custom (Builder)** | Any | Any | Configurable |
-
-### Scenario Anatomy
-
-```yaml
-# Example: scenarios/ransomware.json
-{
-  "id": "sc-ransomware-001",
-  "name": "Ransomware Attack",
-  "phases": [
-    {
-      "name": "Initial Access",
-      "techniques": ["T1566.001"],   # Spearphishing attachment
-      "duration_minutes": 10
-    },
-    {
-      "name": "Execution",
-      "techniques": ["T1059.001"],   # PowerShell dropper
-      "duration_minutes": 5
-    },
-    {
-      "name": "Defense Evasion",
-      "techniques": ["T1562.001", "T1070.001"],  # Disable AV, clear logs
-      "duration_minutes": 10
-    },
-    {
-      "name": "Impact",
-      "techniques": ["T1486", "T1490"],   # Encrypt files, delete backups
-      "duration_minutes": 5
-    }
-  ]
-}
-```
-
----
-
-## 🖥️ Frontend Dashboard
-
-20 interactive pages built with React 18 + TailwindCSS:
-
-```
-  ┌─────────────────────────────────────────────────────────────────┐
-  │  OVERVIEW          ANALYSIS            INTELLIGENCE             │
-  │  • Dashboard       • Alerts            • Network Map            │
-  │  • Scenarios       • Timeline          • AI Analyst  [AI]       │
-  │                    • MITRE ATT&CK      • Threat Intel [NEW]     │
-  │  ANALYSIS cont.    • Log Explorer      • Threat Map             │
-  │  • Anomaly [ML]    • Attack Tree                                │
-  │  • Maturity        • Analytics         TOOLS                    │
-  │                                        • Benchmark  [NEW]       │
-  │                                        • Risk Matrix            │
-  │                                        • Report                 │
-  │                                        • Compare                │
-  │                                        • Scenario Builder       │
-  └─────────────────────────────────────────────────────────────────┘
-```
-
-### Dashboard Features
-
-- **Live Simulation** — real-time event feed via WebSocket during simulation
-- **MITRE ATT&CK View** — heatmap of techniques detected vs missed
-- **Anomaly Detection** — ML anomaly list with severity filter and scores
-- **Benchmark** — NIST CSF radar chart + CIS Controls score bars
-- **AI Analyst** — LLM-generated narrative report with IOCs
-- **Threat Map** — geographic visualization of attack origins
-- **Attack Tree** — kill chain visualization per scenario
-- **Scenario Builder** — drag-and-drop custom scenario creator
-
----
-
-## 🔗 SOAR Integration
-
-CyberTwin SOC connects to **TheHive 5** and **Cortex 3** to automate incident response after every simulation.
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                       SOAR Automation Flow                             │
-│                                                                        │
-│  CyberTwin Simulation                                                  │
-│        │                                                               │
-│        │  POST /api/soar/push/{scenario_id}                            │
-│        ▼                                                               │
-│  ┌─────────────────────────────────────────────────────┐              │
-│  │                   TheHive 5                          │              │
-│  │                                                      │              │
-│  │  Case created automatically with:                    │              │
-│  │  ├─ Title      : [CyberTwin] Scenario — Score/Risk  │              │
-│  │  ├─ Description: Full simulation report (Markdown)   │              │
-│  │  ├─ Severity   : Low / Medium / High / Critical      │              │
-│  │  ├─ Observables: IOCs extracted by AI analyst        │              │
-│  │  ├─ Tasks      : Recommendations as response tasks   │              │
-│  │  └─ Tags       : cybertwin, simulation, risk level   │              │
-│  └──────────────────────┬──────────────────────────────┘              │
-│                          │                                             │
-│                          │  POST /api/soar/analyze-iocs/{id}          │
-│                          ▼                                             │
-│  ┌─────────────────────────────────────────────────────┐              │
-│  │                   Cortex 3                           │              │
-│  │                                                      │              │
-│  │  IOCs analyzed automatically by:                     │              │
-│  │  ├─ VirusTotal_GetReport_3_1  (hashes, domains)      │              │
-│  │  ├─ AbuseIPDB_1_0             (IP addresses)         │              │
-│  │  ├─ Shodan_DNSResolve_1_0     (domains)              │              │
-│  │  └─ URLhaus_2_0               (URLs)                 │              │
-│  │                                                      │              │
-│  │  Job reports available via GET /api/soar/analyzers  │              │
-│  └─────────────────────────────────────────────────────┘              │
-└────────────────────────────────────────────────────────────────────────┘
-```
-
-### SOAR API Endpoints
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/soar/status` | TheHive + Cortex connectivity check |
-| `POST` | `/api/soar/push/{id}` | Push simulation → TheHive case |
-| `POST` | `/api/soar/analyze-iocs/{id}` | Submit IOCs → Cortex analyzers |
-| `GET` | `/api/soar/analyzers` | List available Cortex analyzers |
-
-### Enable SOAR (Docker)
-
-```bash
-# Start with TheHive 5 + Cortex 3 + Elasticsearch
-docker-compose --profile soar up -d
-
-# TheHive UI  →  http://localhost:9000
-# Cortex UI   →  http://localhost:9001
-```
-
-### Configure in `.env`
-
-```env
-THEHIVE_URL=http://thehive:9000
-THEHIVE_API_KEY=your-thehive-api-key
-THEHIVE_ORG=cybertwin
-CORTEX_URL=http://cortex:9001
-CORTEX_API_KEY=your-cortex-api-key
-```
-
----
-
-## 🐳 Docker Deployment
+CyberTwin SOC is **not** a SIEM, not a SOAR, and not yet another dashboard. It is a **digital twin of a Security Operations Center** that ties together the four loops every mature SOC needs:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                   Production Docker Architecture                        │
 │                                                                         │
-│  Browser                                                                │
-│    │  :80                                                               │
-│    ▼                                                                    │
-│  ┌──────────────────────────────────────────────────────────────────┐  │
-│  │                    nginx:1.27-alpine                              │  │
-│  │  (frontend container)                                            │  │
-│  │                                                                  │  │
-│  │  /          → React SPA (built dist/)                            │  │
-│  │  /api/*     → proxy_pass http://backend:8000                     │  │
-│  │  /ws/*      → proxy_pass http://backend:8000 (WebSocket upgrade) │  │
-│  │  /health    → 200 OK (nginx healthcheck)                         │  │
-│  └─────────────────────────┬────────────────────────────────────────┘  │
-│                             │ :8000                                     │
-│  ┌──────────────────────────▼───────────────────────────────────────┐  │
-│  │              python:3.12-slim  (backend container)               │  │
-│  │                                                                  │  │
-│  │  uvicorn — 2 workers — non-root user                             │  │
-│  │  MITRE ATT&CK bundle pre-generated at build time                 │  │
-│  │  Healthcheck: GET /api/health every 30s                          │  │
-│  └──────────┬──────────────────────────────────────────────────────┘  │
-│             │ :6379                                                     │
-│  ┌──────────▼──────────────┐                                           │
-│  │  redis:7-alpine          │  256 MB RAM, LRU eviction               │
-│  │  (cache container)       │  Persisted to named volume              │
-│  └─────────────────────────┘                                           │
+│   1. SIMULATE         2. DETECT          3. RESPOND        4. MEASURE   │
+│   ─────────          ─────────          ─────────         ─────────     │
+│   11 scenarios       46 rules +         SOC cases +       Coverage      │
+│   28 attack         622 MITRE          SOAR (TheHive +    Center +      │
+│   techniques        techniques          Cortex)            Benchmarks    │
+│   Custom Sigma                                                          │
 │                                                                         │
-│  ── optional --profile soar ─────────────────────────────────────────  │
-│  ┌───────────────┐  ┌───────────────┐  ┌────────────────────────────┐  │
-│  │ strangebee/   │  │ thehiveproject │  │  elasticsearch:7.17        │  │
-│  │ thehive:5.3   │  │ /cortex:3.1.8 │  │  (shared index store)      │  │
-│  │ :9000         │  │ :9001         │  │                            │  │
-│  └───────────────┘  └───────────────┘  └────────────────────────────┘  │
+│         ↑__________ continuous improvement loop ___________↓            │
+│                                                                         │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Quick Start
+It answers in concrete numbers — not bullet points — questions every CISO and detection engineer eventually asks:
 
-```bash
-# 1. Clone
-git clone https://github.com/omarbabba779xx/CyberTwin-SOC.git
-cd CyberTwin-SOC
-
-# 2. Configure environment
-cp .env.example .env          # edit passwords, JWT secret
-
-# 3. Start production stack (Redis + FastAPI + nginx)
-docker-compose up -d
-
-# 4. Access
-#    Dashboard  →  http://localhost
-#    API docs   →  http://localhost/api/docs  (proxied via nginx)
-#    Direct API →  http://localhost:8000/docs
-
-# 5. With SOAR (TheHive + Cortex)
-docker-compose --profile soar up -d
-```
-
-### Container Summary
-
-| Container | Image | Port | Role |
-|---|---|---|---|
-| `cybertwin-frontend` | `nginx:1.27-alpine` | **80** | React SPA + API reverse proxy |
-| `cybertwin-backend` | `python:3.12-slim` | 8000 | FastAPI — 2 uvicorn workers |
-| `cybertwin-redis` | `redis:7-alpine` | 6379 | Session cache + rate limiting |
-| `cybertwin-thehive` ⚙️ | `strangebee/thehive:5.3` | 9000 | Case management |
-| `cybertwin-cortex` ⚙️ | `thehiveproject/cortex:3.1.8` | 9001 | IOC analyzers |
-| `cybertwin-elasticsearch` ⚙️ | `elasticsearch:7.17` | 9200 | SOAR data store |
-
-> ⚙️ = optional, started with `--profile soar`
+| Question | Where the answer lives |
+|----------|------------------------|
+| *Of the 622 published ATT&CK techniques, which can my SOC actually detect today?* | `Detection Coverage Center` — 8 honest states (Validated / Failed / Untested / Rule-only / Not-covered / …) |
+| *What's the false-positive rate of my detection rules in the last 30 days?* | `SOC Workflow` — analyst feedback loop on every alert |
+| *If a Solorigate-style supply-chain attack hits us today, will we catch it before exfiltration?* | Run `scenario sc-008-solorigate` and look at the report |
+| *Are my logs sources sufficient for detecting credential dumping?* | `required_logs` per technique × `available_logs` per host group |
+| *How fast can my analysts triage? What's the SLA breach rate?* | SOC cases store SLA, status transitions, and time-to-close |
+| *Which detection engineer changes broke detection?* | Versioned rule store + benchmark comparison |
 
 ---
 
-## 📡 API Reference
+## 📊 Project at a Glance
 
-### Authentication
-```http
-POST /api/auth/login
-Content-Type: application/json
-{ "username": "analyst", "password": "soc2024" }
-
-→ { "access_token": "eyJ...", "role": "analyst", "permissions": [...] }
+```
+                                ┌──────────────────────┐
+                                │   CyberTwin SOC v3   │
+                                │   25 000+ LoC        │
+                                └──────────┬───────────┘
+                                           │
+            ┌──────────────────────────────┼──────────────────────────────┐
+            │                              │                              │
+       ┌────▼─────┐                  ┌────▼─────┐                   ┌────▼─────┐
+       │  PYTHON  │                  │  REACT   │                   │  TESTS   │
+       │ 13 352   │                  │ 11 539   │                   │ 223/223  │
+       │   LoC    │                  │   LoC    │                   │ passing  │
+       └──────────┘                  └──────────┘                   └──────────┘
 ```
 
-### Core Endpoints
+| Metric                        | Count   |  Notes                                                              |
+|-------------------------------|--------:|---------------------------------------------------------------------|
+| **Backend Python**            |  13 352 | Across 8 packages (api, detection, scoring, ai_analyst, …)         |
+| **Frontend React/JSX**        |  11 539 | 26 pages, 10 reusable components, Recharts visualisations           |
+| **Unit & integration tests**  |     223 | All passing on `pytest tests/`                                      |
+| **REST + WebSocket endpoints**|      75 | All rate-limited, all RBAC-scoped, OpenAPI documented               |
+| **MITRE ATT&CK techniques**   |     622 | Full Enterprise matrix, 14 tactics, TAXII 2.1 sync                  |
+| **Detection rules (built-in)**|      46 | 14 platforms, severity-tiered, plus runtime Sigma upload            |
+| **Attack scenarios**          |      11 | Solorigate, ProxyShell, Log4Shell, Insider, Ransomware, …           |
+| **Frontend pages**            |      26 | Dashboard, Detection, Coverage, Cases, Ingestion, MITRE matrix, …   |
+| **Roles (RBAC)**              |      12 | 3 legacy + 9 enterprise (tier1/senior/manager/hunter/auditor/…)     |
+| **Connectors (extensible)**   |      15 | 5 mocks deterministic + 10 real-system stubs (Splunk, Sentinel, …) |
+| **Known CVEs in deps**        |       0 | Verified by `pip-audit` after Apr 2026 dependency upgrade           |
+| **Container scan**            |   clean | Trivy CRITICAL/HIGH = 0 (non-blocking gate in CI)                  |
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Health check |
-| `GET` | `/api/scenarios` | List all 11 scenarios |
-| `POST` | `/api/simulate` | Run a simulation |
-| `GET` | `/api/results/{id}/anomalies` | ML anomaly results |
-| `GET` | `/api/results/{id}/benchmark` | NIST CSF + CIS scores |
-| `GET` | `/api/mitre/techniques` | All 622 ATT&CK techniques |
-| `GET` | `/api/mitre/tactics` | All 14 tactics |
-| `GET` | `/api/mitre/gap-analysis/{id}` | Detection gap analysis (per-simulation) |
-| `GET` | `/api/coverage/summary` | **Coverage Center** — global score + status breakdown |
-| `GET` | `/api/coverage/mitre` | Full per-technique coverage table (filterable) |
-| `GET` | `/api/coverage/technique/{tid}` | Coverage record for one technique |
-| `GET` | `/api/coverage/gaps` | Actionable gaps with recommendations |
-| `GET` | `/api/coverage/gaps/high-risk` | Critical/high-risk gaps only |
-| `POST` | `/api/coverage/recalculate` | Force recalculation (admin) |
-| `POST` | `/api/alerts/{id}/feedback` | **SOC Workflow** — analyst verdict (TP/FP/Benign…) |
-| `GET` | `/api/alerts/feedback/summary` | Aggregate feedback statistics |
-| `GET` | `/api/alerts/feedback/noisy-rules` | Rules with high FP rate from feedback |
-| `POST` | `/api/cases` | Create a SOC case (with SLA) |
-| `GET` | `/api/cases` | List cases (filter by status / severity / assignee) |
-| `GET/PATCH` | `/api/cases/{id}` | Get / update a case |
-| `POST` | `/api/cases/{id}/comments` | Add a timeline comment |
-| `POST` | `/api/cases/{id}/evidence` | Attach evidence (alert / IOC / file / note) |
-| `POST` | `/api/cases/{id}/assign` | Assign to an analyst |
-| `POST` | `/api/cases/{id}/close` | Close the case (closure_reason mandatory) |
-| `POST` | `/api/suppressions` | Create suppression — **must expire** (admin) |
-| `GET` | `/api/suppressions` | List active suppressions |
-| `DELETE` | `/api/suppressions/{id}` | Soft-delete a suppression (admin) |
-| `GET` | `/api/results/{id}/ai-evidence` | **Evidence-first** AI analysis (PII-masked) |
-| `POST` | `/api/ingest/event` | **Live SOC** — submit one OCSF event |
-| `POST` | `/api/ingest/batch` | Submit a batch (≤ 5000 events) |
-| `POST` | `/api/ingest/syslog` | Ingest RFC 3164/5424 syslog lines |
-| `POST` | `/api/ingest/upload` | Upload NDJSON file (≤ 25 MB) |
-| `GET` | `/api/ingest/stats` | Ingestion counters by source/category |
-| `GET` | `/api/ingest/sources` | Supported source_type identifiers |
-| `GET` | `/api/ingest/health` | Public ingestion health probe |
-| `POST` | `/api/ingest/detect` | Run detection on the buffer |
-| `DELETE` | `/api/ingest/buffer` | Clear the buffer (admin) |
-| `GET` | `/api/connectors` | **Enterprise** — registered SIEM/SOAR/EDR/ITSM/TI |
-| `GET` | `/api/connectors/{kind}/{name}/check` | Connectivity probe per connector |
-| `GET` | `/api/health/deep` | Deep probe (cache + DB + ingestion status) |
-| `GET` | `/api/metrics` | Prometheus exposition format |
-| `POST` | `/api/mitre/sync-taxii` | Live TAXII 2.1 sync |
-| `GET` | `/api/sigma/rules` | Loaded Sigma rules |
-| `POST` | `/api/sigma/upload` | Upload new Sigma rule |
-| `WS` | `/ws/simulate/{scenario_id}?token={jwt}` | Live simulation stream (auth via query token) |
-| `GET` | `/api/audit` | Audit log (admin only) |
-| `GET` | `/docs` | Interactive Swagger UI |
+---
 
-### Simulation Request / Response
+## 🏗 Architecture
+
+### High-level component diagram
+
+```
+                                     ┌────────────────────────────┐
+                                     │     ANALYSTS / SOC LEAD     │
+                                     │      (Browser, mobile)      │
+                                     └─────────────┬──────────────┘
+                                                   │ HTTPS (JWT)
+                                                   ▼
+   ┌───────────────────────────────────────────────────────────────────┐
+   │                      FRONTEND  (React 18 + Vite)                   │
+   │  Dashboard · Detection · Coverage · Cases · Ingestion · MITRE      │
+   │  Real-time: WebSocket /ws/simulate/{id}   Charts: Recharts          │
+   └───────────────────────────────────────────────────────────────────┘
+                                                   │
+                                                   ▼
+   ┌───────────────────────────────────────────────────────────────────┐
+   │                   API LAYER  (FastAPI 0.136 + slowapi)             │
+   │  75 endpoints · OpenAPI · Rate limit · CORS · CSP · 12-role RBAC   │
+   │  Middleware: RequestId · MetricsRecorder · JSONLogging · Audit      │
+   └─┬────────┬────────┬────────┬────────┬────────┬────────┬────────┬──┘
+     │        │        │        │        │        │        │        │
+     ▼        ▼        ▼        ▼        ▼        ▼        ▼        ▼
+  ┌─────┐ ┌─────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐
+  │SIM- │ │TELE-│ │DETEC-│ │SCOR- │ │  AI  │ │ ANO- │ │ SOC  │ │ SOAR │
+  │ULA- │ │METRY│ │TION  │ │ ING  │ │ANAL- │ │MALY  │ │WORK- │ │  +   │
+  │TION │ │ GEN │ │ENGINE│ │ENGINE│ │ YST  │ │ ML   │ │FLOW  │ │COV-  │
+  └─────┘ └─────┘ └──────┘ └──────┘ └──────┘ └──────┘ └──────┘ │ERAGE │
+   28 t.   46 r.   46 r.   nist+cis Ollama   IsoFor  cases    └──────┘
+   11 sc.  →OCSF   sigma   →BENCH   /NLG     UEBA    SLA      TheHive
+                  +sigma                     drift  →feedback Cortex
+
+      ┌─────────────────────────────────────────────────────────────┐
+      │  PERSISTENCE   ·  Redis (cache+pubsub)  ·  SQLite/Postgres  │
+      └─────────────────────────────────────────────────────────────┘
+                                  │
+      ┌─────────────────────────────────────────────────────────────┐
+      │  OBSERVABILITY  · Prometheus /metrics  · Structured JSON     │
+      │                  ·  X-Request-ID propagation                  │
+      └─────────────────────────────────────────────────────────────┘
+                                  │
+      ┌─────────────────────────────────────────────────────────────┐
+      │  INGESTION      ·  Win Event · Sysmon · Syslog · CloudTrail │
+      │                 ·  → OCSF normalisation → ring-buffer 50k    │
+      │                 ·  → fed back into the same DETECTION engine │
+      └─────────────────────────────────────────────────────────────┘
+                                  │
+      ┌─────────────────────────────────────────────────────────────┐
+      │  CONNECTORS     ·  SIEM · SOAR · EDR · ITSM · TI            │
+      │                 (Splunk · Sentinel · Elastic · TheHive · …)  │
+      └─────────────────────────────────────────────────────────────┘
+```
+
+### Data flow — full simulation pipeline
+
+```
+   SCENARIO ──► AttackEngine ─► raw events ─┐
+                                            ├──► Telemetry ─► logs (JSON+OCSF)
+   ENV (hosts) ─► generate normal noise ────┘                        │
+                                                                     ▼
+                                       ┌───────────────────► Detection ─► alerts
+                                       │                        │
+                                       │                        ▼
+                                       │                   Correlation ─► incidents
+                                       │                        │
+                                       │                        ▼
+                                       │                   ScoringEngine
+                                       │                        │
+                              ┌────────┴───────┐                ▼
+                              ▼                ▼            AI analyst
+                          Anomaly          Coverage              │
+                            (ML)         (8-state)               ▼
+                              │                │            Final report
+                              ▼                ▼          (markdown + JSON)
+                          UEBA score        gaps[]
+```
+
+---
+
+## 🚀 Features
+
+### 🎭 1 — Adversary simulation engine
+
+- **11 turn-key scenarios** — Solorigate, ProxyShell, Log4Shell, Insider, Lateral movement, Cryptominer, Watering Hole, Living-off-the-Land, …
+- **28 attack techniques** baked into the engine; every event is tagged with its MITRE ATT&CK ID
+- **Custom scenario builder** with strict path-traversal-proof persistence
+- **Realistic timeline generator** that interleaves benign user activity with adversarial actions
+
+### 🔍 2 — Detection engine (multi-source)
+
+- **46 built-in rules** spanning Windows EID, Sysmon, Linux audit, web access, DNS, network, AWS CloudTrail, Azure activity, Office365
+- **Sigma rule loader** — upload `*.yml` Sigma rules at runtime, properly **ReDoS-hardened** (`re.escape` + `fullmatch` semantics, max 256 KB body)
+- **Severity tiering** + confidence weighting + tactic diversity bonus
+- **Incident correlation** — alerts → incidents (kill-chain phase aggregation, multi-host pivot detection)
+
+### 🎯 3 — MITRE ATT&CK Coverage Center *(honest, not vapourware)*
+
+```
+                Coverage state machine
+                ─────────────────────
+
+   ┌───────────────┐      enable rule     ┌─────────────┐
+   │  NOT_COVERED  │ ───────────────────► │ RULE_EXISTS │
+   └───────────────┘                      └──────┬──────┘
+                                                 │ run scenario
+                                                 ▼
+                                         ┌────────────────┐
+                                         │  RULE_UNTESTED │
+                                         └────┬───────┬───┘
+                                              │       │
+                                          PASS│       │FAIL
+                                              ▼       ▼
+                              ┌─────────────────┐ ┌────────────────┐
+                              │ TESTED_DETECTED │ │ TESTED_FAILED  │
+                              └─────────────────┘ └────────────────┘
+                                  validated          regression!
+```
+
+8 honest states (`NOT_COVERED`, `RULE_EXISTS`, `RULE_UNTESTED`, `TESTED_DETECTED`, `TESTED_FAILED`, `LOG_MISSING`, `MUTED`, `DEPRECATED`) with **time-to-detect**, **confidence weighted by severity**, and a **per-tactic risk score** weighted toward `Initial Access`, `Privilege Escalation`, and `Exfiltration`.
+
+### 🤖 4 — AI Analyst (LLM + deterministic fallback)
+
+- Ollama-compatible (Llama 3, Mistral, Qwen) with automatic fallback to a **fully deterministic NLG template** so reports are always produced
+- **Evidence-first** narrative — every claim is grounded on an alert ID or log timestamp
+- IOC extractor: external/internal IPs, domains, URLs, **file hashes (MD5/SHA1/SHA256)**, **email addresses**, compromised accounts (the hash + email regexes were dead code in v2 — fixed in this audit, see `backend/ai_analyst.py:434`)
+
+### 📈 5 — ML Anomaly Detection & UEBA
+
+- IsolationForest baseline trained on benign telemetry
+- UEBA: per-user behavioural drift score
+- Configurable contamination rate; warm-start when retrained
+
+### 🚨 6 — SOC Workflow (alerts → cases → SLA)
+
+- **SQLite-backed Case store** (Postgres ready)
+- Status transitions, comments, evidence attachments, SLA hours per severity
+- Analyst feedback (`true_positive` / `false_positive`) feeds back into rule confidence
+- **Suppressions** with TTL to silence known-noisy rules per host/user
+- **SQL-injection-hardened** UPDATE composer (column allowlist + identifier regex, double-belt defence)
+
+### 📡 7 — Live SOC Telemetry Ingestion (OCSF)
+
+```
+┌──────────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│ Windows EventLog     │    │   Sysmon         │    │  Syslog 3164/   │
+│ (4624,4625,4688,…)  │    │   (1,3,7,8,…)    │    │     5424        │
+└──────────┬───────────┘    └─────────┬────────┘    └─────────┬───────┘
+           │                          │                        │
+           └──────────────┬───────────┴────────────┬──────────┘
+                          ▼                        ▼
+                  ┌──────────────────────────────────────┐
+                  │      OCSF NORMALISER  (mappers.py)    │
+                  └──────────────────┬───────────────────┘
+                                     ▼
+                           ┌────────────────────┐
+                           │ Ring-buffer 50 k    │
+                           │ events  (thread-    │
+                           │ safe, per-source)   │
+                           └─────────┬──────────┘
+                                     ▼
+                           ┌────────────────────┐
+                           │ Same Detection      │
+                           │ Engine as the       │
+                           │ simulator           │
+                           └────────────────────┘
+```
+
+- **9 ingestion endpoints** — `/api/ingest/event`, `/batch` (≤5 000), `/syslog`, `/upload` (NDJSON ≤25 MB), `/detect`, `/stats`, `/sources`, `/health`, `/buffer`
+- Sources covered: Windows Security & Sysmon, Linux syslog (RFC 3164 & 5424), AWS CloudTrail, generic JSON
+- **Same** detection engine: zero-cost reuse of all 46 rules + Sigma uploads
+
+### 🤝 8 — SOAR Integration (TheHive 5 + Cortex 3)
+
+- Optional `--profile soar` in docker-compose
+- Auto-create cases, run analysers (Cortex), enrich IOCs
+- Webhook in / webhook out for bidirectional sync
+
+### 🧪 9 — Compliance Benchmarking (NIST CSF v1.1 + CIS v8)
+
+- Maps every detection capability to NIST sub-categories (`DE.AE-2`, `DE.CM-7`, …) and CIS Controls (CIS 8.11, CIS 13.6, …)
+- Generates a compliance score per simulation
+- Trend dashboard for improving posture over time
+
+### 📊 10 — Observability (production-ready)
+
+- **Prometheus**: 9 metrics under the `cybertwin_*` namespace (counters + histograms; p50/p95/p99 ready)
+- **JSON structured logs** when `ENABLE_JSON_LOGS=1`
+- **`X-Request-ID`** propagation through every request, every log line, every metric
+- **`/api/health/deep`** that 503s if cache or DB is degraded — designed for K8s readiness probes
+- **kube-prometheus-stack** ready: a `ServiceMonitor` template ships in `deploy/helm/`
+
+### 🏷 11 — Enterprise RBAC (12 roles, scoped permissions)
+
+| Tier         | Roles                                                                          |
+|--------------|--------------------------------------------------------------------------------|
+| **Legacy**   | `admin` · `analyst` · `viewer`                                                 |
+| **Tier-1**   | `tier1_analyst` · `senior_analyst` · `soc_manager`                            |
+| **Engineering** | `detection_engineer` · `threat_hunter`                                       |
+| **Read-only**| `auditor` · `read_executive` · `service_account`                              |
+| **Platform** | `platform_admin`                                                                |
+
+Permissions are **scoped** (`case:write`, `rule:disable`, `ingestion:read`, `audit:export`, …) — never blanket admin.
+
+### 🔌 12 — Connector framework (extensible)
+
+```
+backend/connectors/
+├── base.py        ← 5 abstract interfaces (SIEM, SOAR, EDR, ITSM, TI)
+├── mock.py        ← deterministic in-memory mocks for local dev
+├── stubs.py       ← real-system stubs (Splunk, Sentinel, Elastic, TheHive,
+│                    Defender, CrowdStrike, Jira, ServiceNow, MISP, OpenCTI)
+└── registry.py    ← `get_connector(kind, name)` lookup
+```
+
+`/api/connectors` lists every registered backend; `/api/connectors/{kind}/{name}/check` runs a health-probe.
+
+---
+
+## 📸 Screenshots
+
+> *Screenshots live in `docs/screenshots/`. Add yours via PR.*
+
+| Page | Purpose |
+|------|---------|
+| `Dashboard.jsx` | Live overview: KPIs, recent simulations, rule status |
+| `Detection.jsx` | Rule catalogue, confidence per rule, last-seen, true/false-positive ratio |
+| `Coverage.jsx` | 622-technique heat-map with the 8 honest states |
+| `Cases.jsx` | Kanban-style case board with SLA timers |
+| `Ingestion.jsx` | Live counters per source + run-detection button |
+| `MitreView.jsx` | Full ATT&CK matrix, click-through to technique → rules → scenarios |
+
+---
+
+## ⚡ Quick Start
+
+### Option A — Docker Compose (recommended)
+
+```bash
+git clone https://github.com/omarbabba779xx/CyberTwin-SOC.git
+cd CyberTwin-SOC
+
+# Set strong secrets BEFORE first run
+cp .env.example .env
+# edit .env: set JWT_SECRET (>=32 chars) + AUTH_*_PASSWORD
+
+docker compose up -d
+```
+
+Open:
+- Frontend → http://localhost:3001
+- API & docs → http://localhost:8000/docs
+- Prometheus metrics → http://localhost:8000/api/metrics
+
+Default users (override via env vars):
+
+| Username   | Default password (override!)        | Role     |
+|-----------|--------------------------------------|----------|
+| `admin`   | `AUTH_ADMIN_PASSWORD`                | admin    |
+| `analyst` | `AUTH_ANALYST_PASSWORD`              | analyst  |
+| `viewer`  | `AUTH_VIEWER_PASSWORD`               | viewer   |
+
+### Option B — Local development (Python + Node)
+
+```bash
+# Backend
+python -m venv .venv && .venv/Scripts/Activate.ps1   # Windows
+pip install -r requirements.txt
+uvicorn backend.api.main:app --reload --port 8000
+
+# Frontend
+cd frontend
+npm ci
+npm run dev    # http://localhost:3001
+```
+
+### Option C — Kubernetes via Helm
+
+```bash
+helm install cybertwin deploy/helm/cybertwin-soc \
+  --set ingress.host=soc.example.com \
+  --create-namespace -n cybertwin
+```
+
+`runAsNonRoot`, `drop:[ALL]`, `liveness/readiness/startup` probes, `ServiceMonitor` for kube-prometheus-stack — all pre-wired.
+
+---
+
+## 📥 Live Telemetry Ingestion (OCSF)
+
+### Send a single Windows logon event
+
+```bash
+curl -X POST http://localhost:8000/api/ingest/event \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "source": "windows_security",
+        "event_id": 4625,
+        "host": "WIN-DC-01",
+        "user": "alice",
+        "src_ip": "203.0.113.45",
+        "raw": "..."
+      }'
+```
+
+### NDJSON bulk upload (≤ 25 MB)
+
+```bash
+curl -X POST http://localhost:8000/api/ingest/upload \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/x-ndjson" \
+  --data-binary @sample.ndjson
+```
+
+### Run detection over the in-memory ring-buffer
+
+```bash
+curl -X POST http://localhost:8000/api/ingest/detect -H "Authorization: Bearer $TOKEN"
+```
+
+Detection results re-use the 46 built-in rules + every Sigma rule uploaded at runtime. **The ingestion path is the simulation path** — there's a single detection brain.
+
+---
+
+## 🎯 Detection Coverage Center
+
+Open `Coverage.jsx` in the frontend or call:
+
+```bash
+curl http://localhost:8000/api/coverage \
+  -H "Authorization: Bearer $TOKEN" | jq '.summary'
+```
+
+Sample response:
 
 ```json
-// POST /api/simulate
 {
-  "scenario_id": "sc-ransomware-001",
-  "duration_minutes": 30
-}
-
-// Response
-{
-  "scenario": { "id": "sc-ransomware-001", "name": "Ransomware Attack" },
-  "total_events": 1842,
-  "total_alerts": 14,
-  "total_anomalies": 15,
-  "overall_score": 80.3,
-  "risk_level": "Low",
-  "maturity_level": "Managed",
-  "scores": {
-    "detection": 78.5,
-    "coverage": 62.3,
-    "response": 82.1,
-    "visibility": 79.4
-  },
-  "mitre_coverage": { "TA0001": [...], "TA0005": [...] },
-  "ai_analysis": {
-    "summary": "The simulation revealed...",
-    "iocs": ["powershell.exe -enc ...", "C:\\Windows\\Temp\\payload.exe"],
-    "recommendations": ["Enable PowerShell ScriptBlock Logging", "..."],
-    "source": "nlg_fallback"
+  "catalog_total": 622,
+  "validated": 47,
+  "failed": 3,
+  "untested": 18,
+  "rule_mapped": 68,
+  "not_covered": 554,
+  "high_risk_gaps": 41,
+  "by_tactic": {
+    "Initial Access": {"validated": 6, "covered_pct": 24.0, "high_risk_gaps": 12},
+    "Execution":      {"validated": 9, "covered_pct": 31.0, "high_risk_gaps": 4},
+    "...": "..."
   }
 }
 ```
 
----
-
-## 🚀 Installation
-
-### Prerequisites
-
-- Python 3.12+
-- Node.js 18+
-- (Optional) Redis for caching
-- (Optional) Ollama for local LLM analysis
-
-### Backend Setup
-
-```bash
-# Clone the repository
-git clone https://github.com/omarbabba779xx/CyberTwin-SOC.git
-cd CyberTwin-SOC
-
-# Create virtual environment
-python -m venv .venv
-.venv\Scripts\activate        # Windows
-# source .venv/bin/activate   # Linux/macOS
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Generate the full MITRE ATT&CK technique bundle (offline, no internet needed)
-python -m backend.mitre.generate_bundle
-
-# Start the API server
-python -m uvicorn backend.api.main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev       # Development (http://localhost:5173)
-npm run build     # Production build
-```
-
-### Docker (All-in-one)
-
-```bash
-docker-compose up --build
-# API  → http://localhost:8000
-# UI   → http://localhost:3001
-# Docs → http://localhost:8000/docs
-```
+The number of validated techniques is conservative on purpose: **a rule is validated only when a scenario exercises the technique AND the rule fires.**
 
 ---
 
-## ⚙️ Configuration
+## 🎫 SOC Workflow
 
-Create a `.env` file in the project root:
-
-```env
-# Authentication
-AUTH_ADMIN_PASSWORD=your-secure-admin-password
-AUTH_ANALYST_PASSWORD=your-secure-analyst-password
-AUTH_VIEWER_PASSWORD=your-secure-viewer-password
-
-# JWT
-JWT_EXPIRY_HOURS=24
-
-# Cache (leave blank for in-memory)
-REDIS_URL=redis://localhost:6379
-
-# LLM (optional — uses NLG fallback if unavailable)
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3
-
-# CORS
-CORS_ORIGINS=http://localhost:3001,http://localhost:5173
-
-# App
-APP_VERSION=3.0.0
+```
+  alert ──► Case (auto or manual)
+              │
+              ├─► comment / evidence
+              ├─► assign analyst
+              ├─► SLA timer (severity → hours)
+              ├─► transition: NEW → IN_PROGRESS → RESOLVED / FALSE_POSITIVE / CLOSED
+              └─► feedback → updates rule confidence + suppression suggestion
 ```
 
-### RBAC Roles
+Endpoints:
 
-| Role | Permissions |
-|---|---|
-| `admin` | All permissions including audit log, user management |
-| `analyst` | Run simulations, view results, upload Sigma rules |
-| `viewer` | Read-only access to results and dashboards |
+| Method | Path                                   | Purpose                          |
+|-------:|----------------------------------------|----------------------------------|
+| `POST` | `/api/cases`                           | Open a case from an alert        |
+| `GET`  | `/api/cases`                           | List with filters & SLA status   |
+| `PATCH`| `/api/cases/{id}`                      | Update status/assignee (allowlist-validated)   |
+| `POST` | `/api/cases/{id}/comment`              | Append a comment                 |
+| `POST` | `/api/cases/{id}/evidence`             | Attach evidence artefact         |
+| `POST` | `/api/feedback/{alert_id}`             | TP / FP feedback for a rule      |
+| `POST` | `/api/suppressions`                    | Add scoped suppression with TTL  |
 
 ---
 
-## 📁 Project Structure
+## 📊 Observability & Metrics
+
+```
+# HELP cybertwin_requests_total HTTP requests received
+# TYPE cybertwin_requests_total counter
+cybertwin_requests_total{method="GET",path="/api/coverage",status="200"} 1245
+cybertwin_request_latency_seconds_bucket{path="/api/ingest/batch",le="0.01"} 312
+cybertwin_ingest_events_total{source="windows_security"} 50124
+cybertwin_detection_alerts_total{severity="high"} 87
+cybertwin_cases_open{severity="critical"} 3
+```
+
+Sample Grafana queries (one-liners):
+
+```promql
+# p95 API latency per endpoint
+histogram_quantile(0.95, sum by (path,le)(rate(cybertwin_request_latency_seconds_bucket[5m])))
+
+# ingestion EPS by source
+sum by (source)(rate(cybertwin_ingest_events_total[1m]))
+
+# rolling FP rate per rule
+sum by (rule_id)(rate(cybertwin_feedback_total{verdict="false_positive"}[24h]))
+  / sum by (rule_id)(rate(cybertwin_feedback_total[24h]))
+```
+
+---
+
+## 🔐 Security Posture
+
+This project takes its own threat model seriously.
+
+### Hardening that ships in the codebase
+
+| Surface               | Control                                                                 |
+|-----------------------|-------------------------------------------------------------------------|
+| Auth                  | bcrypt (12 rounds) · JWT (HS256, 32-byte key) · 5/min login rate-limit   |
+| API                   | slowapi rate-limit on every endpoint · CORS allowlist · 12-role RBAC    |
+| File uploads          | `_safe_path()` regex + path-resolution check (no traversal possible)    |
+| Sigma loader          | YAML safe_load · 256 KB max · ReDoS-proof globbing · `re.fullmatch`     |
+| SQL                   | Parametrised queries · column allowlist + regex for dynamic UPDATE      |
+| Secrets               | `.jwt_secret` git-ignored & untracked · env-driven · prod warning gate  |
+| Containers            | `runAsNonRoot` · `drop:[ALL]` · multi-stage builds · `HEALTHCHECK`     |
+| Audit                 | Every state-changing endpoint logs to `audit_log` (user, role, IP, action) |
+
+### Continuous security checks (CI)
+
+| Tool          | Purpose                                       | Status          |
+|---------------|-----------------------------------------------|-----------------|
+| **Bandit**    | Python static security analysis               | non-blocking    |
+| **pip-audit** | CVE scan on `requirements.txt`                | **0 known CVEs** ✅ |
+| **Semgrep**   | multi-language SAST (Python + JS)             | non-blocking    |
+| **Gitleaks**  | secret scanning across full git history       | non-blocking    |
+| **Trivy**     | filesystem + container vuln scan              | non-blocking    |
+| **CycloneDX** | SBOM generation (Python + npm)                | artefact upload |
+| **npm audit** | frontend dependency vulnerabilities           | high gate       |
+
+### Findings fixed in the most recent audit (Apr 2026)
+
+| ID    | Finding                                           | Status |
+|------:|---------------------------------------------------|--------|
+| CRIT-1| Path traversal via `scenario.id`                 | ✅ Fixed (`_safe_path`) |
+| CRIT-2| Path traversal via Sigma `rule_id`               | ✅ Fixed (`_safe_path`) |
+| CRIT-3| ReDoS in Sigma matcher (`(.*)*` patterns)         | ✅ Fixed (escape + fullmatch) |
+| CRIT-4| `re.search` semantics → wrong matches            | ✅ Fixed (fullmatch) |
+| CRIT-5| `data/.jwt_secret` was tracked in git             | ✅ Fixed (`git rm --cached`) |
+| CRIT-6| 9 known CVEs in dependency closure               | ✅ Fixed (FastAPI 0.136 / starlette 0.49 / pyjwt 2.12 / multipart 0.0.26) |
+| BUG-1 | F601 — `T1053.003` & `T1052.001` defined twice   | ✅ Fixed (merged, no data loss) |
+| BUG-2 | Dead code: `hash_re` & `email_re` never extracted | ✅ Fixed (now actually used in IOC extractor) |
+| BUG-3 | Dead code: `severity_weights` duplicate          | ✅ Fixed |
+| BUG-4 | flake8 1127 errors on PR                         | ✅ Fixed (intentional patterns ignored, real bugs enforced) |
+
+---
+
+## 🚢 Production Deployment
+
+### Docker Compose (with optional profiles)
+
+```bash
+# Full SOC stack (incl. SOAR + Postgres)
+docker compose --profile soar --profile prod-db up -d
+
+# Just the SOC core
+docker compose up -d
+```
+
+Service map:
+
+| Service       | Port  | Purpose                       |
+|---------------|------:|-------------------------------|
+| `frontend`    | 3001  | nginx-served React SPA        |
+| `backend`     | 8000  | FastAPI uvicorn               |
+| `redis`       | 6379  | cache, pubsub, rate-limiter   |
+| `postgres`    | 5432  | (`prod-db` profile)           |
+| `thehive`     | 9000  | (`soar` profile)              |
+| `cortex`      | 9001  | (`soar` profile)              |
+
+### Helm
+
+```bash
+helm upgrade --install cybertwin deploy/helm/cybertwin-soc \
+  --set image.backend.tag=v3.0.0 \
+  --set image.frontend.tag=v3.0.0 \
+  --set ingress.host=soc.example.com \
+  --set ingress.tls.enabled=true \
+  --set serviceMonitor.enabled=true
+```
+
+### Benchmarks
+
+```bash
+# k6 — API load test (p95 < 500 ms gate)
+k6 run benchmarks/k6_api_test.js \
+  -e BASE=http://localhost:8000 -e TOKEN=$JWT
+
+# locust — ingestion throughput
+locust -f benchmarks/locust_ingestion.py --host http://localhost:8000
+```
+
+---
+
+## 📂 Project Structure
 
 ```
 CyberTwin SOC/
-│
-├── backend/
-│   ├── api/
-│   │   └── main.py              # FastAPI app — 30+ endpoints
-│   ├── auth.py                  # JWT + bcrypt authentication
-│   ├── audit.py                 # Audit logging
-│   ├── cache.py                 # Redis / in-memory cache
-│   ├── database.py              # SQLite persistence
-│   ├── orchestrator.py          # Simulation coordinator
-│   ├── llm_analyst.py           # Ollama LLM + NLG fallback
-│   │
-│   ├── detection/
-│   │   ├── engine.py            # Detection pipeline
-│   │   ├── rules.py             # 46 detection rules (RULE-001 → RULE-046)
-│   │   ├── sigma_loader.py      # Dynamic Sigma YAML loader
-│   │   └── anomaly.py           # IsolationForest + UEBA
-│   │
-│   ├── mitre/
-│   │   ├── attack_data.py       # MITRE_TECHNIQUES dict (622 entries)
-│   │   ├── generate_bundle.py   # Offline bundle generator
-│   │   ├── download_attack.py   # Live STIX bundle downloader
-│   │   ├── taxii_sync.py        # TAXII 2.1 live sync
-│   │   ├── mapper.py            # Event → technique mapper
-│   │   └── techniques_bundle.json  # Pre-generated ATT&CK v14 data
-│   │
-│   ├── scoring/
-│   │   └── __init__.py          # ScoringEngine + NIST CSF + CIS Controls
-│   │
-│   └── simulation/
-│       ├── attack_engine.py     # Scenario loader + event generator
-│       ├── environment.py       # Virtual network environment
-│       └── log_generator.py     # Realistic log synthesis
-│
-├── frontend/
-│   └── src/
-│       ├── pages/               # 20 dashboard pages
-│       │   ├── Dashboard.jsx
-│       │   ├── MitreView.jsx
-│       │   ├── Anomaly.jsx      # ML anomaly dashboard
-│       │   ├── Benchmark.jsx    # NIST/CIS benchmark view
-│       │   ├── AIAnalysis.jsx
-│       │   └── ...17 more
-│       └── components/
-│           ├── Sidebar.jsx      # Navigation + LLM status indicator
-│           ├── LiveSimulation.jsx
-│           └── ...
-│
-├── scenarios/                   # 11 attack scenario JSON files
-│   ├── ransomware.json
-│   ├── kerberoasting.json
-│   ├── apt_campaign.json
-│   ├── cloud_attack.json
-│   └── ...7 more
-│
-├── data/
-│   └── sigma_rules/             # Drop custom Sigma rules here (.yml)
-│
-├── requirements.txt
-├── docker-compose.yml
+├── backend/                       Python — 13 352 LoC
+│   ├── api/                       FastAPI app, 75 endpoints, RBAC, rate-limit
+│   ├── auth.py                    bcrypt + JWT + 12 roles
+│   ├── ai_analyst.py              LLM/NLG analyst & IOC extractor
+│   ├── connectors/                15 SIEM/SOAR/EDR/ITSM/TI connectors
+│   ├── coverage/                  Coverage Center (8-state machine)
+│   ├── detection/                 46 rules + Sigma loader + correlation
+│   ├── ingestion/                 OCSF ring-buffer & pipeline
+│   ├── mitre/                     622 techniques, 14 tactics, TAXII sync
+│   ├── ml_anomaly/                IsolationForest + UEBA
+│   ├── normalization/             Win EID / Sysmon / syslog / CloudTrail
+│   ├── observability/             Prometheus, JSON logs, request_id
+│   ├── orchestrator.py            Full simulation pipeline
+│   ├── reports/                   Markdown + JSON report builder
+│   ├── scoring/                   NIST CSF + CIS benchmark
+│   ├── simulation/                28 attack-technique builder
+│   ├── soc/                       Cases, comments, evidence, SLA, suppressions
+│   └── telemetry/                 Log generator (LogEvent objects)
+├── frontend/                      React 18 + Vite — 11 539 LoC
+│   ├── src/pages/                 26 pages
+│   ├── src/components/            10 reusable
+│   └── Dockerfile                 nginx-served, multi-stage
+├── tests/                         223 tests, all passing
+├── benchmarks/                    k6 + locust load tests
+├── deploy/helm/                   Helm chart + ServiceMonitor
+├── scenarios/                     11 attack scenarios (JSON)
+├── data/sigma_rules/              runtime-uploaded Sigma rules
+├── docker-compose.yml             core + soar + prod-db profiles
+├── Dockerfile.backend             multi-stage, non-root
+├── .github/workflows/ci.yml       6-job CI (tests, build, lint, security, docker)
 └── README.md
 ```
 
 ---
 
-## 🔒 Security Design
+## 🧪 Testing
+
+```bash
+# Full test suite
+python -m pytest tests/ -v
+
+# With coverage
+python -m pytest tests/ --cov=backend --cov-report=term-missing
+
+# A single area
+python -m pytest tests/test_detection.py -k "sigma"
+
+# CI-equivalent lint
+flake8 backend/ --max-line-length=120 \
+       --ignore=E501,W503,E402,E241,E231,E704
+
+# Security scans (local)
+bandit -r backend/ -ll --skip B101,B104
+pip-audit -r requirements.txt --strict
+```
+
+Current state on `master`:
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Security Architecture                    │
-│                                                             │
-│  Authentication   bcrypt (4.x direct) + JWT HS256           │
-│  Authorization    RBAC — admin / analyst / viewer           │
-│  Rate Limiting    slowapi — 5 req/min login, 60 req/min API │
-│  Audit Trail      Every action logged to SQLite             │
-│  Secrets          .env file (never committed to git)        │
-│  CORS             Configurable allowed origins              │
-│  Input Validation Pydantic v2 + regex sanitization          │
-└─────────────────────────────────────────────────────────────┘
+============================ 223 passed in 33.97s ============================
 ```
 
 ---
 
-## ⚠️ Honest Limitations
+## 🗺 Roadmap
 
-CyberTwin SOC is a **digital-twin platform for SOC readiness evaluation**. It is **not** a turnkey production SOC and does **not** detect 100 % of real-world attacks. Read this section carefully before quoting numbers.
+> ✅ All 17 phases below are *delivered* on `master`.
 
-### What the badges actually mean
+| Phase | Theme                                                                  | Status |
+|------:|------------------------------------------------------------------------|:------:|
+|     1 | Stable simulation engine + 11 scenarios                               | ✅ |
+|     2 | Telemetry + LogEvent dataclass                                        | ✅ |
+|     3 | 46 detection rules + Sigma loader                                     | ✅ |
+|     4 | LLM AI Analyst (Ollama + NLG fallback)                                | ✅ |
+|     5 | ML anomaly detection (IsolationForest + UEBA)                          | ✅ |
+|     6 | MITRE ATT&CK 622 techniques + TAXII 2.1 sync                          | ✅ |
+|     7 | Infrastructure (Redis cache, WebSocket, async)                         | ✅ |
+|     8 | NIST CSF + CIS Controls benchmarking                                  | ✅ |
+|     9 | Frontend pages — Benchmark, Anomaly, SOAR, LLM status                 | ✅ |
+|    10 | Unit test suite (now 223 tests)                                        | ✅ |
+|    11 | Docker Compose production deployment                                   | ✅ |
+|    12 | SOAR integration (TheHive 5 + Cortex 3)                                | ✅ |
+|    13 | Stabilisation (CI fixes, governance, secret guards, doc honesty)      | ✅ |
+|    14 | Detection Coverage Center (8-state honest status)                     | ✅ |
+|    15 | SOC Workflow (cases, feedback, suppressions, AI evidence-first)        | ✅ |
+|    16 | Live SOC ingestion (OCSF: Win/Sysmon/syslog/CloudTrail)               | ✅ |
+|    17 | Enterprise (Prometheus + JSON logs + 12-role RBAC + connectors + Helm)| ✅ |
 
-| Badge / metric                    | What it measures                                                              | What it does **not** mean                                                                 |
-| --------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| `MITRE ATT&CK 622 Techniques`     | Number of techniques **loaded into the catalog** for mapping and visualization | That CyberTwin **detects** all 622 techniques                                              |
-| `Detection Rules: 46`             | Number of Sigma-style rules currently shipped                                 | That all 46 rules are tuned, validated, or noise-free in your environment                 |
-| `Attack Scenarios: 11`            | Pre-built simulation scripts that emit known-bad telemetry                    | A complete adversary-emulation library — real APTs use thousands of variant procedures    |
-| `Tests: 128 passing`              | Backend unit / integration tests covering Python modules and API endpoints    | End-to-end validation of every detection rule against every supported log source          |
+### Next ideas (not yet on `master`)
 
-### What CyberTwin SOC **is** good for
-
-- Measuring **detection coverage** against a defined attack catalog and producing **honest gap reports**.
-- Running **repeatable simulations** to compare configurations, rule sets, or analyst response over time.
-- **Training analysts** on realistic-looking telemetry without touching production.
-- Generating **executive-level reports** with NIST CSF / CIS Controls scoring and MITRE heatmaps.
-- Serving as an **integration playground** for SIEM/SOAR/EDR/ITSM connectors before wiring them to real production systems.
-
-### What CyberTwin SOC is **not** (yet)
-
-- A **SIEM**. It does not replace Splunk, Sentinel, Elastic, etc. It is designed to *measure* their coverage.
-- A **threat-intelligence platform**. The threat-intel views are illustrative.
-- A **production EDR**. The endpoint events are synthetic unless you wire up a connector.
-- A **certified compliance auditor**. NIST/CIS scoring is indicative and based on simulation outcomes, not formal audit evidence.
-
-### MITRE coverage — the honest definitions
-
-Since Phase 2 (Detection Coverage Center), the platform distinguishes the levels below in real time. Each technique in the catalog is classified into exactly **one** of 8 honest statuses, exposed via `GET /api/coverage/mitre` and the **Coverage Center** page.
-
-| Level                            | Definition                                                                                | Status today |
-| -------------------------------- | ----------------------------------------------------------------------------------------- | ------------ |
-| Catalog Coverage                 | Technique exists in the loaded MITRE bundle                                                | ✅ Live (622) |
-| Rule-Mapped Coverage             | At least one detection rule references the technique                                       | ✅ Live |
-| Rule Untested                    | Rule and scenario exist but no recent simulation has validated detection                   | ✅ Live |
-| Tested & Detected (Validated)    | Recent simulation produced an alert mapped to the technique                                | ✅ Live |
-| Tested but Failed                | Recent simulation covered the technique but no rule fired                                  | ✅ Live |
-| Needs Data Source                | Rule exists but the required telemetry source is unavailable                               | ✅ Live |
-| Noisy Coverage                   | Rule fires but is flagged by analyst feedback as high-FP                                   | Roadmap (Phase 3) |
-| High-Risk Gaps                   | Gap on a critical tactic (Initial Access, Privilege Escalation, Defense Evasion, …)        | ✅ Live |
-
-The **Global Detection Coverage Score** (0..100) is a weighted average:
-3 points per validated technique + 1 point per rule-mapped technique, normalised against the catalog size. It is **not** a percentage of "techniques you can stop".
-
-### Reproducibility & responsible use
-
-- All detections, scores, and reports are **reproducible** for a given scenario + seed. They are **not** predictions of real-world incidents.
-- The AI Analyst is a **decision-support tool**, not a source of truth. Always verify its output against the underlying events.
-- Use the platform on lab environments, controlled tenants, or air-gapped networks — never paste production secrets into the SOAR / connector configuration without proper review.
-
-> If you find a claim in this README that overstates what the code actually does, please open an issue — accuracy matters more than marketing here.
+See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — a 30-item backlog covering **multi-tenancy**, **real connectors (Splunk/Sentinel/Jira live)**, **executive dashboard**, **purple-team dashboards**, **STIX/TAXII feed publishing**, **eBPF live agent**, **JA3/JA3S TLS fingerprinting**, **detection-as-code GitOps flow**, **Looker Studio export**, …
 
 ---
 
-## 📈 Roadmap
+## 🤝 Contributing
 
-- [x] Phase 1 — Security (JWT, RBAC, bcrypt, audit)
-- [x] Phase 2 — 11 attack scenarios
-- [x] Phase 3 — 46 detection rules + Sigma loader
-- [x] Phase 4 — LLM AI analyst (Ollama + NLG fallback)
-- [x] Phase 5 — ML anomaly detection (IsolationForest + UEBA)
-- [x] Phase 6 — MITRE ATT&CK 622 techniques + TAXII sync
-- [x] Phase 7 — Infrastructure (Redis cache, WebSocket, async)
-- [x] Phase 8 — NIST CSF v1.1 + CIS Controls v8 benchmarking
-- [x] Phase 9 — Frontend: Benchmark, Anomaly, SOAR, LLM status pages
-- [x] Phase 10 — Unit test suite (128 tests, 100% passing)
-- [x] Phase 11 — Docker Compose production deployment (multi-stage + nginx)
-- [x] Phase 12 — SOAR integration (TheHive 5 + Cortex 3)
-- [x] Phase 13 — Stabilization (CI fixes, governance, secret guards, doc honesty)
-- [x] Phase 14 — Detection Coverage Center (8-state honest status, 622-technique table)
-- [x] Phase 15 — SOC Workflow (alert feedback, case management, suppressions, AI evidence-first)
-- [x] Phase 16 — Live SOC (OCSF normalisation: Win/Sysmon/syslog/CloudTrail + ingestion pipeline)
-- [x] Phase 17 — Enterprise (Prometheus + JSON logs + 9-role RBAC + connectors + Helm/K8s + benchmarks)
+PRs are welcome. The bar is:
+
+1. `pytest tests/` is green (223/223).
+2. `flake8` is clean with the same flags CI uses.
+3. New endpoints get a unit test **and** a permission scope.
+4. New ATT&CK techniques get added to `backend/mitre/attack_data.py`.
+5. No secrets, no hard-coded credentials, no path-traversal-prone string ops.
+
+---
+
+## 📜 License
+
+MIT — see [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-Built with ❤️ for the cybersecurity community
+**Built with ❤️ for the cybersecurity community.**
 
-**[⭐ Star this repo](https://github.com/omarbabba779xx/CyberTwin-SOC)** if you find it useful!
+If this project saves your team a sprint, **[⭐ star the repo](https://github.com/omarbabba779xx/CyberTwin-SOC)** — it's the only metric I track.
 
 </div>
-

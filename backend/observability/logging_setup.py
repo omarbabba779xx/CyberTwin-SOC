@@ -20,9 +20,9 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         payload = {
-            "ts":      datetime.now(timezone.utc).isoformat(),
-            "level":   record.levelname,
-            "logger":  record.name,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
             "message": record.getMessage(),
         }
         rid = request_id_var.get()

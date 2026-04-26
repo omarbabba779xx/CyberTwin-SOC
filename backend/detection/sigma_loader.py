@@ -70,9 +70,25 @@ _SIGMA_TO_SEVERITY: dict[str, str] = {
 def _build_condition(detection: dict[str, Any], logsource_type: str) -> Callable[[list[dict]], list[dict]]:
     """Build a CyberTwin condition function from a Sigma detection block."""
 
+    def _glob_match(needle: str, haystack: str) -> bool:
+        """Sigma-style ``*`` glob match without ReDoS risk.
+
+        We escape every regex metachar in the user-supplied pattern, then
+        replace the (still-escaped) ``\\*`` placeholder with ``.*``. Finally
+        we use :py:meth:`re.fullmatch` because Sigma globs are full-string
+        matches (``cmd.exe`` should NOT match ``notcmd.exe.bak``).
+        """
+        # re.escape turns "*" into "\*" -- swap that single token back.
+        pattern = re.escape(needle).replace(r"\*", ".*").replace(r"\?", ".")
+        try:
+            return re.fullmatch(pattern, haystack) is not None
+        except re.error:
+            return False
+
     def _match_event(event: dict, search: dict) -> bool:
         for field, value in search.items():
             if field == "keywords":
+                # 'keywords' = substring match against any field's string repr
                 haystack = str(event).lower()
                 values = value if isinstance(value, list) else [value]
                 if not any(str(v).lower() in haystack for v in values):
@@ -82,8 +98,13 @@ def _build_condition(detection: dict[str, Any], logsource_type: str) -> Callable
             values = value if isinstance(value, list) else [value]
             matched = False
             for v in values:
-                pattern = str(v).lower().replace("*", ".*")
-                if re.search(pattern, event_val):
+                needle = str(v).lower()
+                # Plain substring match if no glob char (faster + safer)
+                if "*" not in needle and "?" not in needle:
+                    if needle == event_val:
+                        matched = True
+                        break
+                elif _glob_match(needle, event_val):
                     matched = True
                     break
             if not matched:

@@ -285,7 +285,7 @@ MITRE_TECHNIQUES: Dict[str, Dict[str, str]] = {
     # ---- Persistence -----------------------------------------------------
     "T1547.001": {"name": "Boot or Logon Autostart Execution: Registry Run Keys", "tactic": "TA0003", "description": "Adversaries may achieve persistence by adding a program to a startup folder or referencing it with a Registry run key."},
     "T1053": {"name": "Scheduled Task/Job", "tactic": "TA0003", "description": "Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code."},
-    "T1053.003": {"name": "Scheduled Task/Job: Cron", "tactic": "TA0003", "description": "Adversaries may abuse the cron utility to perform task scheduling for initial or recurring execution."},
+    # T1053.003 (Cron) is defined above with full description.
     "T1136": {"name": "Create Account", "tactic": "TA0003", "description": "Adversaries may create an account to maintain access to victim systems."},
     "T1136.003": {"name": "Create Account: Cloud Account", "tactic": "TA0003", "description": "Adversaries may create a cloud account to maintain access to victim systems."},
     "T1098": {"name": "Account Manipulation", "tactic": "TA0003", "description": "Adversaries may manipulate accounts to maintain access to victim systems."},
@@ -338,7 +338,7 @@ MITRE_TECHNIQUES: Dict[str, Dict[str, str]] = {
     "T1041": {"name": "Exfiltration Over C2 Channel", "tactic": "TA0010", "description": "Adversaries may steal data by exfiltrating it over an existing command and control channel."},
     "T1048": {"name": "Exfiltration Over Alternative Protocol", "tactic": "TA0010", "description": "Adversaries may steal data by exfiltrating it over a different protocol than that of the existing command and control channel."},
     "T1537": {"name": "Transfer Data to Cloud Account", "tactic": "TA0010", "description": "Adversaries may exfiltrate data by transferring the data, including backups of cloud environments, to another cloud account."},
-    "T1052.001": {"name": "Exfiltration Over Physical Medium: Exfiltration over USB", "tactic": "TA0010", "description": "Adversaries may attempt to exfiltrate data over a USB connected physical device."},
+    # T1052.001 (Exfil over USB) is defined above with full description.
 
     # ---- Impact ----------------------------------------------------------
     "T1485": {"name": "Data Destruction", "tactic": "TA0040", "description": "Adversaries may destroy data and files on specific systems or in large numbers on a network."},

@@ -11,9 +11,7 @@ that reads as if a Level 3 SOC analyst wrote it.
 
 from __future__ import annotations
 
-import hashlib
 import re
-from collections import Counter, defaultdict
 from datetime import datetime
 from typing import Any
 
@@ -209,19 +207,19 @@ class AIAnalyst:
                     ("command_line", "process.command_line"),
                     ("process_name", "process.name"),
                     ("description", "event.description"),
-                    ("query",        "dns.query"),
-                    ("dest_ip",      "network.dest_ip"),
-                    ("file_path",    "file.path"),
-                    ("user",         "user.name"),
+                    ("query", "dns.query"),
+                    ("dest_ip", "network.dest_ip"),
+                    ("file_path", "file.path"),
+                    ("user", "user.name"),
                 ):
                     if ev.get(field):
                         out.append({
-                            "event_id":     ev.get("event_id", ""),
-                            "field":        label,
-                            "value":        cls._mask_secrets(ev.get(field)),
+                            "event_id": ev.get("event_id", ""),
+                            "field": label,
+                            "value": cls._mask_secrets(ev.get(field)),
                             "matched_rule": rule,
-                            "reason":       alert.get("rule_name", ""),
-                            "timestamp":    ev.get("timestamp", ""),
+                            "reason": alert.get("rule_name", ""),
+                            "timestamp": ev.get("timestamp", ""),
                         })
                         break
         return out
@@ -438,6 +436,8 @@ class AIAnalyst:
             desc = a.get("description", "")
             ips.update(ip_re.findall(desc))
             domains.update(d for d in domain_re.findall(desc) if "." in d and not d[0].isdigit())
+            hashes.update(hash_re.findall(desc))
+            emails.update(email_re.findall(desc))
 
         # Scan malicious timeline entries
         for t in timeline:
@@ -445,6 +445,8 @@ class AIAnalyst:
                 continue
             desc = t.get("description", "")
             ips.update(ip_re.findall(desc))
+            hashes.update(hash_re.findall(desc))
+            emails.update(email_re.findall(desc))
             if t.get("user"):
                 accounts.add(t["user"])
 

@@ -14,7 +14,6 @@ Configuration (via .env):
 
 from __future__ import annotations
 
-import json
 import logging
 import os
 from typing import Any
@@ -42,7 +41,7 @@ def _build_prompt(results: dict[str, Any]) -> str:
     }.get(a.get("severity", "low"), 0), reverse=True)[:8]
 
     alert_summary = "\n".join(
-        f"  - [{a.get('severity','?').upper()}] {a.get('rule_name','?')}: {a.get('description','')[:120]}"
+        f"  - [{a.get('severity', '?').upper()}] {a.get('rule_name', '?')}: {a.get('description', '')[:120]}"
         for a in top_alerts
     )
 

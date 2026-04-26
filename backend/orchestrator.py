@@ -118,7 +118,7 @@ class SimulationOrchestrator:
             key=lambda e: e.get("timestamp", ""),
         )
         log_objects = self.telemetry.generate_logs(all_events)
-        log_dicts = [l.to_dict() for l in log_objects]
+        log_dicts = [log.to_dict() for log in log_objects]
 
         # Step 4 — Run detection
         alerts = self.detection.analyse(log_dicts)
@@ -142,16 +142,16 @@ class SimulationOrchestrator:
         logs_stats = self.telemetry.get_statistics()
         timeline = [
             {
-                "timestamp": l.get("timestamp", ""),
-                "event_type": l.get("event_type", ""),
-                "src_host": l.get("src_host", ""),
-                "user": l.get("user", ""),
-                "description": l.get("description", ""),
-                "severity": l.get("severity", ""),
-                "is_malicious": l.get("is_malicious", False),
-                "technique_id": l.get("technique_id"),
+                "timestamp": log.get("timestamp", ""),
+                "event_type": log.get("event_type", ""),
+                "src_host": log.get("src_host", ""),
+                "user": log.get("user", ""),
+                "description": log.get("description", ""),
+                "severity": log.get("severity", ""),
+                "is_malicious": log.get("is_malicious", False),
+                "technique_id": log.get("technique_id"),
             }
-            for l in log_dicts
+            for log in log_dicts
         ]
 
         report = self.reporter.generate_report(

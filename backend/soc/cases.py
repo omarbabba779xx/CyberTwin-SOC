@@ -8,6 +8,7 @@ SLA are tracked deterministically.
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
@@ -153,11 +154,14 @@ def list_cases(
     sql = ["SELECT * FROM soc_cases WHERE 1=1"]
     params: list = []
     if status:
-        sql.append("AND status = ?"); params.append(status)
+        sql.append("AND status = ?")
+        params.append(status)
     if severity:
-        sql.append("AND severity = ?"); params.append(severity)
+        sql.append("AND severity = ?")
+        params.append(severity)
     if assignee:
-        sql.append("AND assignee = ?"); params.append(assignee)
+        sql.append("AND assignee = ?")
+        params.append(assignee)
     sql.append("ORDER BY created_at DESC LIMIT ?")
     params.append(limit)
 
@@ -167,14 +171,31 @@ def list_cases(
     return [_row_to_case(dict(r)) for r in rows]
 
 
+_UPDATABLE_COLUMNS: frozenset[str] = frozenset({
+    "status", "severity", "assignee", "title", "description", "tags",
+    "updated_at",
+})
+# Identifier whitelist regex used as defence-in-depth before any column name
+# is composed into SQL via string interpolation.
+_SQL_IDENT_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
+
+
 def update_case(case_id: str, **fields: Any) -> Optional[Case]:
-    """Patch arbitrary scalar fields (status, severity, assignee, description)."""
+    """Patch arbitrary scalar fields (status, severity, assignee, ...).
+
+    Column names are filtered through ``_UPDATABLE_COLUMNS`` *and* a regex
+    identifier pattern, so the f-string SQL composition is safe.
+    """
     if not fields:
         return get_case(case_id)
-    allowed = {"status", "severity", "assignee", "title", "description", "tags"}
-    for k in list(fields):
-        if k not in allowed:
-            fields.pop(k)
+    # Defence-in-depth: drop any unknown column AND verify it matches an
+    # identifier pattern - never trust a single layer.
+    fields = {
+        k: v for k, v in fields.items()
+        if k in _UPDATABLE_COLUMNS and _SQL_IDENT_RE.match(k)
+    }
+    if not fields:
+        return get_case(case_id)
     if "tags" in fields:
         fields["tags"] = json.dumps(fields["tags"])
     fields["updated_at"] = _now()
@@ -182,7 +203,7 @@ def update_case(case_id: str, **fields: Any) -> Optional[Case]:
     params = list(fields.values()) + [case_id]
     conn = get_conn()
     cur = conn.execute(
-        f"UPDATE soc_cases SET {set_clause} WHERE case_id = ?",
+        f"UPDATE soc_cases SET {set_clause} WHERE case_id = ?",  # nosec B608 - column names come from _UPDATABLE_COLUMNS allowlist + regex
         params,
     )
     conn.commit()

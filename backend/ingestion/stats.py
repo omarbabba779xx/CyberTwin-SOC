@@ -25,7 +25,7 @@ class IngestionStats:
     last_event_at: str = ""
 
     by_source_type: dict[str, int] = field(default_factory=dict)
-    by_category:    dict[str, int] = field(default_factory=dict)
+    by_category: dict[str, int] = field(default_factory=dict)
     drops_by_reason: dict[str, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
