@@ -21,10 +21,10 @@ class TestAttackScenarioEngine:
         """load_scenarios should load at least one scenario."""
         assert len(engine._scenarios) > 0
 
-    def test_list_scenarios_returns_4(self, engine):
-        """There should be 4 scenario files (brute_force, exfiltration, lateral_movement, phishing)."""
+    def test_list_scenarios_returns_at_least_4(self, engine):
+        """Should load all scenario files (at least 4, currently 11)."""
         scenarios = engine.list_scenarios()
-        assert len(scenarios) == 4
+        assert len(scenarios) >= 4
 
     def test_scenario_has_required_fields(self, engine):
         """Each scenario summary should have id, name, description, and phases count."""

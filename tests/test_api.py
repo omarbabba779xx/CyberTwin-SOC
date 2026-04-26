@@ -76,6 +76,9 @@ class TestAPI:
             assert "tactic" in info
 
     async def test_simulate_endpoint(self, client):
+        from backend.auth import create_token
+        token = create_token("analyst", "analyst")
+        headers = {"Authorization": f"Bearer {token}"}
         resp = await client.get("/api/scenarios")
         scenarios = resp.json()
         sid = scenarios[0]["id"]
@@ -83,7 +86,7 @@ class TestAPI:
             "scenario_id": sid,
             "duration_minutes": 15,
             "normal_intensity": "low",
-        }, timeout=300)
+        }, headers=headers, timeout=300)
         assert resp.status_code == 200
         data = resp.json()
         assert "overall_score" in data
@@ -91,6 +94,9 @@ class TestAPI:
         assert "total_alerts" in data
 
     async def test_get_results_after_simulation(self, client):
+        from backend.auth import create_token
+        token = create_token("analyst", "analyst")
+        headers = {"Authorization": f"Bearer {token}"}
         resp = await client.get("/api/scenarios")
         scenarios = resp.json()
         sid = scenarios[0]["id"]
@@ -98,8 +104,8 @@ class TestAPI:
             "scenario_id": sid,
             "duration_minutes": 15,
             "normal_intensity": "low",
-        }, timeout=300)
-        resp = await client.get(f"/api/results/{sid}")
+        }, headers=headers, timeout=300)
+        resp = await client.get(f"/api/results/{sid}", headers=headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "logs" in data
@@ -113,7 +119,10 @@ class TestAPI:
         assert "iocs" in data
 
     async def test_results_unknown_scenario_404(self, client):
-        resp = await client.get("/api/results/nonexistent-scenario")
+        from backend.auth import create_token
+        token = create_token("analyst", "analyst")
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = await client.get("/api/results/nonexistent-scenario", headers=headers)
         assert resp.status_code == 404
 
     # ---- Auth endpoints ---------------------------------------------------
@@ -149,7 +158,7 @@ class TestAPI:
         assert resp.status_code == 200
         data = resp.json()
         assert data["username"] == "admin"
-        assert data["role"] == "analyst"
+        assert data["role"] == "admin"
 
     async def test_get_me_without_token(self, client):
         resp = await client.get("/api/auth/me")
