@@ -15,7 +15,7 @@ import json
 import random
 import uuid
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -264,7 +264,7 @@ class TelemetryEngine:
                     return datetime.strptime(raw, fmt)
                 except ValueError:
                     continue
-        return datetime.utcnow()
+        return datetime.now(timezone.utc)
 
     # ------------------------------------------------------------------
     # Enrichment handlers -- each returns a list[LogEvent]

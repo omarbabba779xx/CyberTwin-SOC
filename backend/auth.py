@@ -18,7 +18,7 @@ import json
 import logging
 import os
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -110,8 +110,8 @@ def create_token(username: str, role: str = "analyst") -> str:
         "sub": username,
         "role": role,
         "permissions": list(ROLES[role]),
-        "iat": datetime.utcnow(),
-        "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
+        "iat": datetime.now(timezone.utc),
+        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
@@ -191,3 +191,65 @@ def authenticate_user(username: str, password: str) -> Optional[dict[str, str]]:
     if not verify_password(password, user["hashed_password"]):
         return None
     return {"username": username, "role": user["role"]}
+
+
+# ---------------------------------------------------------------------------
+# Production safety
+# ---------------------------------------------------------------------------
+
+_DEFAULT_PASSWORDS = {
+    "changeme-admin", "changeme-analyst", "changeme-viewer",
+    "admin", "password", "123456", "cybertwin", "soc",
+}
+
+_DEFAULT_JWT_SECRETS = {
+    "your-secret-key-here", "changeme", "secret", "test-secret",
+}
+
+
+def check_production_safety() -> None:
+    """Refuse to start in production mode if defaults / weak secrets are used.
+
+    Triggered only when the ENV environment variable is set to 'production'.
+    Raises RuntimeError with a clear, actionable message.
+    """
+    env = os.getenv("ENV", "").lower()
+    if env not in ("production", "prod"):
+        # Issue a soft warning in dev
+        if os.getenv("AUTH_ADMIN_PASSWORD", "") in _DEFAULT_PASSWORDS:
+            logger.warning(
+                "\u26a0\ufe0f  AUTH_ADMIN_PASSWORD looks like a default. "
+                "Change it before any non-local deployment."
+            )
+        return
+
+    problems: list[str] = []
+
+    # JWT secret
+    env_secret = os.getenv("JWT_SECRET", "")
+    if not env_secret:
+        problems.append("JWT_SECRET is not set (a random one was auto-generated, "
+                        "which is fine for dev but unsafe across replicas).")
+    elif len(env_secret) < 32:
+        problems.append(f"JWT_SECRET is too short ({len(env_secret)} chars, minimum 32).")
+    elif env_secret.lower() in _DEFAULT_JWT_SECRETS:
+        problems.append("JWT_SECRET uses a known default value.")
+
+    # Default passwords
+    for var in ("AUTH_ADMIN_PASSWORD", "AUTH_ANALYST_PASSWORD", "AUTH_VIEWER_PASSWORD"):
+        val = os.getenv(var, "")
+        if not val:
+            problems.append(f"{var} is not set.")
+        elif val in _DEFAULT_PASSWORDS or len(val) < 12:
+            problems.append(f"{var} is weak or uses a default value.")
+
+    if problems:
+        message = (
+            "\u274c CyberTwin SOC refused to start in production mode "
+            "due to the following security issues:\n  - "
+            + "\n  - ".join(problems)
+            + "\n\nFix these in your .env file (or environment) and restart. "
+              "To override (NOT recommended), set ENV=development."
+        )
+        logger.error(message)
+        raise RuntimeError(message)

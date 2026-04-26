@@ -889,6 +889,57 @@ CyberTwin SOC/
 
 ---
 
+## ⚠️ Honest Limitations
+
+CyberTwin SOC is a **digital-twin platform for SOC readiness evaluation**. It is **not** a turnkey production SOC and does **not** detect 100 % of real-world attacks. Read this section carefully before quoting numbers.
+
+### What the badges actually mean
+
+| Badge / metric                    | What it measures                                                              | What it does **not** mean                                                                 |
+| --------------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `MITRE ATT&CK 622 Techniques`     | Number of techniques **loaded into the catalog** for mapping and visualization | That CyberTwin **detects** all 622 techniques                                              |
+| `Detection Rules: 46`             | Number of Sigma-style rules currently shipped                                 | That all 46 rules are tuned, validated, or noise-free in your environment                 |
+| `Attack Scenarios: 11`            | Pre-built simulation scripts that emit known-bad telemetry                    | A complete adversary-emulation library — real APTs use thousands of variant procedures    |
+| `Tests: 128 passing`              | Backend unit / integration tests covering Python modules and API endpoints    | End-to-end validation of every detection rule against every supported log source          |
+
+### What CyberTwin SOC **is** good for
+
+- Measuring **detection coverage** against a defined attack catalog and producing **honest gap reports**.
+- Running **repeatable simulations** to compare configurations, rule sets, or analyst response over time.
+- **Training analysts** on realistic-looking telemetry without touching production.
+- Generating **executive-level reports** with NIST CSF / CIS Controls scoring and MITRE heatmaps.
+- Serving as an **integration playground** for SIEM/SOAR/EDR/ITSM connectors before wiring them to real production systems.
+
+### What CyberTwin SOC is **not** (yet)
+
+- A **SIEM**. It does not replace Splunk, Sentinel, Elastic, etc. It is designed to *measure* their coverage.
+- A **threat-intelligence platform**. The threat-intel views are illustrative.
+- A **production EDR**. The endpoint events are synthetic unless you wire up a connector.
+- A **certified compliance auditor**. NIST/CIS scoring is indicative and based on simulation outcomes, not formal audit evidence.
+
+### MITRE coverage — the honest definitions
+
+Future releases will distinguish these levels in the UI. Today, the project mostly reports **catalog coverage** and **alert-mapped coverage**:
+
+| Level                            | Definition                                                                            | Status today |
+| -------------------------------- | ------------------------------------------------------------------------------------- | ------------ |
+| Catalog Coverage                 | Technique exists in the loaded MITRE bundle                                            | ✅ 622 / 622 |
+| Rule-Mapped Coverage             | At least one detection rule references the technique                                   | Partial      |
+| Tested Coverage                  | Rule has at least one passing detection-test fixture                                   | Roadmap      |
+| Validated Detection Coverage     | Tested rule fired in a recent simulation **and** produced acceptable false-positive rate | Roadmap      |
+| Noisy Coverage                   | Rule fires but is flagged by analyst feedback as high-FP                               | Roadmap      |
+| High-Risk Gaps                   | Critical technique with **no rule, no test, and no telemetry source** available        | Roadmap      |
+
+### Reproducibility & responsible use
+
+- All detections, scores, and reports are **reproducible** for a given scenario + seed. They are **not** predictions of real-world incidents.
+- The AI Analyst is a **decision-support tool**, not a source of truth. Always verify its output against the underlying events.
+- Use the platform on lab environments, controlled tenants, or air-gapped networks — never paste production secrets into the SOAR / connector configuration without proper review.
+
+> If you find a claim in this README that overstates what the code actually does, please open an issue — accuracy matters more than marketing here.
+
+---
+
 ## 📈 Roadmap
 
 - [x] Phase 1 — Security (JWT, RBAC, bcrypt, audit)

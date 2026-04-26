@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -57,7 +57,7 @@ def log_action(
     details: Optional[dict[str, Any]] = None,
 ) -> None:
     """Write one audit record to the database and application log."""
-    ts = datetime.utcnow().isoformat()
+    ts = datetime.now(timezone.utc).isoformat()
     details_json = json.dumps(details, default=str) if details else None
 
     try:

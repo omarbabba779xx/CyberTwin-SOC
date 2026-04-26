@@ -12,7 +12,8 @@ import logging
 import os
 import re
 import sys
-from datetime import datetime
+from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
 
@@ -53,12 +54,28 @@ from backend.cache import cache
 # App setup
 # ---------------------------------------------------------------------------
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan: replaces deprecated @app.on_event handlers."""
+    logger.info("CyberTwin SOC API v%s starting...", os.getenv("APP_VERSION", "3.0"))
+    logger.info("Cache backend: %s", cache.backend)
+    # Production safety: refuse to start with default credentials
+    from backend.auth import check_production_safety
+    check_production_safety()
+    _orchestrator.initialise()
+    logger.info("Orchestrator ready \u2014 %d scenarios loaded",
+                len(_orchestrator.attack_engine._scenarios))
+    yield
+    logger.info("CyberTwin SOC API shutting down...")
+
+
 app = FastAPI(
     title="CyberTwin SOC API",
     description="Enterprise Digital Twin platform for cyber attack simulation, detection validation, and SOC readiness.",
     version=os.getenv("APP_VERSION", "3.0.0"),
     docs_url="/docs",
     redoc_url="/redoc",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
@@ -143,14 +160,6 @@ def _client_ip(request: Request) -> str:
 # Endpoints
 # ---------------------------------------------------------------------------
 
-@app.on_event("startup")
-def startup():
-    logger.info("CyberTwin SOC API v%s starting...", os.getenv("APP_VERSION", "3.0"))
-    logger.info("Cache backend: %s", cache.backend)
-    _orchestrator.initialise()
-    logger.info("Orchestrator ready — %d scenarios loaded", len(_orchestrator.attack_engine._scenarios))
-
-
 @app.get("/")
 @limiter.limit("60/minute")
 def root(request: Request):
@@ -160,7 +169,7 @@ def root(request: Request):
 @app.get("/api/health")
 @limiter.limit("120/minute")
 def health(request: Request):
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 # ---- Authentication ------------------------------------------------------
@@ -774,9 +783,7 @@ async def push_to_thehive(
     user=Depends(require_permission("run_simulation")),
 ):
     """Push a simulation result to TheHive as a new case with IOCs and tasks."""
-    result = _orchestrator.get_result(result_id)
-    if result is None:
-        raise HTTPException(404, f"Result '{result_id}' not found")
+    result = _get_cached_result(result_id)
     from backend.soar import TheHiveClient
     loop = asyncio.get_event_loop()
     try:
@@ -801,9 +808,7 @@ async def analyze_iocs_cortex(
     user=Depends(require_permission("run_simulation")),
 ):
     """Submit IOCs from a simulation result to Cortex analyzers."""
-    result = _orchestrator.get_result(result_id)
-    if result is None:
-        raise HTTPException(404, f"Result '{result_id}' not found")
+    result = _get_cached_result(result_id)
     iocs = result.get("ai_analysis", {}).get("iocs", [])
     if not iocs:
         return {"message": "No IOCs found in this simulation result", "jobs": []}
