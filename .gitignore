@@ -18,3 +18,9 @@ npm-debug.log
 yarn-error.log
 vite.config.js.timestamp-*
 .claude/
+
+# Workspace artefacts
+_commit_msg.txt
+_*.tmp
+data/.jwt_secret
+sbom-*.json
