@@ -671,7 +671,13 @@ Content-Type: application/json
 | `GET` | `/api/results/{id}/benchmark` | NIST CSF + CIS scores |
 | `GET` | `/api/mitre/techniques` | All 622 ATT&CK techniques |
 | `GET` | `/api/mitre/tactics` | All 14 tactics |
-| `GET` | `/api/mitre/gap-analysis/{id}` | Detection gap analysis |
+| `GET` | `/api/mitre/gap-analysis/{id}` | Detection gap analysis (per-simulation) |
+| `GET` | `/api/coverage/summary` | **Coverage Center** — global score + status breakdown |
+| `GET` | `/api/coverage/mitre` | Full per-technique coverage table (filterable) |
+| `GET` | `/api/coverage/technique/{tid}` | Coverage record for one technique |
+| `GET` | `/api/coverage/gaps` | Actionable gaps with recommendations |
+| `GET` | `/api/coverage/gaps/high-risk` | Critical/high-risk gaps only |
+| `POST` | `/api/coverage/recalculate` | Force recalculation (admin) |
 | `POST` | `/api/mitre/sync-taxii` | Live TAXII 2.1 sync |
 | `GET` | `/api/sigma/rules` | Loaded Sigma rules |
 | `POST` | `/api/sigma/upload` | Upload new Sigma rule |
@@ -919,16 +925,21 @@ CyberTwin SOC is a **digital-twin platform for SOC readiness evaluation**. It is
 
 ### MITRE coverage — the honest definitions
 
-Future releases will distinguish these levels in the UI. Today, the project mostly reports **catalog coverage** and **alert-mapped coverage**:
+Since Phase 2 (Detection Coverage Center), the platform distinguishes the levels below in real time. Each technique in the catalog is classified into exactly **one** of 8 honest statuses, exposed via `GET /api/coverage/mitre` and the **Coverage Center** page.
 
-| Level                            | Definition                                                                            | Status today |
-| -------------------------------- | ------------------------------------------------------------------------------------- | ------------ |
-| Catalog Coverage                 | Technique exists in the loaded MITRE bundle                                            | ✅ 622 / 622 |
-| Rule-Mapped Coverage             | At least one detection rule references the technique                                   | Partial      |
-| Tested Coverage                  | Rule has at least one passing detection-test fixture                                   | Roadmap      |
-| Validated Detection Coverage     | Tested rule fired in a recent simulation **and** produced acceptable false-positive rate | Roadmap      |
-| Noisy Coverage                   | Rule fires but is flagged by analyst feedback as high-FP                               | Roadmap      |
-| High-Risk Gaps                   | Critical technique with **no rule, no test, and no telemetry source** available        | Roadmap      |
+| Level                            | Definition                                                                                | Status today |
+| -------------------------------- | ----------------------------------------------------------------------------------------- | ------------ |
+| Catalog Coverage                 | Technique exists in the loaded MITRE bundle                                                | ✅ Live (622) |
+| Rule-Mapped Coverage             | At least one detection rule references the technique                                       | ✅ Live |
+| Rule Untested                    | Rule and scenario exist but no recent simulation has validated detection                   | ✅ Live |
+| Tested & Detected (Validated)    | Recent simulation produced an alert mapped to the technique                                | ✅ Live |
+| Tested but Failed                | Recent simulation covered the technique but no rule fired                                  | ✅ Live |
+| Needs Data Source                | Rule exists but the required telemetry source is unavailable                               | ✅ Live |
+| Noisy Coverage                   | Rule fires but is flagged by analyst feedback as high-FP                                   | Roadmap (Phase 3) |
+| High-Risk Gaps                   | Gap on a critical tactic (Initial Access, Privilege Escalation, Defense Evasion, …)        | ✅ Live |
+
+The **Global Detection Coverage Score** (0..100) is a weighted average:
+3 points per validated technique + 1 point per rule-mapped technique, normalised against the catalog size. It is **not** a percentage of "techniques you can stop".
 
 ### Reproducibility & responsible use
 

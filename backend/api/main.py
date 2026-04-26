@@ -759,6 +759,150 @@ def list_sigma_rules(request: Request, user=Depends(require_permission("view_res
     return rules
 
 
+# ---- Detection Coverage Center (Phase 2) ---------------------------------
+#
+# These endpoints expose the *honest* MITRE ATT&CK detection coverage
+# computed by joining: catalog + rules + scenarios + recent simulations.
+# Results are cached for 30 seconds because the catalog has 622 techniques.
+
+_COVERAGE_CACHE_KEY = "coverage:snapshot"
+_COVERAGE_CACHE_TTL = 30  # seconds
+
+
+def _compute_coverage_snapshot() -> dict[str, Any]:
+    """Compute or return the cached coverage snapshot."""
+    cached = cache.get(_COVERAGE_CACHE_KEY)
+    if isinstance(cached, dict):
+        return cached
+    from backend.coverage.calculator import build_default_calculator
+    calc = build_default_calculator()
+    records, summary = calc.compute()
+    snapshot = {
+        "summary": summary.to_dict(),
+        "records": [r.to_dict() for r in records],
+    }
+    try:
+        cache.set(_COVERAGE_CACHE_KEY, snapshot, ttl=_COVERAGE_CACHE_TTL)
+    except Exception:
+        pass
+    return snapshot
+
+
+@app.get("/api/coverage/summary")
+@limiter.limit("60/minute")
+def coverage_summary(request: Request, user=Depends(require_permission("view_results"))):
+    """Aggregate detection-coverage figures for the whole MITRE catalog."""
+    snap = _compute_coverage_snapshot()
+    return snap["summary"]
+
+
+@app.get("/api/coverage/mitre")
+@limiter.limit("30/minute")
+def coverage_mitre_table(
+    request: Request,
+    status: Optional[str] = None,
+    tactic: Optional[str] = None,
+    user=Depends(require_permission("view_results")),
+):
+    """Full per-technique coverage table.
+
+    Optional query filters:
+      - status:  not_covered | rule_exists | rule_exists_untested |
+                 tested_and_detected | tested_but_failed | noisy |
+                 needs_data_source | not_applicable
+      - tactic:  TA0001..TA0043
+    """
+    snap = _compute_coverage_snapshot()
+    records = snap["records"]
+    if status:
+        records = [r for r in records if r["status"] == status]
+    if tactic:
+        records = [r for r in records if r["tactic_id"] == tactic]
+    return {"total": len(records), "records": records}
+
+
+@app.get("/api/coverage/technique/{technique_id}")
+@limiter.limit("60/minute")
+def coverage_technique_detail(
+    request: Request,
+    technique_id: str,
+    user=Depends(require_permission("view_results")),
+):
+    """Full coverage record for one technique."""
+    snap = _compute_coverage_snapshot()
+    for r in snap["records"]:
+        if r["technique_id"] == technique_id:
+            return r
+    raise HTTPException(404, f"Technique '{technique_id}' not found in catalog")
+
+
+@app.get("/api/coverage/gaps")
+@limiter.limit("30/minute")
+def coverage_gaps(
+    request: Request,
+    high_risk_only: bool = False,
+    limit: int = 50,
+    user=Depends(require_permission("view_results")),
+):
+    """Top actionable detection gaps with recommendations."""
+    snap = _compute_coverage_snapshot()
+    from backend.coverage.calculator import CoverageCalculator  # noqa: F401
+    from backend.coverage.gap_analyzer import GapAnalyzer
+    from backend.coverage.models import TechniqueCoverage, TechniqueStatus
+
+    # Rebuild typed records from the cached dicts to feed the analyzer.
+    typed_records = []
+    for r in snap["records"]:
+        typed_records.append(TechniqueCoverage(
+            technique_id=r["technique_id"],
+            name=r["name"],
+            tactic_id=r["tactic_id"],
+            tactic_name=r["tactic_name"],
+            is_subtechnique=r["is_subtechnique"],
+            rules=list(r.get("rules", [])),
+            rule_count=r.get("rule_count", 0),
+            scenarios=list(r.get("scenarios", [])),
+            scenario_count=r.get("scenario_count", 0),
+            last_simulation_id=r.get("last_simulation_id"),
+            last_simulation_at=r.get("last_simulation_at"),
+            last_simulation_detected=r.get("last_simulation_detected"),
+            confidence=r.get("confidence", 0.0),
+            required_logs=list(r.get("required_logs", [])),
+            available_logs=list(r.get("available_logs", [])),
+            missing_logs=list(r.get("missing_logs", [])),
+            status=TechniqueStatus(r["status"]),
+        ))
+
+    gaps = GapAnalyzer(typed_records).analyse(only_high_risk=high_risk_only)
+    gaps = gaps[: max(1, min(limit, 500))]
+    return {"total": len(gaps), "gaps": [g.to_dict() for g in gaps]}
+
+
+@app.get("/api/coverage/gaps/high-risk")
+@limiter.limit("30/minute")
+def coverage_high_risk_gaps(request: Request, limit: int = 25,
+                            user=Depends(require_permission("view_results"))):
+    """Shortcut to the highest-priority gaps only."""
+    return coverage_gaps(
+        request=request, high_risk_only=True, limit=limit, user=user
+    )
+
+
+@app.post("/api/coverage/recalculate")
+@limiter.limit("10/minute")
+def coverage_recalculate(
+    request: Request,
+    user=Depends(require_permission("configure_system")),
+):
+    """Force a fresh coverage computation, bypassing the 30s cache."""
+    cache.delete(_COVERAGE_CACHE_KEY) if hasattr(cache, "delete") else None
+    snap = _compute_coverage_snapshot()
+    log_action("COVERAGE_RECALCULATE", username=user["sub"], role=user.get("role"),
+               ip_address=_client_ip(request),
+               details={"catalog_total": snap["summary"]["catalog_total"]})
+    return {"status": "recalculated", "summary": snap["summary"]}
+
+
 # ---- SOAR Integration (TheHive + Cortex) ---------------------------------
 
 @app.get("/api/soar/status")

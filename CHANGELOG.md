@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (Phase 2 — Detection Coverage Center)
+
+- New module `backend/coverage/` (`models.py`, `calculator.py`, `gap_analyzer.py`)
+  that joins four sources into a real, measurable coverage view:
+    1. The MITRE catalog (622 techniques)
+    2. Built-in + Sigma detection rules
+    3. Attack scenarios
+    4. Recent simulation results from the cache
+- 8-state honest status enum (`TechniqueStatus`):
+  `not_covered`, `rule_exists`, `rule_exists_untested`, `tested_and_detected`,
+  `tested_but_failed`, `noisy`, `needs_data_source`, `not_applicable`.
+- Six new API endpoints under `/api/coverage/`:
+  - `GET /api/coverage/summary` — global score + status breakdown
+  - `GET /api/coverage/mitre` — full per-technique table (filter by status / tactic)
+  - `GET /api/coverage/technique/{tid}` — single-technique drill-down
+  - `GET /api/coverage/gaps` — actionable gaps with recommendations
+  - `GET /api/coverage/gaps/high-risk` — critical/high-risk gaps shortcut
+  - `POST /api/coverage/recalculate` — admin force-refresh (bypasses 30 s cache)
+- Frontend page `frontend/src/pages/CoverageCenter.jsx` with Score banner,
+  status distribution bar, filterable techniques list with detail panel,
+  and a Gaps tab. Wired into the sidebar under *Analysis → Coverage Center*.
+- 22 new tests in `tests/test_coverage.py` (calculator, gap analyzer, and
+  full HTTP integration of the 6 endpoints). Total: **150 / 150 passing**.
+
+### Changed (Phase 2)
+
+- `DetectionRule` dataclass extended with optional metadata
+  (`status`, `version`, `author`, `required_logs`, `required_fields`,
+  `false_positives`, `recommendations`, `confidence`). All have defaults so
+  the 46 existing rules continue to work without modification.
+- README *Honest Limitations* section updated: the 8-state coverage matrix
+  is now described as **Live** (was Roadmap) and the Global Score formula
+  is documented.
+
 ### Fixed (Phase 1.5 — Documentation & deployment honesty)
 
 - README documented the WebSocket as `/ws/simulation/{id}` but the actual
