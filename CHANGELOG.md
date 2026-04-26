@@ -7,6 +7,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (Phase 3 — SOC Operational Workflow)
+
+- New module `backend/soc/` with persistent SQLite tables and business logic for:
+    - **Alert Feedback** (`feedback.py`): record analyst verdicts
+      (`true_positive`, `false_positive`, `benign_positive`, `duplicate`,
+      `needs_more_data`, `escalated`, `closed`); aggregate FP rate;
+      detect noisy rules.
+    - **Case Management** (`cases.py`): full Alert → Incident → Case workflow
+      with comments, evidence, assignment, severity-based SLA computation,
+      mandatory closure reason, status enum
+      (`new`, `open`, `in_progress`, `pending`, `resolved`, `closed`,
+      `false_positive`).
+    - **Suppressions** (`suppressions.py`): silence noise without deleting it;
+      every suppression **MUST** have an expiration (no permanent bypass);
+      6 scopes (`rule`, `user`, `host`, `ip`, `process`, `tenant`); soft-delete
+      preserves audit trail.
+- **Suppression integration in DetectionEngine**: alerts that match an active,
+  non-expired suppression are tagged with `suppressed_by=<id>` and excluded
+  from the analyst queue, but the alert object is preserved internally.
+- **Evidence-first AI analysis** (`ai_analyst.AIAnalyst.analyse_with_evidence`):
+  strict structured output schema with `evidence[]` linking each claim to a
+  specific `event_id` + `field` + `value`, plus `confidence`, `mitre[]`,
+  `hypotheses[]`, `recommended_actions[]`, `iocs`, `limitations[]`,
+  `guardrails[]`. PII / secrets are redacted. Refuses to invent IOCs or
+  threat-actor attribution.
+- **15 new API endpoints**:
+    - `POST /api/alerts/{id}/feedback`
+    - `GET /api/alerts/feedback/summary`
+    - `GET /api/alerts/feedback/noisy-rules`
+    - `POST /api/cases`, `GET /api/cases`, `GET/PATCH /api/cases/{id}`
+    - `POST /api/cases/{id}/comments|evidence|assign|close`
+    - `POST /api/suppressions`, `GET /api/suppressions`,
+      `DELETE /api/suppressions/{id}`
+    - `GET /api/results/{id}/ai-evidence`
+- **3 new frontend pages**:
+    - `pages/AlertQueue.jsx` — triage UI with verdict buttons + noisy-rule panel
+    - `pages/CaseManagement.jsx` — create + drill-down + comments + evidence + close
+    - `pages/Suppressions.jsx` — admin form + active list with expiration display
+  Wired into the sidebar under a new **SOC Workflow** section.
+- **27 new tests** in `tests/test_soc.py` covering the business logic AND the
+  HTTP API for feedback, cases (full lifecycle), suppressions (admin RBAC,
+  mandatory expiration), and the evidence-first analyst (no-evidence-no-claim,
+  secret redaction). Total: **177 / 177 passing**.
+
+### Changed (Phase 3)
+
+- `DetectionEngine.analyse()` now applies active suppressions transparently,
+  logging the count of suppressed alerts at INFO level.
+- `lifespan` startup now calls `init_soc_tables()` so the SOC tables are
+  ready before the first request lands.
+- Pydantic deprecation cleaned up: `payload.dict()` → `payload.model_dump()`.
+
 ### Added (Phase 2 — Detection Coverage Center)
 
 - New module `backend/coverage/` (`models.py`, `calculator.py`, `gap_analyzer.py`)

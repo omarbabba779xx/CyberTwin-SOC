@@ -70,9 +70,21 @@ class DetectionEngine:
     # ------------------------------------------------------------------
 
     def analyse(self, logs: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        """Run every enabled rule against *logs* and return generated alerts."""
-        self._alerts = []
+        """Run every enabled rule against *logs* and return generated alerts.
 
+        Active suppressions are applied: alerts that match a suppression are
+        kept internally with a `suppressed_by` field but excluded from the
+        return value, so the analyst queue stays clean while preserving the
+        audit trail.
+        """
+        self._alerts = []
+        # Lazy import - avoid coupling the detection package to backend.soc
+        try:
+            from backend.soc.suppressions import is_alert_suppressed
+        except Exception:
+            is_alert_suppressed = None  # type: ignore[assignment]
+
+        suppressed = 0
         for rule in self._rules:
             if not rule.enabled:
                 continue
@@ -84,8 +96,20 @@ class DetectionEngine:
 
             if matched_events:
                 alert = self._create_alert(rule, matched_events)
+                if is_alert_suppressed:
+                    try:
+                        is_supp, supp = is_alert_suppressed(alert)
+                        if is_supp and supp:
+                            alert["suppressed_by"] = supp.suppression_id
+                            alert["suppression_scope"] = supp.scope
+                            suppressed += 1
+                            continue
+                    except Exception as exc:
+                        logger.debug("Suppression check failed: %s", exc)
                 self._alerts.append(alert)
 
+        if suppressed:
+            logger.info("Detection engine suppressed %d alert(s) via active rules", suppressed)
         self._alerts.sort(key=lambda a: a.get("timestamp", ""))
         return list(self._alerts)
 

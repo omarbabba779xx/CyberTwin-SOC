@@ -65,6 +65,10 @@ async def lifespan(app: FastAPI):
     _orchestrator.initialise()
     logger.info("Orchestrator ready \u2014 %d scenarios loaded",
                 len(_orchestrator.attack_engine._scenarios))
+    # Phase 3 - SOC tables (alert feedback, cases, suppressions)
+    from backend.soc import init_soc_tables
+    init_soc_tables()
+    logger.info("SOC tables ready (feedback, cases, suppressions)")
     yield
     logger.info("CyberTwin SOC API shutting down...")
 
@@ -901,6 +905,333 @@ def coverage_recalculate(
                ip_address=_client_ip(request),
                details={"catalog_total": snap["summary"]["catalog_total"]})
     return {"status": "recalculated", "summary": snap["summary"]}
+
+
+# ---- SOC Workflow (Phase 3): Alert Feedback, Cases, Suppressions ---------
+
+class FeedbackRequest(BaseModel):
+    rule_id: str
+    verdict: str
+    reason: str = ""
+
+    @field_validator("verdict")
+    @classmethod
+    def _verdict_valid(cls, v):
+        from backend.soc.models import AlertVerdict
+        if v not in {a.value for a in AlertVerdict}:
+            raise ValueError(f"verdict must be one of {[a.value for a in AlertVerdict]}")
+        return v
+
+
+class CaseCreateRequest(BaseModel):
+    title: str
+    description: str = ""
+    severity: str = "medium"
+    alert_ids: list[str] = []
+    incident_ids: list[str] = []
+    affected_hosts: list[str] = []
+    affected_users: list[str] = []
+    mitre_techniques: list[str] = []
+    tags: list[str] = []
+    assignee: Optional[str] = None
+
+
+class CasePatchRequest(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    severity: Optional[str] = None
+    status: Optional[str] = None
+    assignee: Optional[str] = None
+    tags: Optional[list[str]] = None
+
+
+class CommentRequest(BaseModel):
+    body: str
+
+
+class EvidenceRequest(BaseModel):
+    type: str = "alert"
+    reference: str
+    description: str = ""
+    payload: Optional[dict[str, Any]] = None
+
+
+class CaseCloseRequest(BaseModel):
+    closure_reason: str
+    final_status: str = "closed"
+
+
+class AssignRequest(BaseModel):
+    assignee: str
+
+
+class SuppressionRequest(BaseModel):
+    scope: str
+    target: str
+    reason: str
+    duration_hours: Optional[int] = None
+    expires_at: Optional[str] = None
+    approved_by: Optional[str] = None
+
+
+# ---- Alert feedback ------------------------------------------------------
+
+@app.post("/api/alerts/{alert_id}/feedback")
+@limiter.limit("60/minute")
+def post_alert_feedback(
+    alert_id: str, payload: FeedbackRequest, request: Request,
+    user=Depends(require_permission("view_results")),
+):
+    """Record analyst verdict on an alert (TP/FP/Benign/Duplicate/...)."""
+    from backend.soc import record_feedback
+    try:
+        fb = record_feedback(
+            alert_id=alert_id, rule_id=payload.rule_id,
+            verdict=payload.verdict, reason=payload.reason,
+            analyst=user["sub"], role=user.get("role", "viewer"),
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    log_action("ALERT_FEEDBACK", username=user["sub"], role=user.get("role"),
+               resource=alert_id, ip_address=_client_ip(request),
+               details={"rule_id": payload.rule_id, "verdict": payload.verdict})
+    return fb.to_dict()
+
+
+@app.get("/api/alerts/feedback/summary")
+@limiter.limit("60/minute")
+def get_feedback_summary(request: Request,
+                        user=Depends(require_permission("view_results"))):
+    from backend.soc import feedback_summary
+    return feedback_summary()
+
+
+@app.get("/api/alerts/feedback/noisy-rules")
+@limiter.limit("30/minute")
+def get_noisy_rules(
+    request: Request, min_total: int = 3, threshold: float = 0.5,
+    user=Depends(require_permission("view_results")),
+):
+    """Return rules with high false-positive feedback rates."""
+    from backend.soc import list_noisy_rules
+    return {"rules": list_noisy_rules(min_total=min_total, fp_threshold=threshold)}
+
+
+# ---- Cases ---------------------------------------------------------------
+
+@app.post("/api/cases")
+@limiter.limit("30/minute")
+def post_case(
+    payload: CaseCreateRequest, request: Request,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import create_case
+    try:
+        case = create_case(
+            title=payload.title, description=payload.description,
+            severity=payload.severity, created_by=user["sub"],
+            alert_ids=payload.alert_ids, incident_ids=payload.incident_ids,
+            affected_hosts=payload.affected_hosts,
+            affected_users=payload.affected_users,
+            mitre_techniques=payload.mitre_techniques,
+            tags=payload.tags, assignee=payload.assignee,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    log_action("CASE_CREATE", username=user["sub"], role=user.get("role"),
+               resource=case.case_id, ip_address=_client_ip(request),
+               details={"severity": case.severity})
+    return case.to_dict()
+
+
+@app.get("/api/cases")
+@limiter.limit("60/minute")
+def list_cases_endpoint(
+    request: Request,
+    status: Optional[str] = None, severity: Optional[str] = None,
+    assignee: Optional[str] = None, limit: int = 50,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import list_cases
+    cases = list_cases(status=status, severity=severity,
+                       assignee=assignee, limit=limit)
+    return {"total": len(cases), "cases": [c.to_dict() for c in cases]}
+
+
+@app.get("/api/cases/{case_id}")
+@limiter.limit("60/minute")
+def get_case_endpoint(case_id: str, request: Request,
+                      user=Depends(require_permission("view_results"))):
+    from backend.soc import get_case
+    case = get_case(case_id)
+    if case is None:
+        raise HTTPException(404, f"Case '{case_id}' not found")
+    return case.to_dict()
+
+
+@app.patch("/api/cases/{case_id}")
+@limiter.limit("60/minute")
+def patch_case(
+    case_id: str, payload: CasePatchRequest, request: Request,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import update_case
+    fields = {k: v for k, v in payload.model_dump().items() if v is not None}
+    case = update_case(case_id, **fields)
+    if case is None:
+        raise HTTPException(404, f"Case '{case_id}' not found")
+    log_action("CASE_UPDATE", username=user["sub"], role=user.get("role"),
+               resource=case_id, ip_address=_client_ip(request),
+               details={"changes": list(fields.keys())})
+    return case.to_dict()
+
+
+@app.post("/api/cases/{case_id}/comments")
+@limiter.limit("60/minute")
+def post_case_comment(
+    case_id: str, payload: CommentRequest, request: Request,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import add_comment
+    try:
+        cmt = add_comment(case_id, author=user["sub"],
+                          role=user.get("role", "viewer"), body=payload.body)
+    except ValueError as exc:
+        raise HTTPException(404 if "not found" in str(exc) else 400, str(exc))
+    return cmt.to_dict()
+
+
+@app.post("/api/cases/{case_id}/evidence")
+@limiter.limit("60/minute")
+def post_case_evidence(
+    case_id: str, payload: EvidenceRequest, request: Request,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import add_evidence
+    try:
+        ev = add_evidence(case_id, type=payload.type, reference=payload.reference,
+                          description=payload.description,
+                          added_by=user["sub"], payload=payload.payload)
+    except ValueError as exc:
+        raise HTTPException(404 if "not found" in str(exc) else 400, str(exc))
+    return ev.to_dict()
+
+
+@app.post("/api/cases/{case_id}/assign")
+@limiter.limit("30/minute")
+def post_case_assign(
+    case_id: str, payload: AssignRequest, request: Request,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import assign_case
+    case = assign_case(case_id, assignee=payload.assignee)
+    if case is None:
+        raise HTTPException(404, f"Case '{case_id}' not found")
+    log_action("CASE_ASSIGN", username=user["sub"], role=user.get("role"),
+               resource=case_id, ip_address=_client_ip(request),
+               details={"assignee": payload.assignee})
+    return case.to_dict()
+
+
+@app.post("/api/cases/{case_id}/close")
+@limiter.limit("30/minute")
+def post_case_close(
+    case_id: str, payload: CaseCloseRequest, request: Request,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import close_case
+    try:
+        case = close_case(case_id, closure_reason=payload.closure_reason,
+                          final_status=payload.final_status)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    if case is None:
+        raise HTTPException(404, f"Case '{case_id}' not found")
+    log_action("CASE_CLOSE", username=user["sub"], role=user.get("role"),
+               resource=case_id, ip_address=_client_ip(request),
+               details={"final_status": payload.final_status})
+    return case.to_dict()
+
+
+# ---- Suppressions --------------------------------------------------------
+
+@app.post("/api/suppressions")
+@limiter.limit("20/minute")
+def post_suppression(
+    payload: SuppressionRequest, request: Request,
+    user=Depends(require_permission("configure_system")),
+):
+    from backend.soc import create_suppression
+    try:
+        s = create_suppression(
+            scope=payload.scope, target=payload.target,
+            reason=payload.reason,
+            duration_hours=payload.duration_hours,
+            expires_at=payload.expires_at,
+            created_by=user["sub"],
+            approved_by=payload.approved_by,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    log_action("SUPPRESSION_CREATE", username=user["sub"], role=user.get("role"),
+               ip_address=_client_ip(request),
+               details={"scope": s.scope, "target": s.target,
+                        "expires_at": s.expires_at})
+    return s.to_dict()
+
+
+@app.get("/api/suppressions")
+@limiter.limit("60/minute")
+def get_suppressions(
+    request: Request, only_active: bool = True,
+    user=Depends(require_permission("view_results")),
+):
+    from backend.soc import list_suppressions
+    items = list_suppressions(only_active=only_active)
+    return {"total": len(items), "suppressions": [s.to_dict() for s in items]}
+
+
+@app.delete("/api/suppressions/{suppression_id}")
+@limiter.limit("20/minute")
+def delete_suppression_endpoint(
+    suppression_id: int, request: Request,
+    user=Depends(require_permission("configure_system")),
+):
+    from backend.soc import delete_suppression
+    if not delete_suppression(suppression_id, deleted_by=user["sub"]):
+        raise HTTPException(404, f"Suppression #{suppression_id} not found")
+    log_action("SUPPRESSION_DELETE", username=user["sub"],
+               role=user.get("role"), resource=str(suppression_id),
+               ip_address=_client_ip(request))
+    return {"status": "deleted", "suppression_id": suppression_id}
+
+
+# ---- Evidence-first AI Analysis (Phase 3) --------------------------------
+
+@app.get("/api/results/{scenario_id}/ai-evidence")
+@limiter.limit("30/minute")
+def get_ai_evidence_analysis(
+    request: Request, scenario_id: str,
+    user=Depends(require_permission("view_results")),
+):
+    """Return the structured evidence-first AI analysis for a simulation.
+
+    Unlike `/api/results/{id}/ai-analysis`, this endpoint enforces the
+    Phase 3 schema: `summary`, `confidence`, `evidence[]`, `mitre[]`,
+    `hypotheses[]`, `recommended_actions[]`, `iocs`, `limitations[]`,
+    `guardrails[]` -- with PII/secrets masked.
+    """
+    result = _get_cached_result(scenario_id)
+    from backend.ai_analyst import AIAnalyst
+    return AIAnalyst().analyse_with_evidence(
+        scenario=result.get("scenario", {}),
+        alerts=result.get("alerts", []),
+        incidents=result.get("incidents", []),
+        scores=result.get("scores", {}),
+        mitre_coverage=result.get("mitre_coverage", {}),
+        timeline=result.get("timeline", []),
+        logs_stats=result.get("logs_statistics", {}),
+    )
 
 
 # ---- SOAR Integration (TheHive + Cortex) ---------------------------------

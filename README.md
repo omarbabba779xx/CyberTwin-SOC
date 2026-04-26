@@ -678,6 +678,20 @@ Content-Type: application/json
 | `GET` | `/api/coverage/gaps` | Actionable gaps with recommendations |
 | `GET` | `/api/coverage/gaps/high-risk` | Critical/high-risk gaps only |
 | `POST` | `/api/coverage/recalculate` | Force recalculation (admin) |
+| `POST` | `/api/alerts/{id}/feedback` | **SOC Workflow** — analyst verdict (TP/FP/Benign…) |
+| `GET` | `/api/alerts/feedback/summary` | Aggregate feedback statistics |
+| `GET` | `/api/alerts/feedback/noisy-rules` | Rules with high FP rate from feedback |
+| `POST` | `/api/cases` | Create a SOC case (with SLA) |
+| `GET` | `/api/cases` | List cases (filter by status / severity / assignee) |
+| `GET/PATCH` | `/api/cases/{id}` | Get / update a case |
+| `POST` | `/api/cases/{id}/comments` | Add a timeline comment |
+| `POST` | `/api/cases/{id}/evidence` | Attach evidence (alert / IOC / file / note) |
+| `POST` | `/api/cases/{id}/assign` | Assign to an analyst |
+| `POST` | `/api/cases/{id}/close` | Close the case (closure_reason mandatory) |
+| `POST` | `/api/suppressions` | Create suppression — **must expire** (admin) |
+| `GET` | `/api/suppressions` | List active suppressions |
+| `DELETE` | `/api/suppressions/{id}` | Soft-delete a suppression (admin) |
+| `GET` | `/api/results/{id}/ai-evidence` | **Evidence-first** AI analysis (PII-masked) |
 | `POST` | `/api/mitre/sync-taxii` | Live TAXII 2.1 sync |
 | `GET` | `/api/sigma/rules` | Loaded Sigma rules |
 | `POST` | `/api/sigma/upload` | Upload new Sigma rule |

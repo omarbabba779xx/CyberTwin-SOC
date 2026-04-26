@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import {
   Shield, LayoutDashboard, Target, AlertTriangle, Clock, Grid3X3,
   FileText, Network, Brain, Radar, GitCompare, PenTool, Sun, Moon, LogOut,
-  Globe, BarChart3, GitBranch, Cpu, BookOpen, Zap
+  Globe, BarChart3, GitBranch, Cpu, BookOpen, Zap, Briefcase, ShieldOff
 } from 'lucide-react'
 import { LANGUAGES } from '../i18n'
 
@@ -38,6 +38,14 @@ const NAV_SECTIONS = [
     ]
   },
   {
+    label: 'SOC Workflow',
+    items: [
+      { id: 'alert-queue',  label: 'Alert Queue',  labelKey: 'nav.alertQueue',   icon: AlertTriangle, tag: 'NEW' },
+      { id: 'cases',        label: 'Cases',        labelKey: 'nav.cases',        icon: Briefcase,     tag: 'NEW' },
+      { id: 'suppressions', label: 'Suppressions', labelKey: 'nav.suppressions', icon: ShieldOff,     tag: 'NEW' },
+    ]
+  },
+  {
     label: 'Tools',
     items: [
       { id: 'benchmark', label: 'Benchmark',   labelKey: 'nav.benchmark',  icon: BookOpen,      tag: 'NEW'  },
@@ -50,7 +58,7 @@ const NAV_SECTIONS = [
   }
 ]
 
-const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark', 'soar', 'coverage']
+const alwaysEnabled = ['dashboard', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark', 'soar', 'coverage', 'alert-queue', 'cases', 'suppressions']
 
 export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLangChange, llmStatus }) {
   const t = i18n?.t || ((k) => k)
