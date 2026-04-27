@@ -178,19 +178,22 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 | **C** | Background jobs scaffold              | `backend/jobs/` Arq-shaped (registry, config, tasks) · in-process executor today, real Arq worker in v3.2 · `/api/tasks/{task_id}` poll/list/cancel | `c81d04d` |
 
 ```mermaid
-gitGraph
-    commit id: "v3.0.0 stabilised"
-    commit id: "audit Apr-2026"
-    branch v3.1.0
-    checkout v3.1.0
-    commit id: "🔐 jti + refresh"
-    commit id: "🛡️ nginx-unprivileged"
-    commit id: "🧩 split 13 routers"
-    commit id: "🗄️ SQLAlchemy + Alembic"
-    commit id: "🤖 AI security tests"
-    commit id: "✅ quality-gate"
-    checkout main
-    merge v3.1.0 tag: "v3.1.0"
+timeline
+    title CyberTwin SOC — v3.1.x release line
+    section v3.0.x · stabilised
+        Apr 19  : Live OCSF ingestion
+        Apr 20  : Helm chart + 6-job CI
+        Apr 25  : Senior architect audit
+    section v3.1.0 · hardening
+        Apr 27  : JWT jti + refresh rotation
+                : nginx-unprivileged · CORS strict
+                : Split 13 routers · 30+ AI security tests
+                : SQLAlchemy + Alembic + tenant_id
+                : quality-gate CI · Checkov · 64-char JWT
+    section v3.1.1 · proofs (Pkg A/B/C)
+        Apr 28  : Lighthouse CI · multi-tenancy guards
+                : PostgreSQL migration smoke job
+                : Arq-shaped jobs · /api/tasks · 14th router
 ```
 
 ---
@@ -251,7 +254,7 @@ mindmap
 
 | Area                      | Status                                                | Evidence |
 |---------------------------|-------------------------------------------------------|----------|
-| **Backend tests**         | ✅ 239 passing                                          | [`docs/proof/coverage-report.md`](docs/proof/coverage-report.md) |
+| **Backend tests**         | ✅ 253 passing                                          | [`docs/proof/coverage-report.md`](docs/proof/coverage-report.md) |
 | **Code coverage**         | ✅ 69.8 % (gate: ≥ 60 %)                               | `pytest --cov=backend` |
 | **Frontend build**        | ✅ Passing                                             | GitHub Actions `Frontend Build` job |
 | **Docker build**          | ✅ Retry-loop healthcheck on `/api/health` & `/health` | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
@@ -301,7 +304,7 @@ flowchart TB
     end
 
     subgraph Data["💾 Data tier"]
-        DB[("SQLite / PostgreSQL<br/>10 ORM tables · 17 indexes<br/>SQLAlchemy 2.0 + Alembic")]
+        DB[("SQLite / PostgreSQL<br/>10 ORM tables · 19 indexes<br/>SQLAlchemy 2.0 + Alembic")]
         REDIS[("Redis<br/>cache · jti denylist · rate-limit")]
         BUF["Ring buffer<br/>50 k events"]
     end
@@ -994,7 +997,7 @@ flowchart TB
 | Secrets         | env-driven · prod gate refuses start if weak · `.gitleaks.toml` allowlist                            |
 | Containers      | `nginx-unprivileged` (uid 101) · `runAsNonRoot` · `drop:[ALL]` · multi-stage builds                 |
 | Audit           | Every state-changing endpoint logs to `audit_log` (user, role, IP, action, timestamp)               |
-| DB              | SQLAlchemy 2.0 + Alembic · 10 ORM tables · 17 composite indexes · `tenant_id` on every model         |
+| DB              | SQLAlchemy 2.0 + Alembic · 10 ORM tables · 19 composite indexes · `tenant_id` on every model · multi-tenancy structural guards |
 
 ### Continuous security checks
 
@@ -1079,7 +1082,7 @@ helm upgrade --install cybertwin deploy/helm/cybertwin-soc \
 # Set DATABASE_URL once
 export DATABASE_URL=postgresql+psycopg2://user:pass@host:5432/cybertwin
 
-# Apply Alembic migrations (creates 9 tables + 17 composite indexes)
+# Apply Alembic migrations (creates 9 tables + 19 composite indexes)
 alembic upgrade head
 
 # Roll back last migration
@@ -1115,9 +1118,10 @@ flowchart TB
     ROOT --> SC["📜 scenarios/<br/>11 attack JSON"]
     ROOT --> SCR["🔧 scripts/"]
     ROOT --> DOC["📖 docs/<br/>IMPROVEMENTS · proof/"]
-    ROOT --> CI["🔄 .github/workflows/<br/>ci.yml — 8 jobs + gate"]
+    ROOT --> CI["🔄 .github/workflows/<br/>ci.yml — 9 jobs + gate"]
+    ROOT --> JB["⚙️ backend/jobs/<br/>Arq-shaped task registry"]
 
-    BE --> BE1["api/ — 13 routers + main.py + deps.py"]
+    BE --> BE1["api/ — 14 routers + main.py + deps.py"]
     BE --> BE2["detection/ — 46 rules + Sigma + correlation"]
     BE --> BE3["coverage/ — 8-state machine + gap analyzer"]
     BE --> BE4["soc/ — cases · feedback · suppressions"]
@@ -1141,7 +1145,7 @@ flowchart TB
     class ROOT root
     class BE,BE1,BE2,BE3,BE4,BE5,BE6,BE7,BE8,BE9,BE10,BE11 be
     class FE,FE1,FE2,FE3 fe
-    class TS,AL,BM,DEP,SC,SCR,DOC,CI ops
+    class TS,AL,BM,DEP,SC,SCR,DOC,CI,JB ops
 ```
 
 ---
@@ -1152,9 +1156,9 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    E2E["🌐 End-to-end<br/>(compose smoke · CI Docker job)<br/>1 scenario"]
-    API["🔌 API integration<br/>(test_api.py · test_soc.py · test_ingestion.py)<br/>~80 tests"]
-    UNIT["⚙️ Unit tests<br/>(test_auth · test_detection · test_ai_analyst<br/>test_attack_engine · test_coverage · test_scoring · …)<br/>~159 tests"]
+    E2E["🌐 End-to-end<br/>(compose smoke · CI Docker + PostgreSQL jobs)<br/>~5 scenarios"]
+    API["🔌 API integration<br/>(test_api · test_soc · test_ingestion · test_jobs)<br/>~85 tests"]
+    UNIT["⚙️ Unit tests<br/>(test_auth · test_detection · test_ai_analyst · test_multitenancy<br/>test_attack_engine · test_coverage · test_scoring · …)<br/>~163 tests"]
 
     UNIT --> API --> E2E
 
@@ -1186,7 +1190,7 @@ pip-audit -r requirements.txt --strict
 Current `master`:
 
 ```
-============================ 239 passed in 30.94s ============================
+============================ 253 passed in 30.94s ============================
 flake8: 0 errors · pip-audit: 0 CVE · npm audit: 0 high · gitleaks: 0 leaks
 coverage: 69.8 % (gate ≥ 60 %)
 ```
