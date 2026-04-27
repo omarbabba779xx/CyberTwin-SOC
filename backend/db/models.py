@@ -186,6 +186,7 @@ class CaseComment(Base):
 
     __table_args__ = (
         Index("ix_comments_case_id", "case_id"),
+        Index("ix_comments_tenant_case", "tenant_id", "case_id"),
     )
 
 
@@ -206,6 +207,7 @@ class CaseEvidence(Base):
 
     __table_args__ = (
         Index("ix_evidence_case_id", "case_id"),
+        Index("ix_evidence_tenant_case", "tenant_id", "case_id"),
     )
 
 

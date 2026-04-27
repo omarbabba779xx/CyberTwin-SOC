@@ -62,6 +62,23 @@ jobs:
           echo "Bundle sizes:"
           du -sh dist/assets/*.js dist/assets/*.css
 
+      - name: Lighthouse CI (frontend perf/a11y/best-practices)
+        working-directory: frontend
+        # Soft-fail today: gate hardens in v3.2 once perf budget is locked.
+        continue-on-error: true
+        run: |
+          npm install --no-save @lhci/cli@0.14.x
+          npx lhci autorun --config=.lighthouserc.json || true
+
+      - name: Upload Lighthouse report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-${{ github.sha }}
+          path: frontend/.lighthouseci/
+          retention-days: 14
+          if-no-files-found: ignore
+
   lint:
     runs-on: ubuntu-latest
     name: Code Quality

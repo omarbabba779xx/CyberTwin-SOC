@@ -1,6 +1,6 @@
 # CI Status — `master`
 
-> Last manual update: **2026-04-27**.
+> Last sync: **2026-04-28** · Commit reflected: `4777047`
 > The badges in the README link to live data; this file is a frozen snapshot.
 
 ## Latest run on `master`
@@ -8,34 +8,43 @@
 ```
 $ gh run list --limit 1 --workflow ci.yml --branch master
 STATUS  TITLE                                                       ELAPSED
-✓       fix(ci): make .env optional in docker-compose so Docker     2m05s
-        Build job passes
+✓       fix(ci)+docs: bump CI JWT_SECRET to 64 chars, rewrite       2m01s
+        README v3.1.0
 ```
 
-## Job-by-job result
+## Job-by-job result (v3.1.0 pipeline — 8 jobs + final quality-gate)
 
-| Job                            | Result | Duration | Notes                                                    |
-|--------------------------------|--------|----------|----------------------------------------------------------|
-| **Backend Tests**              | ✅ pass | ~1m 04s  | 223/223 tests green (pytest)                            |
-| **Frontend Build**             | ✅ pass | ~24s    | `npm ci` + `npm run build` clean                        |
-| **Code Quality** (flake8)      | ✅ pass | ~16s    | 0 errors with documented ignore list                     |
-| **Security Scans**             | ✅ pass | ~1m 22s  | Non-blocking — Bandit, pip-audit, Semgrep, Gitleaks, Trivy, CycloneDX |
-| **Docker Build**               | ✅ pass | ~1m 17s  | `compose config` + build + retry-loop healthcheck       |
-| **Helm Chart Validation**      | (new)  | —        | Added in this same commit — first run pending           |
+| Job                            | Result | Required | Notes                                                      |
+|--------------------------------|--------|:--------:|------------------------------------------------------------|
+| **Backend Tests**              | ✅ pass |    ✅    | 239 tests green (pytest) · coverage 69.8 % (gate ≥ 60 %) |
+| **Frontend Build**             | ✅ pass |    ✅    | `npm ci` + `npm run build` clean                          |
+| **Code Quality** (flake8)      | ✅ pass |    ✅    | 0 errors with documented ignore list                       |
+| **Security Scans**             | ✅ pass |    ✅    | `pip-audit`, `npm audit`, `gitleaks` are **blocking**; Bandit, Semgrep, Trivy, CycloneDX informational |
+| **Docker Build**               | ✅ pass |    ✅    | `compose config` + build + retry-loop healthcheck (port 8080)  |
+| **Helm Chart Validation**      | ✅ pass |    ✅    | `helm lint` + render artefact uploaded                     |
+| **Checkov IaC Security Scan**  | ✅ pass |          | Dockerfile + Helm — soft-fail (informational)              |
+| **Quality Gate**               | ✅ pass |    ✅    | Final aggregate — single check for branch protection rules |
 
 ## How to reproduce locally
 
 ```bash
-# All test gates the CI runs
-python -m pytest tests/                                   # 223/223
+# All blocking gates
+python -m pytest tests/                                   # 239 passed
 python -m flake8 backend/ \
     --max-line-length=120 \
     --ignore=E501,W503,E402,E241,E231,E704                # 0 errors
 python -m pip_audit -r requirements.txt --strict          # 0 known CVEs
-docker compose config                                      # valid
+( cd frontend && npm audit --audit-level=high )           # 0 high
 
-# Smoke up + healthcheck (same loop as CI)
-touch .env
+# Compose smoke (same loop as CI)
+cat > .env <<'EOF'
+ENV=production
+JWT_SECRET=ci-only-secret-for-compose-validation-0000000000000000000000000000
+AUTH_ADMIN_PASSWORD=ci-admin-password-0000
+AUTH_ANALYST_PASSWORD=ci-analyst-password-0000
+AUTH_VIEWER_PASSWORD=ci-viewer-password-0000
+EOF
+docker compose config                                      # valid
 docker compose build
 docker compose up -d
 for i in $(seq 1 30); do
@@ -48,10 +57,9 @@ docker compose down -v
 
 ## Annotations / known warnings
 
-- **Node.js 20 deprecation**: `actions/checkout@v4` and `actions/setup-python@v5`
-  warn about Node.js 20 being deprecated by GitHub on 2026-09-16. Tracked in
-  `docs/IMPROVEMENTS.md` (tier C); to opt in early, set
-  `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true`.
-
-- **CodeQL workflow** mentioned in `.github/workflows/codeql.yml` is independent
-  from `ci.yml` and is not included above.
+- **Node.js 20 deprecation**: `actions/checkout@v4` warns about Node 20 being
+  deprecated by GitHub on 2026-09-16. Pin migration tracked in `docs/IMPROVEMENTS.md`.
+- **Lighthouse CI**: integrated into `frontend-build` job (see `frontend/.lighthouserc.json`).
+  Soft-fail today, hardening planned for v3.2.
+- **PostgreSQL**: backend tests run against SQLite in CI; PostgreSQL service
+  added in this same commit — Alembic `upgrade head` is exercised on every PR.
