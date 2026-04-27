@@ -36,6 +36,101 @@ jobs:
           file: coverage.xml
         continue-on-error: true
 
+  postgres-migration:
+    runs-on: ubuntu-latest
+    name: PostgreSQL Migration Smoke
+    # Proves the SQLAlchemy schema and Alembic migrations apply cleanly to a
+    # real PostgreSQL 16 instance — both forward AND backward — and that all
+    # expected indexes are created. Tests still run on SQLite (cheaper); this
+    # job is the production-DB safety net.
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: cybertwin
+          POSTGRES_PASSWORD: cybertwin
+          POSTGRES_DB: cybertwin_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg2://cybertwin:cybertwin@localhost:5432/cybertwin_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Wait for PostgreSQL
+        run: |
+          for i in $(seq 1 15); do
+            pg_isready -h localhost -p 5432 -U cybertwin && exit 0
+            sleep 2
+          done
+          echo "PostgreSQL did not become ready in time."
+          exit 1
+
+      - name: Apply migrations forward (alembic upgrade head)
+        run: alembic upgrade head
+
+      - name: Verify all expected tables exist
+        run: |
+          python -c "
+          import os
+          from sqlalchemy import create_engine, inspect
+          engine = create_engine(os.environ['DATABASE_URL'])
+          insp = inspect(engine)
+          tables = set(insp.get_table_names())
+          expected = {'simulation_runs', 'security_events', 'alerts', 'soc_cases',
+                      'case_comments', 'case_evidence', 'alert_feedback',
+                      'suppressions', 'audit_log', 'alembic_version'}
+          missing = expected - tables
+          assert not missing, f'Missing tables: {missing}. Found: {sorted(tables)}'
+          print(f'OK: {len(tables)} tables created.')
+          "
+
+      - name: Verify tenant_id index coverage
+        run: |
+          python -c "
+          import os
+          from sqlalchemy import create_engine, inspect
+          engine = create_engine(os.environ['DATABASE_URL'])
+          insp = inspect(engine)
+          gaps = []
+          for tbl in insp.get_table_names():
+              if tbl == 'alembic_version':
+                  continue
+              cols = {c['name'] for c in insp.get_columns(tbl)}
+              if 'tenant_id' not in cols:
+                  continue
+              indexes = insp.get_indexes(tbl)
+              covered = any('tenant_id' in idx['column_names'] for idx in indexes)
+              if not covered:
+                  gaps.append(tbl)
+          assert not gaps, f'Tables missing tenant_id index: {gaps}'
+          print('OK: every tenant_id column is indexed.')
+          "
+
+      - name: Roll back fully (alembic downgrade base)
+        run: alembic downgrade base
+
+      - name: Re-apply forward (idempotency check)
+        run: alembic upgrade head
+
   frontend-build:
     runs-on: ubuntu-latest
     name: Frontend Build
@@ -342,6 +437,7 @@ jobs:
     name: Quality Gate
     needs:
       - backend-tests
+      - postgres-migration
       - frontend-build
       - lint
       - security
@@ -354,10 +450,11 @@ jobs:
           echo "=========================================="
           echo "  CyberTwin SOC Quality Gate: PASSED"
           echo "=========================================="
-          echo "  backend-tests  : OK"
-          echo "  frontend-build : OK"
-          echo "  lint           : OK"
-          echo "  security       : OK"
-          echo "  docker         : OK"
-          echo "  helm-lint      : OK"
+          echo "  backend-tests       : OK"
+          echo "  postgres-migration  : OK"
+          echo "  frontend-build      : OK"
+          echo "  lint                : OK"
+          echo "  security            : OK"
+          echo "  docker              : OK"
+          echo "  helm-lint           : OK"
           echo "=========================================="
