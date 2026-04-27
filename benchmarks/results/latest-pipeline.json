@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-04-27T08:37:52.135009+00:00",
+  "python_version": "3.12.10",
+  "repeats_per_scenario": 3,
+  "scenarios_tested": 3,
+  "results": [
+    {
+      "scenario": "sc-apt-campaign-001",
+      "runs": 3,
+      "mean_s": 4.652,
+      "min_s": 4.412,
+      "max_s": 4.793,
+      "stdev_s": 0.209,
+      "total_events": 68,
+      "total_logs": 68,
+      "total_alerts": 8,
+      "total_incidents": 1
+    },
+    {
+      "scenario": "sc-bruteforce-001",
+      "runs": 3,
+      "mean_s": 12.597,
+      "min_s": 12.217,
+      "max_s": 12.927,
+      "stdev_s": 0.357,
+      "total_events": 4581,
+      "total_logs": 4581,
+      "total_alerts": 12,
+      "total_incidents": 1
+    },
+    {
+      "scenario": "sc-cloud-attack-001",
+      "runs": 3,
+      "mean_s": 4.409,
+      "min_s": 4.405,
+      "max_s": 4.415,
+      "stdev_s": 0.005,
+      "total_events": 82,
+      "total_logs": 82,
+      "total_alerts": 6,
+      "total_incidents": 1
+    }
+  ]
+}

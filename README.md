@@ -109,6 +109,30 @@ It answers in concrete numbers — not bullet points — questions every CISO an
 
 ---
 
+## ✅ Validation Status
+
+> **Honesty rule**: every claim in this README must have a corresponding artefact in [`docs/proof/`](docs/proof/). If a number changes, both the README and the proof file are updated in the same commit.
+
+| Area                      | Status                                          | Evidence                                                                            |
+|---------------------------|-------------------------------------------------|-------------------------------------------------------------------------------------|
+| **Backend tests**         | ✅ 223/223 passing                               | [`docs/proof/coverage-report.md`](docs/proof/coverage-report.md)                    |
+| **Frontend build**        | ✅ Passing                                       | GitHub Actions `Frontend Build` job                                                 |
+| **Docker build**          | ✅ Passing (retry-loop healthcheck on `/api/health` + `/health`) | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
+| **Helm chart**            | ✅ Lint + render in CI                           | `helm-lint` job + uploaded `helm-rendered-{sha}` artefact                          |
+| **Compose profiles**      | ✅ default + `soar` + `prod-db` validated        | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md)                |
+| **Code quality**          | ✅ flake8 = 0 errors (documented ignore list)    | `Code Quality` CI job                                                               |
+| **Security scans**        | ✅ Run · ⏳ blocking gates rolling out in stages  | [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md)        |
+| **Known CVEs**            | ✅ **0** (`pip-audit`)                           | [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md)        |
+| **MITRE coverage**        | 📊 **40 / 622** rule-mapped (6.43%) — honest snapshot | [`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)     |
+| **Pipeline benchmarks**   | 📊 **3 scenarios × 3 runs · 4–13 s end-to-end**  | [`docs/proof/benchmark-results.md`](docs/proof/benchmark-results.md)                |
+| **Live ingestion**        | ✅ Implemented · ⏳ stress test on larger datasets pending | [`tests/test_ingestion.py`](tests/test_ingestion.py)                                |
+| **HTTP load test (k6)**   | 📋 Scripts present · ⏳ first run pending        | [`benchmarks/k6_api_test.js`](benchmarks/k6_api_test.js)                            |
+| **LLM-mode AI Analyst**   | ✅ Implemented · ⏳ Ollama benchmark pending      | [`backend/llm_analyst.py`](backend/llm_analyst.py)                                  |
+
+Legend: ✅ = green & continuously enforced · 📊 = measured snapshot · 📋 = scripts shipped, run pending · ⏳ = work-in-progress.
+
+---
+
 ## 🏗 Architecture
 
 ### High-level component diagram

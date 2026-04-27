@@ -180,21 +180,107 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build Docker images
+      - name: Create .env stub
+        # `.env` is git-ignored. We create a stub so the compose env_file
+        # directive is satisfied on every Compose version (incl. < 2.24
+        # which doesn't support `required: false`).
+        run: touch .env
+
+      - name: Validate compose config
+        # Fails fast on typos / unknown keys / variable interpolation errors
+        # before we waste time on `build`.
+        run: |
+          docker compose config > /dev/null
+          docker compose --profile soar config > /dev/null
+          docker compose --profile prod-db config > /dev/null
+          echo "All compose configurations are valid."
+
+      - name: Build default stack
         run: docker compose build
 
-      - name: Start services
-        run: |
-          # `.env` is git-ignored. Create an empty stub so `docker compose up`
-          # works even on Compose versions that don't support `required: false`.
-          touch .env
-          docker compose up -d
-          sleep 10
+      - name: Build prod-db profile (Postgres opt-in)
+        # Compiles the prod-db profile too so we never ship a broken
+        # production manifest. Profile-only services are pulled, not run.
+        run: docker compose --profile prod-db build
 
-      - name: Health check
+      - name: Start default stack
+        run: docker compose up -d
+
+      - name: Wait for backend health
         run: |
-          curl -f http://localhost:8000/api/health || exit 1
-          echo "Backend healthy!"
+          for i in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/api/health > /dev/null; then
+              echo "Backend is healthy after ${i} attempt(s)."
+              exit 0
+            fi
+            echo "::group::Attempt ${i}/30 - waiting 5s for backend..."
+            docker compose ps
+            docker compose logs backend --tail=20 || true
+            echo "::endgroup::"
+            sleep 5
+          done
+          echo "Backend did not become healthy in time."
+          exit 1
+
+      - name: Wait for frontend health
+        run: |
+          for i in $(seq 1 12); do
+            if curl -fsS http://localhost/health > /dev/null; then
+              echo "Frontend is healthy after ${i} attempt(s)."
+              exit 0
+            fi
+            echo "Attempt ${i}/12 - waiting 5s for frontend..."
+            sleep 5
+          done
+          echo "Frontend did not become healthy in time."
+          exit 1
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          echo "::group::backend logs"
+          docker compose logs backend --tail=200 || true
+          echo "::endgroup::"
+          echo "::group::frontend logs"
+          docker compose logs frontend --tail=200 || true
+          echo "::endgroup::"
+          echo "::group::redis logs"
+          docker compose logs redis --tail=100 || true
+          echo "::endgroup::"
+          docker compose ps
 
       - name: Stop services
-        run: docker compose down
+        if: always()
+        run: docker compose down -v
+
+  helm-lint:
+    runs-on: ubuntu-latest
+    name: Helm Chart Validation
+    needs: [backend-tests, frontend-build]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+
+      - name: Helm lint
+        run: helm lint deploy/helm/cybertwin-soc
+
+      - name: Render Helm templates (smoke test)
+        run: |
+          helm template cybertwin deploy/helm/cybertwin-soc \
+            --set ingress.host=ci.example.com \
+            --set serviceMonitor.enabled=true \
+            > /tmp/rendered.yaml
+          echo "Rendered manifest size:"
+          wc -l /tmp/rendered.yaml
+
+      - name: Upload rendered manifest as artefact
+        uses: actions/upload-artifact@v4
+        with:
+          name: helm-rendered-${{ github.sha }}
+          path: /tmp/rendered.yaml
+          retention-days: 14

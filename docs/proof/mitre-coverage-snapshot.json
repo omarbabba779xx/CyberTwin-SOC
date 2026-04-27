@@ -1,0 +1,106 @@
+{
+  "generated_at": "2026-04-27T08:39:06.699949+00:00",
+  "rules_loaded": 46,
+  "techniques_in_catalog": 622,
+  "tactics_in_catalog": 14,
+  "summary": {
+    "catalog_total": 622,
+    "rule_mapped": 40,
+    "validated": 0,
+    "failed": 0,
+    "untested": 40,
+    "not_covered": 582,
+    "high_risk_gaps": 293,
+    "rule_mapped_pct": 6.43
+  },
+  "by_status": {
+    "not_covered": 582,
+    "rule_exists": 40
+  },
+  "by_tactic": {
+    "TA0001": {
+      "name": "Initial Access",
+      "covered": 4,
+      "total": 19,
+      "high_risk_gaps": 15
+    },
+    "TA0003": {
+      "name": "Persistence",
+      "covered": 3,
+      "total": 107,
+      "high_risk_gaps": 104
+    },
+    "TA0007": {
+      "name": "Discovery",
+      "covered": 2,
+      "total": 40,
+      "high_risk_gaps": 0
+    },
+    "TA0009": {
+      "name": "Collection",
+      "covered": 3,
+      "total": 28,
+      "high_risk_gaps": 0
+    },
+    "TA0010": {
+      "name": "Exfiltration",
+      "covered": 2,
+      "total": 19,
+      "high_risk_gaps": 17
+    },
+    "TA0006": {
+      "name": "Credential Access",
+      "covered": 10,
+      "total": 59,
+      "high_risk_gaps": 0
+    },
+    "TA0004": {
+      "name": "Privilege Escalation",
+      "covered": 3,
+      "total": 27,
+      "high_risk_gaps": 24
+    },
+    "TA0008": {
+      "name": "Lateral Movement",
+      "covered": 2,
+      "total": 17,
+      "high_risk_gaps": 0
+    },
+    "TA0005": {
+      "name": "Defense Evasion",
+      "covered": 2,
+      "total": 116,
+      "high_risk_gaps": 114
+    },
+    "TA0002": {
+      "name": "Execution",
+      "covered": 3,
+      "total": 38,
+      "high_risk_gaps": 35
+    },
+    "TA0043": {
+      "name": "Reconnaissance",
+      "covered": 0,
+      "total": 43,
+      "high_risk_gaps": 0
+    },
+    "TA0011": {
+      "name": "Command and Control",
+      "covered": 2,
+      "total": 36,
+      "high_risk_gaps": 34
+    },
+    "TA0040": {
+      "name": "Impact",
+      "covered": 4,
+      "total": 28,
+      "high_risk_gaps": 24
+    },
+    "TA0042": {
+      "name": "Resource Development",
+      "covered": 0,
+      "total": 45,
+      "high_risk_gaps": 0
+    }
+  }
+}

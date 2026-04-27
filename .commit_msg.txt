@@ -1,0 +1,35 @@
+feat(ci+docs): harden Docker job, add Helm lint, publish proof artefacts
+
+CI hardenings (Docker job):
+- Replace fragile `sleep 10` with retry loops:
+    - 30 x 5s on backend `/api/health`
+    - 12 x 5s on frontend nginx `/health`
+- Add `docker compose config` validation for default + soar + prod-db
+  profiles before any build (fast-fail on typos / interpolation errors)
+- Build the prod-db profile too so CI catches broken Postgres manifests
+- Dump backend / frontend / redis logs automatically on any failure
+- `if: always()` on `docker compose down -v` so cleanup runs after errors
+
+CI new job (Helm Chart Validation):
+- helm lint on deploy/helm/cybertwin-soc
+- helm template smoke test (with sample values)
+- Upload rendered manifest as artefact for downstream kubeconform / OPA
+
+Evidence (docs/proof/):
+- README.md   : how to regenerate every artefact
+- ci-status.md: per-job status snapshot of master
+- coverage-report.md: pytest 223/223 + section breakdown
+- mitre-coverage-snapshot.{json,md}: 40/622 (6.43%) honest snapshot
+- benchmark-results.md: 3 scenarios x 3 runs, 4-13s end-to-end
+- security-scan-summary.md: pip-audit 0, Bandit 0 high (5 medium reviewed)
+- docker-validation.md: every CI gate documented + local repro
+
+Tools:
+- benchmarks/bench_pipeline.py : reproducible end-to-end benchmark
+- benchmarks/mitre_snapshot.py : reproducible coverage snapshot
+
+README:
+- New "Validation Status" table near the top with hard links to every
+  proof artefact. Distinguishes ✅ continuously-enforced from 📊 measured
+  snapshot from 📋 scripts-shipped-but-not-yet-run from ⏳ work-in-progress.
+- Anchored "Honesty rule": README claims must have proof artefacts.
