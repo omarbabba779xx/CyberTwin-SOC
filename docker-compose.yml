@@ -7,7 +7,7 @@
 #   docker-compose logs -f backend                      # stream backend logs
 #   docker-compose down -v                              # stop & remove volumes
 
-version: "3.9"
+# Compose v2.x — `version:` is no longer required and is intentionally omitted.
 
 networks:
   cybertwin-net:
@@ -51,7 +51,10 @@ services:
       - backend-data:/app/data
       - ./scenarios:/app/scenarios:ro
     env_file:
-      - .env
+      # Optional — sourced when present (local dev). Absent in CI / minimal
+      # deployments where everything comes from the `environment:` block.
+      - path: .env
+        required: false
     environment:
       PYTHONUNBUFFERED: "1"
       REDIS_URL: redis://redis:6379

@@ -185,6 +185,9 @@ jobs:
 
       - name: Start services
         run: |
+          # `.env` is git-ignored. Create an empty stub so `docker compose up`
+          # works even on Compose versions that don't support `required: false`.
+          touch .env
           docker compose up -d
           sleep 10
 
