@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
 import { Shield, User, Lock, Eye, EyeOff, Cpu, Search, BarChart3 } from 'lucide-react'
 import { LANGUAGES } from '../i18n'
-
-const API = 'http://localhost:8000'
+import { apiUrl } from '../utils/api'
 
 export default function Login({ onLogin, i18n, onLangChange }) {
   const t = i18n?.t || ((k) => k)
@@ -19,7 +18,7 @@ export default function Login({ onLogin, i18n, onLangChange }) {
     setLoading(true)
 
     try {
-      const res = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(apiUrl('/api/auth/login'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
@@ -27,7 +26,8 @@ export default function Login({ onLogin, i18n, onLangChange }) {
 
       if (res.ok) {
         const data = await res.json()
-        localStorage.setItem('cybertwin_token', data.token || 'authenticated')
+        if (!data.token) throw new Error('Missing token in login response')
+        localStorage.setItem('cybertwin_token', data.token)
         localStorage.setItem('cybertwin_user', username)
         onLogin()
       } else {
@@ -35,7 +35,7 @@ export default function Login({ onLogin, i18n, onLangChange }) {
         setError(data.detail || t('login.error'))
       }
     } catch {
-      if (username === 'admin' && password === 'cybertwin2024') {
+      if (import.meta.env.VITE_ENABLE_DEMO_LOGIN === 'true' && username === 'admin' && password === 'cybertwin2024') {
         localStorage.setItem('cybertwin_token', 'demo-token')
         localStorage.setItem('cybertwin_user', username)
         onLogin()

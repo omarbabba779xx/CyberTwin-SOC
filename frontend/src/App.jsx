@@ -6,6 +6,7 @@ import ShortcutsHelp from './components/ShortcutsHelp'
 import useKeyboardShortcuts from './hooks/useKeyboardShortcuts'
 import Login from './pages/Login'
 import { createI18n } from './i18n'
+import { apiUrl, authHeaders } from './utils/api'
 
 // ─── Code-split page components with React.lazy ───
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
@@ -45,8 +46,6 @@ function LoadingFallback() {
     </div>
   )
 }
-
-const API = 'http://localhost:8000'
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
@@ -91,11 +90,12 @@ export default function App() {
 
   useEffect(() => {
     if (!isLoggedIn) return
-    fetch(`${API}/api/scenarios`).then(r => r.json()).then(setScenarios).catch(() => {})
-    fetch(`${API}/api/environment`).then(r => r.json()).then(setEnvironment).catch(() => {})
-    fetch(`${API}/api/mitre/techniques`).then(r => r.json()).then(setTechniques).catch(() => {})
-    fetch(`${API}/api/threat-intel`).then(r => r.json()).then(setThreatIntel).catch(() => {})
-  }, [isLoggedIn])
+    const headers = authHeaders(token)
+    fetch(apiUrl('/api/scenarios'), { headers }).then(r => r.json()).then(setScenarios).catch(() => {})
+    fetch(apiUrl('/api/environment'), { headers }).then(r => r.json()).then(setEnvironment).catch(() => {})
+    fetch(apiUrl('/api/mitre/techniques'), { headers }).then(r => r.json()).then(setTechniques).catch(() => {})
+    fetch(apiUrl('/api/threat-intel'), { headers }).then(r => r.json()).then(setThreatIntel).catch(() => {})
+  }, [isLoggedIn, token])
 
   useEffect(() => {
     localStorage.setItem('cybertwin_history', JSON.stringify(history.slice(-20)))
@@ -137,7 +137,7 @@ export default function App() {
   const pages = {
     dashboard: <Dashboard result={simResult} environment={environment} i18n={i18n} />,
     scenarios: <Scenarios scenarios={scenarios} onRun={runSimulation} loading={loading} />,
-    builder: <ScenarioBuilder techniques={techniques} hosts={hosts} onRun={runSimulation} />,
+    builder: <ScenarioBuilder techniques={techniques} hosts={hosts} onRun={runSimulation} token={token} />,
     alerts: <Alerts alerts={simResult?.alerts} incidents={simResult?.incidents} />,
     timeline: <Timeline timeline={simResult?.timeline} scenario={simResult?.scenario} />,
     mitre: <MitreView coverage={simResult?.mitre_coverage} scores={simResult?.scores} />,
@@ -149,7 +149,7 @@ export default function App() {
     'threat-map': <ThreatMap result={simResult} scenarios={scenarios} />,
     'risk-matrix': <RiskMatrix result={simResult} scenarios={scenarios} />,
     maturity: <Maturity result={simResult} scores={simResult?.scores} />,
-    analytics: <Analytics />,
+    analytics: <Analytics token={token} />,
     comparison: <Comparison history={history} />,
     'attack-tree': <AttackTree result={simResult} scenario={simResult?.scenario} i18n={i18n} />,
     benchmark: <Benchmark scenarioId={simResult?.scenario?.id} token={token} />,
@@ -191,6 +191,7 @@ export default function App() {
       {liveSimId && (
         <LiveSimulation
           scenarioId={liveSimId}
+          token={token}
           onComplete={onLiveComplete}
           onCancel={() => setLiveSimId(null)}
         />

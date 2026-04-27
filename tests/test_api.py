@@ -32,21 +32,30 @@ class TestAPI:
         assert resp.status_code == 200
         assert resp.json()["status"] == "ok"
 
-    async def test_get_environment(self, client):
-        resp = await client.get("/api/environment")
+    async def test_get_environment(self, client, auth_headers):
+        unauth = await client.get("/api/environment")
+        assert unauth.status_code == 401
+
+        resp = await client.get("/api/environment", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "network" in data or "hosts" in data
 
-    async def test_get_hosts(self, client):
-        resp = await client.get("/api/environment/hosts")
+    async def test_get_hosts(self, client, auth_headers):
+        unauth = await client.get("/api/environment/hosts")
+        assert unauth.status_code == 401
+
+        resp = await client.get("/api/environment/hosts", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
         assert len(data) > 0
 
-    async def test_get_users(self, client):
-        resp = await client.get("/api/environment/users")
+    async def test_get_users(self, client, auth_headers):
+        unauth = await client.get("/api/environment/users")
+        assert unauth.status_code == 401
+
+        resp = await client.get("/api/environment/users", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
@@ -82,6 +91,13 @@ class TestAPI:
         resp = await client.get("/api/scenarios")
         scenarios = resp.json()
         sid = scenarios[0]["id"]
+        oversized = await client.post("/api/simulate", json={
+            "scenario_id": sid,
+            "duration_minutes": 241,
+            "normal_intensity": "low",
+        }, headers=headers, timeout=300)
+        assert oversized.status_code == 422
+
         resp = await client.post("/api/simulate", json={
             "scenario_id": sid,
             "duration_minutes": 15,
@@ -111,6 +127,28 @@ class TestAPI:
         assert "logs" in data
         assert "alerts" in data
         assert "scores" in data
+
+        unauth_history = await client.get("/api/history")
+        assert unauth_history.status_code == 401
+
+        oversized_history = await client.get("/api/history?limit=10000", headers=headers)
+        assert oversized_history.status_code == 422
+
+        history = await client.get("/api/history?limit=10", headers=headers)
+        assert history.status_code == 200
+        runs = history.json()
+        assert isinstance(runs, list)
+        assert runs
+
+        run_id = runs[0]["id"]
+        unauth_detail = await client.get(f"/api/history/{run_id}")
+        assert unauth_detail.status_code == 401
+        detail = await client.get(f"/api/history/{run_id}", headers=headers)
+        assert detail.status_code == 200
+
+        by_scenario = await client.get(f"/api/history/scenario/{sid}", headers=headers)
+        assert by_scenario.status_code == 200
+        assert isinstance(by_scenario.json(), list)
 
     async def test_threat_intel_endpoint(self, client):
         resp = await client.get("/api/threat-intel")

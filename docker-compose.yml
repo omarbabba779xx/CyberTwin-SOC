@@ -2,8 +2,6 @@
 # Usage:
 #   docker-compose up -d                                # default stack (Redis + backend + frontend)
 #   docker-compose --profile soar up -d                 # + TheHive 5 + Cortex 3 + Elasticsearch
-#   docker-compose --profile prod-db up -d              # + PostgreSQL 16 (replaces SQLite)
-#   docker-compose --profile soar --profile prod-db up -d
 #   docker-compose logs -f backend                      # stream backend logs
 #   docker-compose down -v                              # stop & remove volumes
 
@@ -18,7 +16,6 @@ volumes:
   backend-data:
   thehive-data:
   elasticsearch-data:
-  postgres-data:
 
 services:
 
@@ -56,6 +53,7 @@ services:
       - path: .env
         required: false
     environment:
+      ENV: ${ENV:-production}
       PYTHONUNBUFFERED: "1"
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: "http://localhost,http://localhost:80,http://frontend"
@@ -154,26 +152,4 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 60s
-      retries: 5
-
-  # ── PostgreSQL (production) — opt-in via --profile prod-db ──────────────
-  # When enabled, set DATABASE_URL in .env to:
-  #   postgresql+psycopg://cybertwin:${POSTGRES_PASSWORD}@postgres:5432/cybertwin
-  postgres:
-    image: postgres:16-alpine
-    container_name: cybertwin-postgres
-    restart: unless-stopped
-    profiles: ["prod-db"]
-    environment:
-      POSTGRES_DB: cybertwin
-      POSTGRES_USER: cybertwin
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-please-change-me}
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    networks:
-      - cybertwin-net
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U cybertwin -d cybertwin"]
-      interval: 10s
-      timeout: 5s
       retries: 5

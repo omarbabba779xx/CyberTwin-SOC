@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Cpu, RefreshCw, AlertTriangle, User, Clock, Activity } from 'lucide-react'
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { apiUrl, authHeaders } from '../utils/api'
 
 const SEV_COLOR = { critical: '#f85149', high: '#ffa657', medium: '#e3b341', low: '#3fb950' }
 const SEV_BG = { critical: 'rgba(248,81,73,0.1)', high: 'rgba(255,166,87,0.1)', medium: 'rgba(227,179,65,0.1)', low: 'rgba(63,185,80,0.1)' }
@@ -76,8 +75,8 @@ export default function Anomaly({ scenarioId, token }) {
     if (!scenarioId) return
     setLoading(true)
     setError(null)
-    fetch(`${API}/api/results/${scenarioId}/anomalies`, {
-      headers: { Authorization: `Bearer ${token}` },
+    fetch(apiUrl(`/api/results/${encodeURIComponent(scenarioId)}/anomalies`), {
+      headers: authHeaders(token),
     })
       .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
       .then(setData)

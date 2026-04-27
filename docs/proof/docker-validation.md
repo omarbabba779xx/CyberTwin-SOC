@@ -9,29 +9,26 @@ The `Docker Build` job in `.github/workflows/ci.yml` runs the following gates,
 in order, and **fails the build on any gate**:
 
 ```
-1.  touch .env                              # stub for local dev parity
+1.  create .env with test-only strong secrets
 2.  docker compose config                   # default stack
 3.  docker compose --profile soar config    # SOAR stack
-4.  docker compose --profile prod-db config # Postgres stack
-5.  docker compose build                    # default
-6.  docker compose --profile prod-db build  # prod profile
-7.  docker compose up -d                    # default
-8.  retry-loop curl http://localhost:8000/api/health    (30 × 5s)
-9.  retry-loop curl http://localhost/health             (12 × 5s)
-10. docker compose down -v                  # always (cleanup)
+4.  docker compose build                    # default
+5.  docker compose up -d                    # default
+6.  retry-loop curl http://localhost:8000/api/health    (30 x 5s)
+7.  retry-loop curl http://localhost/health             (12 x 5s)
+8.  docker compose down -v                  # always (cleanup)
 ```
 
 ## Profiles & services validated
 
-| Service        | Default | SOAR profile | prod-db profile | Healthcheck |
-|----------------|---------|--------------|-----------------|-------------|
-| `redis`        | ✅      | ✅            | ✅              | redis-cli ping |
-| `backend`      | ✅      | ✅            | ✅              | `/api/health` |
-| `frontend`     | ✅      | ✅            | ✅              | nginx `/health` |
-| `postgres`     | —       | —            | ✅              | `pg_isready` |
-| `thehive`      | —       | ✅            | —               | TCP probe |
-| `cortex`       | —       | ✅            | —               | TCP probe |
-| `elasticsearch`| —       | ✅            | —               | cluster yellow |
+| Service        | Default | SOAR profile | Healthcheck |
+|----------------|---------|--------------|-------------|
+| `redis`        | ✅      | ✅            | redis-cli ping |
+| `backend`      | ✅      | ✅            | `/api/health` |
+| `frontend`     | ✅      | ✅            | nginx `/health` |
+| `thehive`      | —       | ✅            | TCP probe |
+| `cortex`       | —       | ✅            | TCP probe |
+| `elasticsearch`| —       | ✅            | cluster yellow |
 
 ## Local reproduction
 
@@ -39,14 +36,18 @@ in order, and **fails the build on any gate**:
 # Validate every profile
 docker compose config
 docker compose --profile soar config
-docker compose --profile prod-db config
 
-# Build everything you might ship
+# Build the default stack
 docker compose build
-docker compose --profile prod-db build
 
 # Bring it up + smoke test
-touch .env
+cat > .env <<'EOF'
+ENV=production
+JWT_SECRET=local-compose-secret-for-validation-000000000000
+AUTH_ADMIN_PASSWORD=local-admin-password-0000
+AUTH_ANALYST_PASSWORD=local-analyst-password-0000
+AUTH_VIEWER_PASSWORD=local-viewer-password-0000
+EOF
 docker compose up -d
 
 for i in $(seq 1 30); do

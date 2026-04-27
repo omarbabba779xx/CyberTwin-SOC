@@ -15,6 +15,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 logger = logging.getLogger("cybertwin.taxii")
 
@@ -76,13 +77,16 @@ def _fetch_via_rest() -> list[dict[str, Any]]:
     import urllib.error
 
     url = f"{_TAXII_ROOT}/taxii2/"
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.netloc != "attack-taxii.mitre.org":
+        raise RuntimeError(f"Refusing untrusted TAXII URL: {url}")
     headers = {
         "Accept": "application/taxii+json;version=2.1",
         "User-Agent": "CyberTwin-SOC/3.0",
     }
     req = urllib.request.Request(url, headers=headers)
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15) as resp:  # nosec B310
             data = json.loads(resp.read().decode())
             return data.get("objects", [])[:20]
     except urllib.error.URLError as exc:

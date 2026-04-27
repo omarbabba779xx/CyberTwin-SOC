@@ -12,13 +12,13 @@ import logging
 import os
 import re
 from contextlib import asynccontextmanager
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
@@ -46,7 +46,7 @@ from backend.api.deps import (  # noqa: E402
 
 from backend.orchestrator import SimulationOrchestrator
 from backend.database import init_db, save_run
-from backend.auth import require_permission
+from backend.auth import has_permission, require_permission
 from backend.audit import init_audit_table, log_action
 from backend.cache import cache
 
@@ -133,9 +133,16 @@ app.include_router(history_routes.router)
 # ---------------------------------------------------------------------------
 
 class SimulationRequest(BaseModel):
-    scenario_id: str
-    duration_minutes: int = 60
-    normal_intensity: str = "normal"
+    scenario_id: str = Field(min_length=1, max_length=80)
+    duration_minutes: int = Field(default=60, ge=1, le=240)
+    normal_intensity: Literal["low", "normal", "high"] = "normal"
+
+    @field_validator("scenario_id")
+    @classmethod
+    def _scenario_id_safe(cls, v: str) -> str:
+        if not re.fullmatch(r"[A-Za-z0-9_.-]{1,80}", v):
+            raise ValueError("scenario_id contains unsupported characters")
+        return v
 
 
 class SimulationSummary(BaseModel):
@@ -152,11 +159,11 @@ class SimulationSummary(BaseModel):
 
 class CustomScenarioRequest(BaseModel):
     id: Optional[str] = None
-    name: str
-    description: str = ""
+    name: str = Field(min_length=3, max_length=120)
+    description: str = Field(default="", max_length=4000)
     severity: str = "medium"
-    category: str = "custom"
-    phases: list = []
+    category: str = Field(default="custom", max_length=80)
+    phases: list = Field(default_factory=list, max_length=50)
 
     @field_validator("id", mode="before")
     @classmethod
@@ -167,6 +174,14 @@ class CustomScenarioRequest(BaseModel):
         if not sanitised:
             raise ValueError("Invalid scenario id")
         return sanitised
+
+    @field_validator("severity")
+    @classmethod
+    def _severity_valid(cls, v: str) -> str:
+        allowed = {"low", "medium", "high", "critical"}
+        if v not in allowed:
+            raise ValueError(f"severity must be one of {sorted(allowed)}")
+        return v
 
 
 # ---------------------------------------------------------------------------
@@ -266,21 +281,44 @@ async def run_simulation(
 
 # ---- WebSocket Live Simulation -------------------------------------------
 
+def _websocket_bearer_token(websocket: WebSocket, query_token: str | None) -> tuple[str | None, bool]:
+    """Extract a bearer token from WebSocket subprotocols or legacy query.
+
+    Browsers cannot set an Authorization header for WebSockets. The frontend
+    sends ["bearer", token] as Sec-WebSocket-Protocol so the JWT does not end
+    up in URLs, browser history, or common proxy access logs. Query token
+    support remains only for backward compatibility with older clients.
+    """
+    protocols = [
+        item.strip()
+        for item in websocket.headers.get("sec-websocket-protocol", "").split(",")
+        if item.strip()
+    ]
+    if len(protocols) >= 2 and protocols[0].lower() == "bearer":
+        return protocols[1], True
+    return query_token, False
+
+
 @app.websocket("/ws/simulate/{scenario_id}")
 async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None = None):
     """Stream simulation events in real-time via WebSocket."""
     from backend.auth import JWT_SECRET, JWT_ALGORITHM
     import jwt as _jwt
-    if token is None:
+
+    ws_token, used_subprotocol = _websocket_bearer_token(websocket, token)
+    if ws_token is None:
         await websocket.close(code=4001, reason="Missing authentication token")
         return
     try:
-        ws_user = _jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        ws_user = _jwt.decode(ws_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except (_jwt.ExpiredSignatureError, _jwt.InvalidTokenError):
         await websocket.close(code=4001, reason="Invalid or expired token")
         return
+    if not has_permission(ws_user.get("role", "viewer"), "run_simulation"):
+        await websocket.close(code=4003, reason="Permission 'run_simulation' required")
+        return
 
-    await websocket.accept()
+    await websocket.accept(subprotocol="bearer" if used_subprotocol else None)
 
     try:
         scenario = _orchestrator.attack_engine.get_scenario(scenario_id)
@@ -301,8 +339,8 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
 
         try:
             save_run(scenario_id, scenario.get("name", ""), result)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("DB save failed for WebSocket run %s: %s", scenario_id, exc)
 
         logs = result.get("logs", [])
         timeline = result.get("timeline", [])
@@ -416,8 +454,8 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
     except Exception as e:
         try:
             await websocket.send_json({"type": "error", "message": str(e)})
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Could not send WebSocket error frame: %s", exc)
 
 
 # ---- Results (cache-backed) -----------------------------------------------
@@ -692,8 +730,8 @@ def _compute_coverage_snapshot() -> dict[str, Any]:
     }
     try:
         cache.set(_COVERAGE_CACHE_KEY, snapshot, ttl=_COVERAGE_CACHE_TTL)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Coverage cache write failed: %s", exc)
     return snapshot
 
 
@@ -815,9 +853,9 @@ def coverage_recalculate(
 # ---- SOC Workflow (Phase 3): Alert Feedback, Cases, Suppressions ---------
 
 class FeedbackRequest(BaseModel):
-    rule_id: str
+    rule_id: str = Field(min_length=1, max_length=120)
     verdict: str
-    reason: str = ""
+    reason: str = Field(default="", max_length=2000)
 
     @field_validator("verdict")
     @classmethod
@@ -829,54 +867,120 @@ class FeedbackRequest(BaseModel):
 
 
 class CaseCreateRequest(BaseModel):
-    title: str
-    description: str = ""
+    title: str = Field(min_length=3, max_length=200)
+    description: str = Field(default="", max_length=5000)
     severity: str = "medium"
-    alert_ids: list[str] = []
-    incident_ids: list[str] = []
-    affected_hosts: list[str] = []
-    affected_users: list[str] = []
-    mitre_techniques: list[str] = []
-    tags: list[str] = []
-    assignee: Optional[str] = None
+    alert_ids: list[str] = Field(default_factory=list, max_length=100)
+    incident_ids: list[str] = Field(default_factory=list, max_length=100)
+    affected_hosts: list[str] = Field(default_factory=list, max_length=100)
+    affected_users: list[str] = Field(default_factory=list, max_length=100)
+    mitre_techniques: list[str] = Field(default_factory=list, max_length=100)
+    tags: list[str] = Field(default_factory=list, max_length=50)
+    assignee: Optional[str] = Field(default=None, max_length=120)
+
+    @field_validator("severity")
+    @classmethod
+    def _case_severity_valid(cls, v: str) -> str:
+        from backend.soc.models import CaseSeverity
+        if v not in {s.value for s in CaseSeverity}:
+            raise ValueError(f"severity must be one of {[s.value for s in CaseSeverity]}")
+        return v
+
+    @field_validator("alert_ids", "incident_ids", "affected_hosts", "affected_users", "mitre_techniques", "tags")
+    @classmethod
+    def _case_list_items_bounded(cls, v: list[str]) -> list[str]:
+        if any(len(str(item)) > 160 for item in v):
+            raise ValueError("list item exceeds 160 characters")
+        return v
 
 
 class CasePatchRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
+    title: Optional[str] = Field(default=None, min_length=3, max_length=200)
+    description: Optional[str] = Field(default=None, max_length=5000)
     severity: Optional[str] = None
     status: Optional[str] = None
-    assignee: Optional[str] = None
-    tags: Optional[list[str]] = None
+    assignee: Optional[str] = Field(default=None, max_length=120)
+    tags: Optional[list[str]] = Field(default=None, max_length=50)
+
+    @field_validator("severity")
+    @classmethod
+    def _patch_severity_valid(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        from backend.soc.models import CaseSeverity
+        if v not in {s.value for s in CaseSeverity}:
+            raise ValueError(f"severity must be one of {[s.value for s in CaseSeverity]}")
+        return v
+
+    @field_validator("status")
+    @classmethod
+    def _patch_status_valid(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return v
+        from backend.soc.models import CaseStatus
+        if v not in {s.value for s in CaseStatus}:
+            raise ValueError(f"status must be one of {[s.value for s in CaseStatus]}")
+        return v
 
 
 class CommentRequest(BaseModel):
-    body: str
+    body: str = Field(min_length=1, max_length=5000)
 
 
 class EvidenceRequest(BaseModel):
-    type: str = "alert"
-    reference: str
-    description: str = ""
+    type: str = Field(default="alert", max_length=40)
+    reference: str = Field(min_length=1, max_length=500)
+    description: str = Field(default="", max_length=3000)
     payload: Optional[dict[str, Any]] = None
+
+    @field_validator("type")
+    @classmethod
+    def _evidence_type_valid(cls, v: str) -> str:
+        allowed = {"alert", "event", "ioc", "file", "url", "note"}
+        if v not in allowed:
+            raise ValueError(f"type must be one of {sorted(allowed)}")
+        return v
+
+    @field_validator("payload")
+    @classmethod
+    def _payload_size_cap(cls, v: Optional[dict[str, Any]]) -> Optional[dict[str, Any]]:
+        if v is not None and _approx_size(v) > 64 * 1024:
+            raise ValueError("payload exceeds 64 KB cap")
+        return v
 
 
 class CaseCloseRequest(BaseModel):
-    closure_reason: str
+    closure_reason: str = Field(min_length=5, max_length=3000)
     final_status: str = "closed"
+
+    @field_validator("final_status")
+    @classmethod
+    def _final_status_valid(cls, v: str) -> str:
+        allowed = {"closed", "resolved", "false_positive"}
+        if v not in allowed:
+            raise ValueError(f"final_status must be one of {sorted(allowed)}")
+        return v
 
 
 class AssignRequest(BaseModel):
-    assignee: str
+    assignee: str = Field(min_length=1, max_length=120)
 
 
 class SuppressionRequest(BaseModel):
     scope: str
-    target: str
-    reason: str
-    duration_hours: Optional[int] = None
-    expires_at: Optional[str] = None
-    approved_by: Optional[str] = None
+    target: str = Field(min_length=1, max_length=250)
+    reason: str = Field(min_length=5, max_length=2000)
+    duration_hours: Optional[int] = Field(default=None, ge=1, le=24 * 90)
+    expires_at: Optional[str] = Field(default=None, max_length=80)
+    approved_by: Optional[str] = Field(default=None, max_length=120)
+
+    @field_validator("scope")
+    @classmethod
+    def _suppression_scope_valid(cls, v: str) -> str:
+        from backend.soc.models import SuppressionScope
+        if v not in {s.value for s in SuppressionScope}:
+            raise ValueError(f"scope must be one of {[s.value for s in SuppressionScope]}")
+        return v
 
 
 # ---- Alert feedback ------------------------------------------------------

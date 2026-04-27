@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { BookOpen, Shield, CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react'
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { apiUrl, authHeaders } from '../utils/api'
 
 function ScoreBar({ score, max = 100 }) {
   const pct = Math.min(100, Math.round((score / max) * 100))
@@ -40,8 +39,8 @@ export default function Benchmark({ scenarioId, token }) {
     if (!scenarioId) return
     setLoading(true)
     setError(null)
-    fetch(`${API}/api/results/${scenarioId}/benchmark`, {
-      headers: { Authorization: `Bearer ${token}` },
+    fetch(apiUrl(`/api/results/${encodeURIComponent(scenarioId)}/benchmark`), {
+      headers: authHeaders(token),
     })
       .then((r) => r.ok ? r.json() : Promise.reject(r.statusText))
       .then(setData)

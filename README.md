@@ -143,7 +143,7 @@ mindmap
 | **Frontend build**        | ✅ Passing                                             | GitHub Actions `Frontend Build` job |
 | **Docker build**          | ✅ Retry-loop healthcheck on `/api/health` & `/health` | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
 | **Helm chart**            | ✅ Lint + render in CI                                 | `helm-lint` job + uploaded `helm-rendered-{sha}` artefact |
-| **Compose profiles**      | ✅ default + `soar` + `prod-db`                        | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
+| **Compose profiles**      | ✅ default + `soar`                                    | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
 | **Code quality**          | ✅ flake8 = 0 errors                                   | `Code Quality` CI job |
 | **Security gates**        | ✅ `pip-audit`, `npm audit`, `gitleaks` — **blocking** | [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md) |
 | **Known CVEs**            | ✅ **0**                                               | [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md) |
@@ -189,7 +189,7 @@ flowchart TB
     end
 
     subgraph Data["💾 Data tier"]
-        DB[("SQLite / Postgres<br/>7 tables · 17 indexes")]
+        DB[("SQLite<br/>7 tables · 17 indexes")]
         REDIS[("Redis<br/>cache · pubsub · rate-limit")]
         BUF["Ring buffer<br/>50 k events"]
     end
@@ -389,7 +389,7 @@ flowchart LR
     class FP fp
 ```
 
-- SQLite-backed case store (Postgres-ready) · status transitions · comments · evidence attachments · SLA hours per severity
+- SQLite-backed case store · status transitions · comments · evidence attachments · SLA hours per severity
 - Analyst feedback (`true_positive` / `false_positive`) feeds back into rule confidence
 - Scoped suppressions with TTL to silence known-noisy rules per host/user
 - **SQL-injection-hardened** UPDATE composer (column allowlist + identifier regex, double-belt defence)
@@ -676,8 +676,8 @@ flowchart LR
 ### Docker Compose
 
 ```bash
-# Full SOC stack (incl. SOAR + Postgres)
-docker compose --profile soar --profile prod-db up -d
+# Full SOC stack (incl. SOAR)
+docker compose --profile soar up -d
 
 # Just the SOC core
 docker compose up -d
@@ -685,10 +685,9 @@ docker compose up -d
 
 | Service     | Port  | Purpose                       |
 |-------------|------:|-------------------------------|
-| `frontend`  | 3001  | nginx-served React SPA        |
+| `frontend`  | 80    | nginx-served React SPA        |
 | `backend`   | 8000  | FastAPI uvicorn               |
 | `redis`     | 6379  | cache · pubsub · rate-limiter |
-| `postgres`  | 5432  | (`prod-db` profile)           |
 | `thehive`   | 9000  | (`soar` profile)              |
 | `cortex`    | 9001  | (`soar` profile)              |
 

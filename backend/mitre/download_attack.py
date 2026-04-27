@@ -21,6 +21,7 @@ import json
 import logging
 import urllib.request
 from pathlib import Path
+from urllib.parse import urlparse
 
 logger = logging.getLogger("cybertwin.mitre.download")
 
@@ -96,9 +97,12 @@ def _download_bundle() -> dict:
     """Try each mirror URL until one succeeds."""
     for url in _ATTACK_URLS:
         try:
+            parsed = urlparse(url)
+            if parsed.scheme != "https":
+                raise RuntimeError(f"Refusing non-HTTPS MITRE bundle URL: {url}")
             logger.info("Downloading MITRE ATT&CK bundle from %s …", url)
             req = urllib.request.Request(url, headers={"User-Agent": "CyberTwin-SOC/3.0"})
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with urllib.request.urlopen(req, timeout=60) as resp:  # nosec B310
                 data = json.loads(resp.read().decode("utf-8"))
             logger.info("Download OK (objects: %d)", len(data.get("objects", [])))
             return data

@@ -61,17 +61,6 @@ redis:
     requests: {cpu: 50m,  memory: 64Mi}
     limits:   {cpu: 200m, memory: 256Mi}
 
-postgres:
-  enabled: false      # opt-in
-  image: postgres:16-alpine
-  persistence:
-    enabled: true
-    size: 20Gi
-    storageClass: ""
-  resources:
-    requests: {cpu: 250m, memory: 512Mi}
-    limits:   {cpu: 1,    memory: 2Gi}
-
 # Pod-level security defaults
 podSecurityContext:
   runAsNonRoot: true

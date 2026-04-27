@@ -14,6 +14,7 @@ to be reused across multiple routers lives here:
 
 from __future__ import annotations
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -33,7 +34,12 @@ from backend.orchestrator import SimulationOrchestrator  # noqa: E402
 # Singletons
 # ---------------------------------------------------------------------------
 
-limiter = Limiter(key_func=get_remote_address)
+_RATE_LIMIT_STORAGE_URI = os.getenv("RATE_LIMIT_STORAGE_URI") or os.getenv("REDIS_URL")
+limiter = Limiter(
+    key_func=get_remote_address,
+    storage_uri=_RATE_LIMIT_STORAGE_URI,
+    in_memory_fallback_enabled=True,
+)
 orchestrator = SimulationOrchestrator()
 
 

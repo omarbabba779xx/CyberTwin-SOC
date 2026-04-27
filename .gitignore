@@ -24,3 +24,4 @@ _commit_msg.txt
 _*.tmp
 data/.jwt_secret
 sbom-*.json
+.omx/

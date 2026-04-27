@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { websocketProtocols, websocketUrl } from '../utils/api'
 
 /**
  * LiveSimulation — Full-screen WebSocket-driven simulation overlay.
  *
- * Connects to  ws://localhost:8000/ws/simulate/{scenarioId}  and streams
+ * Connects to the configured backend /ws/simulate/{scenarioId} endpoint and streams
  * events, alerts, phases, scores, and AI analysis in real time with
  * dramatic terminal-style visuals suitable for an academic defense demo.
  */
-export default function LiveSimulation({ scenarioId, onComplete, onCancel }) {
+export default function LiveSimulation({ scenarioId, token, onComplete, onCancel }) {
   // ---- state ----
   const [status, setStatus] = useState('connecting') // connecting | streaming | complete | error
   const [scenarioName, setScenarioName] = useState('')
@@ -43,18 +44,9 @@ export default function LiveSimulation({ scenarioId, onComplete, onCancel }) {
 
   // ---- WebSocket connection ----
   useEffect(() => {
-    // Build a WebSocket URL that works in:
-    //   - dev (Vite on :5173, backend on :8000)            -> VITE_API_URL=http://localhost:8000
-    //   - prod behind nginx (same origin, /ws/* proxied)   -> VITE_API_URL empty -> relative URL
-    const apiBase = import.meta.env.VITE_API_URL || ''
-    let wsUrl
-    if (apiBase) {
-      wsUrl = apiBase.replace(/^http/, 'ws') + `/ws/simulate/${scenarioId}`
-    } else {
-      const wsScheme = window.location.protocol === 'https:' ? 'wss' : 'ws'
-      wsUrl = `${wsScheme}://${window.location.host}/ws/simulate/${scenarioId}`
-    }
-    const ws = new WebSocket(wsUrl)
+    const wsUrl = websocketUrl(`/ws/simulate/${encodeURIComponent(scenarioId)}`)
+    const protocols = websocketProtocols(token)
+    const ws = protocols.length ? new WebSocket(wsUrl, protocols) : new WebSocket(wsUrl)
     wsRef.current = ws
 
     ws.onopen = () => {
@@ -153,7 +145,7 @@ export default function LiveSimulation({ scenarioId, onComplete, onCancel }) {
     return () => {
       ws.close()
     }
-  }, [scenarioId])
+  }, [scenarioId, token])
 
   // Auto-scroll event log
   useEffect(() => {

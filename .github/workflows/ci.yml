@@ -187,11 +187,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create .env stub
+      - name: Create compose .env
         # `.env` is git-ignored. We create a stub so the compose env_file
-        # directive is satisfied on every Compose version (incl. < 2.24
-        # which doesn't support `required: false`).
-        run: touch .env
+        # directive is satisfied and the production safety gate has strong
+        # test-only secrets during the compose smoke run.
+        run: |
+          cat > .env <<'EOF'
+          ENV=production
+          JWT_SECRET=ci-only-secret-for-compose-validation-000000000000
+          AUTH_ADMIN_PASSWORD=ci-admin-password-0000
+          AUTH_ANALYST_PASSWORD=ci-analyst-password-0000
+          AUTH_VIEWER_PASSWORD=ci-viewer-password-0000
+          EOF
 
       - name: Validate compose config
         # Fails fast on typos / unknown keys / variable interpolation errors
@@ -199,16 +206,10 @@ jobs:
         run: |
           docker compose config > /dev/null
           docker compose --profile soar config > /dev/null
-          docker compose --profile prod-db config > /dev/null
           echo "All compose configurations are valid."
 
       - name: Build default stack
         run: docker compose build
-
-      - name: Build prod-db profile (Postgres opt-in)
-        # Compiles the prod-db profile too so we never ship a broken
-        # production manifest. Profile-only services are pulled, not run.
-        run: docker compose --profile prod-db build
 
       - name: Start default stack
         run: docker compose up -d

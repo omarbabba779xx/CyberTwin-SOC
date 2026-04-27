@@ -3,8 +3,7 @@ import { BarChart3, TrendingUp, Award, Target, Activity, ArrowUpRight, ArrowDown
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
-
-const API = 'http://localhost:8000'
+import { apiUrl, authHeaders } from '../utils/api'
 
 const SCORE_COLORS = {
   overall: '#e63946',
@@ -27,21 +26,21 @@ function getRiskColor(level) {
   return '#2a9d8f'
 }
 
-export default function Analytics() {
+export default function Analytics({ token }) {
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(true)
   const [sortField, setSortField] = useState('timestamp')
   const [sortDir, setSortDir] = useState('desc')
 
   useEffect(() => {
-    fetch(`${API}/api/history?limit=50`)
+    fetch(apiUrl('/api/history?limit=50'), { headers: authHeaders(token) })
       .then(r => r.json())
       .then(data => {
         setHistory(Array.isArray(data) ? data : [])
         setLoading(false)
       })
       .catch(() => setLoading(false))
-  }, [])
+  }, [token])
 
   // Trend data (chronological order)
   const trendData = useMemo(() => {

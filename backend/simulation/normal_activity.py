@@ -510,7 +510,7 @@ class NormalActivityGenerator:
             "timestamp": timestamp.isoformat(),
             "event_id": str(uuid.uuid4()),
             "src_host": host.get("id", "unknown"),
-            "src_ip": host.get("ip", "0.0.0.0"),
+            "src_ip": host.get("ip", "0.0.0.0"),  # nosec B104
             "user": user.get("id", "unknown"),
             "event_type": event_type,
             "description": description,

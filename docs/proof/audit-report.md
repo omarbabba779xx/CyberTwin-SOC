@@ -85,9 +85,9 @@
 
 ### 🟡 HIGH — SQLite in production
 - **File**: `backend/database.py`
-- `prod-db` Docker Compose profile spins up PostgreSQL but `database.py`
-  still hard-codes SQLite. No SQLAlchemy, no Alembic migrations, no
-  connection pooling.
+- Current deployment manifests no longer advertise a PostgreSQL runtime,
+  because `database.py` still hard-codes SQLite. There is no SQLAlchemy,
+  Alembic migration path, or connection pooling yet.
 - **Recommendation**: Phase 3 migration — abstract DB behind a repository
   layer, add Alembic, dual-backend (SQLite for demo, PostgreSQL for prod).
 

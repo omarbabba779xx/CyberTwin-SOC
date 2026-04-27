@@ -78,7 +78,7 @@ _FILE_PATHS_WINDOWS = [
 ]
 
 _FILE_PATHS_LINUX = [
-    "/etc/passwd", "/etc/shadow", "/tmp/.hidden_shell.sh",
+    "/etc/passwd", "/etc/shadow", "/tmp/.hidden_shell.sh",  # nosec B108
     "/var/log/auth.log", "/home/{user}/.ssh/authorized_keys",
     "/opt/webapp/config/db.yml", "/var/www/html/uploads/shell.php",
 ]

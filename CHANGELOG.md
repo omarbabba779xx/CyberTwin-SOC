@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security / Hardening
+
+- Protected simulation history and environment topology endpoints with
+  `view_results` RBAC and added regression assertions for unauthenticated
+  access.
+- Capped simulation request duration and history page size to reduce
+  resource-exhaustion risk from oversized user requests.
+- Removed the obsolete `prod-db` Docker/Helm surface until the backend has
+  a real `DATABASE_URL` adapter, avoiding false production-readiness claims.
+
 ### Added (Phase 5 — Enterprise readiness)
 
 - **Observability** (`backend/observability/`):
@@ -183,11 +193,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added (Phase 1.5)
 
 - `CODE_OF_CONDUCT.md` — Contributor Covenant 2.1.
-- `docker-compose.yml`: new `postgres` service under the opt-in
-  `--profile prod-db` (PostgreSQL 16, named volume, healthcheck), plus a
-  `postgres-data` named volume. Documented in the file's header.
-- `.env.example`: new `POSTGRES_PASSWORD` variable, commented `DATABASE_URL`
-  example, and clearer profile documentation.
+- Historical note: the earlier experimental PostgreSQL compose profile was
+  later removed because the backend still uses the SQLite repository layer.
+  Database migration remains tracked as future work rather than advertised
+  as a deployable production profile.
 - CI security job extended with non-blocking scanners:
   `semgrep` (multi-language SAST), `gitleaks` (secret scanning),
   `npm audit` (frontend deps), `trivy` (filesystem CVE scan), and

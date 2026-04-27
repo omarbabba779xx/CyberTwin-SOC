@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import { PenTool, Plus, Trash2, ChevronDown, ChevronRight, Search, Play, Save, GripVertical, Check, AlertCircle } from 'lucide-react'
+import { apiUrl, authHeaders } from '../utils/api'
 
 const tacticColors = {
   'reconnaissance': '#f4a261', 'resource-development': '#457b9d', 'initial-access': '#e63946',
@@ -9,7 +10,7 @@ const tacticColors = {
   'exfiltration': '#eab308', 'impact': '#dc2626',
 }
 
-export default function ScenarioBuilder({ techniques = [], hosts = [], onRun }) {
+export default function ScenarioBuilder({ techniques = [], hosts = [], onRun, token }) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [severity, setSeverity] = useState('high')
@@ -18,6 +19,7 @@ export default function ScenarioBuilder({ techniques = [], hosts = [], onRun }) 
   const [search, setSearch] = useState('')
   const [expandedTactic, setExpandedTactic] = useState(null)
   const [saved, setSaved] = useState(false)
+  const [savedId, setSavedId] = useState('')
 
   // Group techniques by tactic
   const grouped = useMemo(() => {
@@ -70,36 +72,48 @@ export default function ScenarioBuilder({ techniques = [], hosts = [], onRun }) 
     setPhases(newPhases)
   }
 
+  const buildScenario = () => ({
+    id: savedId || `sc-custom-${Date.now()}`,
+    name: name || 'Custom Scenario',
+    description,
+    severity,
+    category,
+    phases: phases.map((p, i) => ({
+      phase: i + 1,
+      name: p.technique_name,
+      technique_id: p.technique_id,
+      technique_name: p.technique_name,
+      tactic: p.tactic,
+      target_host: p.target_host,
+      description: p.description,
+      stealth_level: p.stealth_level,
+      expected_logs: [{ event_type: 'generic', count: 5 }],
+    })),
+  })
+
   const saveScenario = async () => {
-    const scenario = {
-      id: `sc-custom-${Date.now()}`,
-      name: name || 'Custom Scenario',
-      description,
-      severity,
-      category,
-      phases: phases.map((p, i) => ({
-        phase: i + 1,
-        name: p.technique_name,
-        technique_id: p.technique_id,
-        technique_name: p.technique_name,
-        tactic: p.tactic,
-        target_host: p.target_host,
-        description: p.description,
-        stealth_level: p.stealth_level,
-        expected_logs: [{ event_type: 'generic', count: 5 }],
-      })),
-    }
+    const scenario = buildScenario()
     try {
-      await fetch('http://localhost:8000/api/scenarios/custom', {
+      const response = await fetch(apiUrl('/api/scenarios/custom'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(token, { 'Content-Type': 'application/json' }),
         body: JSON.stringify(scenario),
       })
+      if (!response.ok) throw new Error(`Save failed with HTTP ${response.status}`)
+      const data = await response.json()
+      setSavedId(data.id || scenario.id)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+      return data.id || scenario.id
     } catch (e) {
       console.error('Save failed:', e)
+      return null
     }
+  }
+
+  const launchScenario = async () => {
+    const id = savedId || await saveScenario()
+    if (id && onRun) onRun(id)
   }
 
   const isValid = name.length > 0 && phases.length > 0
@@ -307,7 +321,7 @@ export default function ScenarioBuilder({ techniques = [], hosts = [], onRun }) 
             className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-[#457b9d] hover:bg-[#457b9d]/80 disabled:bg-gray-700 disabled:text-gray-500 rounded-lg text-sm font-semibold transition">
             {saved ? <><Check size={16} /> Saved!</> : <><Save size={16} /> Save Scenario</>}
           </button>
-          <button onClick={() => onRun && onRun(`sc-custom-${Date.now()}`)} disabled={!isValid}
+          <button onClick={launchScenario} disabled={!isValid}
             className="btn-primary w-full flex items-center justify-center gap-2 px-4 py-2.5 disabled:bg-gray-700 disabled:text-gray-500 rounded-lg text-sm font-semibold transition">
             <Play size={16} /> Launch Simulation
           </button>
