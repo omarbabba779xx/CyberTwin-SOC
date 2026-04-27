@@ -5,6 +5,31 @@ All notable changes to CyberTwin SOC are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.1] — 2026-04-28
+
+### Quality & CI
+
+- **PostgreSQL migration smoke job** — new CI job `postgres-migration` spins up `postgres:16-alpine`, runs `alembic upgrade head`, verifies all 9 expected tables exist, audits `tenant_id` index coverage, then runs `alembic downgrade base` and re-applies `upgrade head` (idempotency check). Added to `quality-gate` dependencies.
+- **Lighthouse CI** — wired into `frontend-build` job with `frontend/.lighthouserc.json` (desktop preset, perf ≥ 0.7, a11y ≥ 0.85). Reports uploaded as `lighthouse-{sha}` artefacts.
+- **Multi-tenancy structural guards** — `tests/test_multitenancy.py` (5 tests) ensures every ORM model carries `tenant_id`, every `tenant_id` column is covered by an index, exemptions are documented and real, the analyst role has the full case-lifecycle permission set, and no role references undefined permissions.
+
+### Added
+
+- **Background-jobs scaffold** — new `backend/jobs/` module (Arq-shaped):
+  - `registry.py` — `register_task` / `enqueue` / `get_status` / `update_progress` / `TaskStatus` enum.
+  - `config.py` — `RedisSettings` parsed from `JOBS_REDIS_URL` or `REDIS_URL`.
+  - `tasks.py` — first concrete task `coverage_recalculate`.
+  - `arq==0.26.3` added to `requirements.txt`.
+  - In-process executor today (hermetic for tests); same Redis key layout (`cybertwin:task:{id}`) the future Arq worker will use, so endpoint contracts stay stable.
+- **`/api/tasks` router** — `GET /api/tasks` (list types), `GET /api/tasks/{task_id}` (poll), `DELETE /api/tasks/{task_id}` (cooperative cancel). 9 unit tests in `tests/test_jobs.py`.
+- **Alembic migration 0002** — `case_comments` and `case_evidence` get composite `tenant_id` indexes (`ix_comments_tenant_case`, `ix_evidence_tenant_case`), closing the structural-guard gap surfaced in v3.1.0.
+
+### Documentation
+
+- **README rewrite** — synced to current numbers (253 tests, 14 routers, 80 endpoints, 9-job CI), new sections: pkg A/B/C delivery table, `/api/tasks` sequence diagram + status payload spec.
+- **`docs/proof/ci-status.md`** — refreshed to current SHA and job topology.
+- **GitHub repo metadata** — description rewritten, topics expanded to 20 (added `python`, `detection-engineering`, `ocsf`, `sigma-rules`, `threat-hunting`, `threat-intelligence`, `blue-team`, `siem`, `kubernetes`, `helm-chart`).
+
 ## [3.1.0] — 2026-04-27
 
 ### Security

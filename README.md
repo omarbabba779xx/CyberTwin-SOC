@@ -11,13 +11,13 @@
 
 🆕 **v3.1.0 — Hardening release**
 
-🔐 JWT revocation denylist · 🔄 Refresh token rotation · 🧩 API split into 13 routers · 🛡️ nginx-unprivileged · 🗄️ SQLAlchemy + Alembic · 🎯 Scoped RBAC · ✅ CI quality-gate · 🤖 30+ AI security tests
+🔐 JWT revocation denylist · 🔄 Refresh token rotation · 🧩 API split into 14 routers · 🛡️ nginx-unprivileged · 🗄️ SQLAlchemy + Alembic + **PostgreSQL CI smoke** · 🎯 Scoped RBAC · 🧪 **Multi-tenancy structural guards** · 💡 **Lighthouse CI** · ⚙️ **Arq-shaped background jobs** + `/api/tasks` · ✅ CI quality-gate (9 jobs)
 
 </td></tr>
 </table>
 
 [![CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
-[![Tests](https://img.shields.io/badge/tests-239%20passing-brightgreen)](#-quality--testing)
+[![Tests](https://img.shields.io/badge/tests-253%20passing-brightgreen)](#-quality--testing)
 [![Coverage](https://img.shields.io/badge/coverage-69.8%25-success)](#-quality--testing)
 [![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![React](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
@@ -119,7 +119,7 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 <th width="25%">🔐 Security</th>
 <th width="25%">🏗 Architecture</th>
 <th width="25%">🗄️ Database</th>
-<th width="25%">✅ Quality</th>
+<th width="25%">✅ Quality & Ops</th>
 </tr>
 <tr valign="top">
 <td>
@@ -136,37 +136,46 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 <td>
 
 - `main.py` **1561 → 135 LoC**
-- **13 router modules** (one per domain)
-- 8 new routes:
+- **14 router modules** (one per domain)
+- 9 new routes:
    `scenarios`, `simulation`,
    `results`, `ingestion`,
    `coverage`, `soc`,
-   `soar`, `mitre`
+   `soar`, `mitre`,
+   **`tasks`**
 
 </td>
 <td>
 
 - **SQLAlchemy 2.0** ORM
-- **Alembic** migration infra
-- **PostgreSQL-ready** via `DATABASE_URL`
+- **Alembic** + 2 migrations
+- **PostgreSQL CI smoke job**: forward + rollback + idempotency
 - **10 ORM models** with `tenant_id`
-- **17 composite indexes**
+- **19 composite indexes** (17 base + 2 tenant gap fixes)
 - Cross-DB JSON via TypeDecorator
 
 </td>
 <td>
 
 - **30+ AI security tests**
-- Prompt-injection resilience
-- PII redaction tests
-- IOC integrity tests
-- `quality-gate` CI job
+- **5 multi-tenancy structural guards**
+- **9 background-job tests**
+- `quality-gate` CI job (**9 jobs**)
 - **Checkov** IaC scan
-- 8 jobs + final gate
+- **Lighthouse CI** (perf/a11y)
+- **Arq-shaped jobs** + `/api/tasks`
 
 </td>
 </tr>
 </table>
+
+### 📦 v3.1.0 hardening packages (delivered after the audit)
+
+| Pkg | Title                                  | Highlights                                                                                       | Commit    |
+|----:|----------------------------------------|--------------------------------------------------------------------------------------------------|-----------|
+| **A** | Closer phase 1                        | Lighthouse CI · 5 multi-tenancy guards · `case_comments`/`case_evidence` tenant indexes (mig 0002) · `docs/proof/ci-status.md` synced | `e10bf4a` |
+| **B** | PostgreSQL production smoke           | New `postgres-migration` CI job · spins up `postgres:16-alpine` · forward + rollback + idempotency + tenant-index audit | `f24fc7b` |
+| **C** | Background jobs scaffold              | `backend/jobs/` Arq-shaped (registry, config, tasks) · in-process executor today, real Arq worker in v3.2 · `/api/tasks/{task_id}` poll/list/cancel | `c81d04d` |
 
 ```mermaid
 gitGraph
@@ -196,7 +205,7 @@ mindmap
       16 357 LoC
       15 packages
       77 endpoints
-      239 tests ✅
+      253 tests ✅
     Frontend
       React 18 + Vite
       12 396 LoC
@@ -217,22 +226,22 @@ mindmap
       Docker Compose
       Helm chart
       Prometheus + JSON logs
-      9-job CI 100% green
+      9-job CI + gate 100% green
 ```
 
 | Metric                              |   Count | Notes                                                                     |
 |-------------------------------------|--------:|---------------------------------------------------------------------------|
 | **Backend Python**                  |  16 357 | 15 packages — `api`, `detection`, `coverage`, `soc`, `ingestion`, `mitre`, `db`, … |
 | **Frontend React/JSX**              |  12 396 | 26 pages, 10 reusable components, Recharts visualisations                 |
-| **Unit & integration tests**        |     239 | All passing on `pytest tests/` (~30 s) · 69.8 % code coverage             |
-| **REST + WebSocket endpoints**      |      77 | Rate-limited, RBAC-scoped, OpenAPI-documented, split across **13 routers** |
+| **Unit & integration tests**        |     253 | All passing on `pytest tests/` (~30 s) · 69.8 % code coverage · 5 multi-tenancy guards · 9 job-system tests |
+| **REST + WebSocket endpoints**      |      80 | Rate-limited, RBAC-scoped, OpenAPI-documented, split across **14 routers** |
 | **MITRE ATT&CK techniques**         |     622 | Full Enterprise matrix · 14 tactics · TAXII 2.1 sync                      |
 | **Built-in detection rules**        |      46 | 14 platforms · severity-tiered · runtime Sigma upload                     |
 | **Attack scenarios**                |      11 | Solorigate, ProxyShell, Log4Shell, Insider, Ransomware, …                 |
 | **RBAC roles / scoped permissions** | 12 / 30+ | 3 legacy + 9 enterprise · `case:write`, `rule:approve`, `ingestion:read`, … |
 | **Connectors (extensible)**         |      15 | 5 deterministic mocks + 10 real-system stubs (Splunk, Sentinel, …)        |
 | **Known CVEs in dependencies**      |       0 | Verified by `pip-audit --strict` and `npm audit`                          |
-| **Database indexes**                | 17 ✅ | 10 ORM tables · 17 composite indexes (Alembic migration `0001`)            |
+| **Database indexes**                | 19 ✅ | 10 ORM tables · 19 composite indexes (Alembic migrations `0001` + `0002`) · forward+rollback CI smoke on PostgreSQL 16 |
 
 ---
 
@@ -275,7 +284,7 @@ flowchart TB
 
     subgraph API["⚙️ API tier — FastAPI 0.136"]
         MW["Middleware<br/>RequestID · Metrics · Audit · CORS · RateLimit · CSP"]
-        ROUT["13 Routers<br/>health · auth · simulation · results · ingestion · scenarios<br/>coverage · soc · soar · mitre · environment · history"]
+        ROUT["14 Routers<br/>health · auth · simulation · results · ingestion · scenarios<br/>coverage · soc · soar · mitre · environment · history"]
         DEPS["Shared deps<br/>JWT (jti+refresh) · 12-role scoped RBAC · slowapi"]
     end
 
@@ -838,6 +847,63 @@ Latest snapshot: [`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-cove
 
 ---
 
+## ⚙️ Background jobs (v3.1.0 scaffold)
+
+Heavy workloads (long simulations, report exports, SOAR pushes) move off the
+request path via an **Arq-shaped task registry**. The default executor today
+is **in-process** (hermetic for tests, no worker required), but uses the same
+Redis key layout that the future Arq worker will use, so endpoint contracts
+will not change in v3.2.
+
+| Method  | Path                       | Permission       | Purpose                                                       |
+|--------:|----------------------------|------------------|---------------------------------------------------------------|
+| `GET`   | `/api/tasks`               | `view_results`   | List registered task types                                    |
+| `GET`   | `/api/tasks/{task_id}`     | `view_results`   | Poll status (`queued` / `running` / `succeeded` / `failed`)   |
+| `DELETE`| `/api/tasks/{task_id}`     | `simulation:run` | Cancel (cooperative for in-process executor today)            |
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as 🧑 Analyst
+    participant API as ⚙️ FastAPI
+    participant REG as 🗂 jobs/registry
+    participant CACHE as 🔴 Redis
+    participant TASK as 🛠 task fn
+
+    U->>API: POST /api/coverage/recalculate
+    API->>REG: enqueue("coverage_recalculate")
+    REG->>CACHE: set cybertwin:task:{id} status=queued
+    REG->>TASK: await fn(task_id, **kw)
+    TASK->>CACHE: progress 30 → 100
+    TASK-->>REG: result
+    REG->>CACHE: set status=succeeded · result
+    API-->>U: 202 {task_id}
+
+    Note over U,API: Client polls
+    U->>API: GET /api/tasks/{id}
+    API->>CACHE: read cybertwin:task:{id}
+    CACHE-->>API: {status, progress, result}
+    API-->>U: 200 {status: succeeded, progress: 100, result: ...}
+```
+
+Status payload:
+
+```json
+{
+  "task_id": "a1b2c3d4e5f6g7h8",
+  "task": "coverage_recalculate",
+  "status": "succeeded",
+  "progress": 100,
+  "result": { "summary": { "catalog_total": 622, "validated": 0 } },
+  "error": null,
+  "enqueued_at": "2026-04-28T09:14:02+00:00",
+  "started_at":  "2026-04-28T09:14:02+00:00",
+  "finished_at": "2026-04-28T09:14:03+00:00"
+}
+```
+
+---
+
 ## 📊 Observability & metrics
 
 ```mermaid
@@ -951,24 +1017,25 @@ Full audit report (7 domains scored, 4 critical issues fixed): [`docs/proof/audi
 
 ```mermaid
 flowchart LR
-    PUSH["📥 git push / PR"] --> JOBS{8 parallel jobs}
+    PUSH["📥 git push / PR"] --> JOBS{9 parallel jobs}
 
     JOBS --> J1["🧪 Backend Tests<br/>pytest · ~30 s · cov ≥ 60 %"]
-    JOBS --> J2["⚛️ Frontend Build<br/>vite production · ~18 s"]
-    JOBS --> J3["✨ Code Quality<br/>flake8 · 0 errors"]
-    JOBS --> J4["🔐 Security Scans<br/>pip-audit · npm audit · gitleaks"]
-    JOBS --> J5["🐳 Docker Build<br/>compose smoke + healthcheck"]
-    JOBS --> J6["⎈ Helm Lint<br/>lint + render artefact"]
-    JOBS --> J7["🏗️ Checkov<br/>Dockerfile · Helm IaC"]
+    JOBS --> J2["🐘 PostgreSQL Migration<br/>upgrade · downgrade · idempotency"]
+    JOBS --> J3["⚛️ Frontend Build<br/>vite + Lighthouse CI"]
+    JOBS --> J4["✨ Code Quality<br/>flake8 · 0 errors"]
+    JOBS --> J5["🔐 Security Scans<br/>pip-audit · npm audit · gitleaks"]
+    JOBS --> J6["🐳 Docker Build<br/>compose smoke + healthcheck"]
+    JOBS --> J7["⎈ Helm Lint<br/>lint + render artefact"]
+    JOBS --> J8["🏗️ Checkov<br/>Dockerfile · Helm IaC"]
 
-    J1 & J2 & J3 & J4 & J5 & J6 & J7 --> QG["🎯 quality-gate<br/>(single blocking check<br/>for branch protection)"]
+    J1 & J2 & J3 & J4 & J5 & J6 & J7 & J8 --> QG["🎯 quality-gate<br/>(single blocking check<br/>for branch protection)"]
     QG -->|✅| MERGE["🟢 Merge allowed"]
     QG -->|❌| BLOCK["🔴 Blocked"]
 
     classDef job fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
     classDef pass fill:#dcfce7,stroke:#22c55e,color:#14532d
     classDef fail fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
-    class J1,J2,J3,J4,J5,J6,J7 job
+    class J1,J2,J3,J4,J5,J6,J7,J8 job
     class QG,MERGE pass
     class BLOCK fail
 ```
@@ -1041,7 +1108,7 @@ flowchart TB
     ROOT["📁 CyberTwin-SOC"]
     ROOT --> BE["🐍 backend/<br/>16 357 LoC · Python 3.12"]
     ROOT --> FE["⚛️ frontend/<br/>12 396 LoC · React 18 + Vite"]
-    ROOT --> TS["🧪 tests/<br/>239 tests · 100 % passing"]
+    ROOT --> TS["🧪 tests/<br/>253 tests · 100 % passing"]
     ROOT --> AL["🗄️ alembic/<br/>migration infra"]
     ROOT --> BM["📊 benchmarks/<br/>k6 · locust · pipeline · MITRE snapshot"]
     ROOT --> DEP["⎈ deploy/helm/<br/>chart + ServiceMonitor"]
