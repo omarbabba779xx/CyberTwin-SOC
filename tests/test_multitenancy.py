@@ -10,8 +10,6 @@ table), add it to `EXEMPT_TABLES` with a comment explaining why.
 """
 from __future__ import annotations
 
-import pytest
-
 
 # Tables that legitimately have no tenant_id.
 # Document the reason on every entry — reviewers must justify adding more.

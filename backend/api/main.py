@@ -119,6 +119,7 @@ from backend.api.routes import (  # noqa: E402
     simulation as simulation_routes,
     soar as soar_routes,
     soc as soc_routes,
+    tasks as tasks_routes,
 )
 
 app.include_router(health_routes.router)
@@ -133,3 +134,4 @@ app.include_router(coverage_routes.router)
 app.include_router(soc_routes.router)
 app.include_router(soar_routes.router)
 app.include_router(mitre_routes.router)
+app.include_router(tasks_routes.router)
