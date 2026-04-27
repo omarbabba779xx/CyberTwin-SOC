@@ -28,7 +28,14 @@ def _conn() -> sqlite3.Connection:
 
 
 def init_audit_table() -> None:
-    """Create the audit_log table if it does not exist."""
+    """Create the audit_log table and its indexes if missing.
+
+    Indexes are essential for compliance/forensic queries:
+    - filtering by user (incident response, insider-threat investigations)
+    - filtering by action (e.g. "every CASE_CLOSE in the last 30 days")
+    - time-window queries (SOX, GDPR access reviews)
+    - failure tracking (status='failure' for brute-force forensics)
+    """
     conn = _conn()
     conn.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
@@ -43,6 +50,22 @@ def init_audit_table() -> None:
             details     TEXT
         )
     """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_timestamp "
+        "ON audit_log (timestamp DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_username_id "
+        "ON audit_log (username, id DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_action "
+        "ON audit_log (action)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_status "
+        "ON audit_log (status) WHERE status != 'success'"
+    )
     conn.commit()
     conn.close()
 

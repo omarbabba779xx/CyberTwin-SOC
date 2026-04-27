@@ -17,7 +17,14 @@ def _get_conn():
 
 
 def init_db():
-    """Create tables if they don't exist."""
+    """Create tables and indexes if they don't exist.
+
+    Indexes are critical here: the dashboard hits ``get_runs_by_scenario``
+    on every page load, and ``ORDER BY id DESC`` is fast (PK), but the
+    ``WHERE scenario_id = ?`` filter without an index is a sequential
+    scan. The composite index supports both filtering and ordering in a
+    single B-tree walk.
+    """
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = _get_conn()
     conn.execute("""
@@ -39,6 +46,22 @@ def init_db():
             full_result TEXT
         )
     """)
+    # Filter on scenario_id is the dominant access pattern (history page,
+    # per-scenario benchmarks, regression-trend view).
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_runs_scenario_id_id "
+        "ON simulation_runs (scenario_id, id DESC)"
+    )
+    # Time-window queries (last 24h, last 7d) for the dashboard.
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_runs_timestamp "
+        "ON simulation_runs (timestamp DESC)"
+    )
+    # Risk-level filter on the executive dashboard.
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_runs_risk_level "
+        "ON simulation_runs (risk_level)"
+    )
     conn.commit()
     conn.close()
 

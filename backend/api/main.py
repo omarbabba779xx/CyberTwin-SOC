@@ -94,6 +94,8 @@ app.add_middleware(
 # Phase 5 - request_id correlation + Prometheus request duration
 from backend.observability.middleware import RequestIdMiddleware
 from backend.observability.metrics import MetricsMiddleware
+from backend.observability.security_headers import SecurityHeadersMiddleware
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(MetricsMiddleware)
 app.add_middleware(RequestIdMiddleware)
 
@@ -1139,10 +1141,36 @@ def check_enterprise_connector(kind: str, name: str, request: Request,
 
 # ---- Live Log Ingestion (Phase 4) ----------------------------------------
 
+# Hard caps. Total batch payload is bounded by event_count * per_event_size
+# AND by the global request body limit enforced at the ASGI layer (uvicorn
+# default is 1 MB but we set a deliberate 16 MB cap for ingestion).
+_INGEST_MAX_EVENTS = 5000
+_INGEST_MAX_EVENT_BYTES = 64 * 1024          # 64 KB per event (generous for OCSF)
+_INGEST_MAX_SYSLOG_LINES = 5000
+_INGEST_MAX_SYSLOG_LINE_LEN = 8 * 1024       # RFC 5424 says SHOULD support 2048
+
+
+def _approx_size(obj: Any) -> int:
+    """Cheap upper bound on the JSON-serialised size of a dict."""
+    try:
+        return len(json.dumps(obj, default=str))
+    except Exception:
+        return _INGEST_MAX_EVENT_BYTES + 1   # treat as oversize on error
+
+
 class IngestEventRequest(BaseModel):
     event: dict[str, Any]
     source_type: Optional[str] = None
     tenant_id: Optional[str] = None
+
+    @field_validator("event")
+    @classmethod
+    def _event_size_cap(cls, v):
+        if _approx_size(v) > _INGEST_MAX_EVENT_BYTES:
+            raise ValueError(
+                f"Event exceeds {_INGEST_MAX_EVENT_BYTES // 1024} KB cap."
+            )
+        return v
 
 
 class IngestBatchRequest(BaseModel):
@@ -1153,14 +1181,36 @@ class IngestBatchRequest(BaseModel):
     @field_validator("events")
     @classmethod
     def _events_size_cap(cls, v):
-        if len(v) > 5000:
-            raise ValueError("Batch capped at 5000 events.")
+        if len(v) > _INGEST_MAX_EVENTS:
+            raise ValueError(f"Batch capped at {_INGEST_MAX_EVENTS} events.")
+        # Block the multiplied-DoS angle: 5000 × 100 KB == 500 MB.
+        for i, evt in enumerate(v):
+            if _approx_size(evt) > _INGEST_MAX_EVENT_BYTES:
+                raise ValueError(
+                    f"Event #{i} exceeds "
+                    f"{_INGEST_MAX_EVENT_BYTES // 1024} KB cap."
+                )
         return v
 
 
 class IngestSyslogRequest(BaseModel):
     lines: list[str]
     tenant_id: Optional[str] = None
+
+    @field_validator("lines")
+    @classmethod
+    def _lines_size_cap(cls, v):
+        if len(v) > _INGEST_MAX_SYSLOG_LINES:
+            raise ValueError(
+                f"Syslog batch capped at {_INGEST_MAX_SYSLOG_LINES} lines."
+            )
+        for i, line in enumerate(v):
+            if len(line) > _INGEST_MAX_SYSLOG_LINE_LEN:
+                raise ValueError(
+                    f"Line #{i} exceeds "
+                    f"{_INGEST_MAX_SYSLOG_LINE_LEN // 1024} KB cap."
+                )
+        return v
 
 
 @app.post("/api/ingest/event")
