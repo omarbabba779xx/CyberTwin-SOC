@@ -1,38 +1,22 @@
-refactor(api)+ci(security): split main.py into routers, promote 3 scanners to blocking
+fix(security): npm audit clean of all HIGH CVEs in frontend deps
 
-API refactor (start of progressive split of the 1591-line main.py):
-- New backend/api/deps.py: shared singletons (limiter, orchestrator) and
-  helpers (_client_ip, _get_cached_result, _safe_path) so routers can
-  re-use them without re-importing main.
-- New backend/api/routes/ package with 4 cleanly-extracted routers:
-    - health.py       (/, /api/health, /api/health/deep, /api/metrics)
-    - auth.py         (/api/auth/login, /api/auth/me, /api/audit)
-    - environment.py  (/api/environment[/hosts|/users])
-    - history.py      (/api/history/*, 5 endpoints)
-- main.py: imports limiter+orchestrator from deps, calls
-  app.include_router(...) for the 4 routers, removes the migrated
-  inline endpoint definitions.
-- Net effect on main.py: 1591 -> 1406 lines (-185, -12%).
-- 13 of the legacy ~75 endpoints now live in their domain router.
-- Pattern is now established; the remaining groups (scenarios,
-  simulation, results, mitre, sigma, coverage, alerts, cases,
-  suppressions, connectors, ingest, soar, threat-intel) can migrate
-  one PR at a time without touching main.py more than to remove blocks
-  and add include_router calls.
+The newly-blocking `npm audit --audit-level=high` gate caught 3 HIGH CVEs
+in transitive dependencies of the frontend bundle:
 
-Tests: 223/223 still pass. flake8: 0 errors.
+1. d3-color <3.1.0 — ReDoS (GHSA-36jr-mh4h-2g58)
+   Pulled in by react-simple-maps@3.0.0 -> d3-zoom -> d3-interpolate -> d3-color.
+   Fixed by an `overrides` block forcing d3-color to ^3.1.0.
 
-CI security gates promoted to BLOCKING (staged plan, steps 2 & 3):
-- pip-audit -r requirements.txt --strict        : was non-blocking;
-  now any new published CVE in any pinned dep fails the build.
-  Baseline: 0 known CVEs (verified locally).
-- npm audit --audit-level=high                  : was non-blocking;
-  now any high+ CVE in frontend deps fails the build.
-- gitleaks (gitleaks/gitleaks-action@v2)        : was non-blocking;
-  now any secret matching .gitleaks.toml fails the build.
-  Baseline: 0 verified secrets after the JWT-secret incident fix.
+2. lodash <=4.17.23 — Code Injection via `_.template` (GHSA-r5fr-rjxr-66jc)
+   + Prototype Pollution (GHSA-f23m-r3pf-42rh).
+   Fixed via `npm audit fix` (non-breaking).
 
-Bandit, Semgrep and Trivy stay non-blocking until their baselines are
-reviewed — documented in docs/proof/security-scan-summary.md.
+3. picomatch <=2.3.1 || 4.0.0-4.0.3 — Method Injection (GHSA-3v7f-55p6-f55p)
+   + ReDoS (GHSA-c2c7-rcm5-vvqj).
+   Fixed via `npm audit fix` (non-breaking).
 
-Job name updated: "Security Scans (non-blocking)" -> "Security Scans".
+Result: `npm audit --audit-level=high` is clean.
+Remaining: 2 moderate (esbuild + vite dev-server only) — flagged for the
+next dependency-bump pass; they don't ship to production users.
+
+`npm run build` verified successful (12.15s).
