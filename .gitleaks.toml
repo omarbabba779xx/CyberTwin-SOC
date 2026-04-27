@@ -22,7 +22,7 @@ regexes = [
     # Helm chart placeholder (disabled template, clearly labelled REPLACE_ME)
     "REPLACE_ME_WITH_A_48_CHAR_RANDOM_HEX_STRING",
     # CI stub — used only for compose validation, clearly labelled ci-only
-    "ci-only-secret-for-compose-validation-000000000000",
+    "ci-only-secret-for-compose-validation-0+",
     # changeme-* passwords in auth.py are runtime defaults caught by check_production_safety()
     "changeme-(admin|analyst|viewer)",
 ]

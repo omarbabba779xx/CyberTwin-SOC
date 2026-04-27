@@ -194,7 +194,7 @@ jobs:
         run: |
           cat > .env <<'EOF'
           ENV=production
-          JWT_SECRET=ci-only-secret-for-compose-validation-000000000000
+          JWT_SECRET=ci-only-secret-for-compose-validation-0000000000000000000000000000
           AUTH_ADMIN_PASSWORD=ci-admin-password-0000
           AUTH_ANALYST_PASSWORD=ci-analyst-password-0000
           AUTH_VIEWER_PASSWORD=ci-viewer-password-0000
