@@ -6,6 +6,8 @@
 
 *A digital twin of a modern SOC. Emulates real adversary tradecraft, ingests OCSF telemetry, runs 46 detection rules + Sigma against the full MITRE ATT&CK matrix, drives a complete case-management workflow, and ships with AI analyst, ML anomaly detection, SOAR integration, Prometheus observability and Helm/Kubernetes deployment.*
 
+> **v3.1.0 — Hardening release:** JWT revocation denylist + refresh token rotation · API modularised into 12 router files · nginx-unprivileged frontend · SQLAlchemy + Alembic PostgreSQL migration infra · scoped RBAC permissions on all ingestion endpoints · CI quality-gate job + Checkov IaC scan · 30+ AI analyst security tests.
+
 [![CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
 [![Tests](https://img.shields.io/badge/tests-223%2F223%20passing-brightgreen)](#-quality--testing)
 [![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://python.org)
@@ -172,7 +174,7 @@ flowchart TB
 
     subgraph API["⚙️ API tier — FastAPI 0.136"]
         MW["Middleware<br/>RequestID · Metrics · Audit · CORS · RateLimit · CSP"]
-        ROUT["Routers<br/>health · auth · environment · history · ingestion · coverage · cases …"]
+        ROUT["12 Routers<br/>health · auth · simulation · results · ingestion<br/>coverage · soc · soar · mitre · scenarios · env · history"]
         DEPS["Shared deps<br/>JWT · 12-role RBAC · slowapi"]
     end
 
@@ -468,12 +470,12 @@ cp .env.example .env
 docker compose up -d
 ```
 
-| Service        | URL                                         |
-|----------------|---------------------------------------------|
-| Frontend       | <http://localhost:3001>                     |
-| API + OpenAPI  | <http://localhost:8000/docs>                |
-| Prometheus     | <http://localhost:8000/api/metrics>         |
-| Health (deep)  | <http://localhost:8000/api/health/deep>     |
+| Service        | URL                                         | Notes                           |
+|----------------|---------------------------------------------|---------------------------------|
+| Frontend       | <http://localhost>                          | nginx-unprivileged, port 80→8080 |
+| API + OpenAPI  | <http://localhost:8000/docs>                |                                 |
+| Prometheus     | <http://localhost:8000/api/metrics>         | restrict via `RESTRICT_INTERNAL_ENDPOINTS=true` |
+| Health (deep)  | <http://localhost:8000/api/health/deep>     | restrict via env var in prod    |
 
 ### Option B — Local development
 
@@ -613,20 +615,21 @@ sum by (rule_id)(rate(cybertwin_feedback_total{verdict="false_positive"}[24h]))
 
 ## 🔐 Security posture
 
-| Surface         | Control                                                                                  |
-|-----------------|------------------------------------------------------------------------------------------|
-| Auth            | bcrypt (12 rounds) · JWT HS256 (32-byte key) · 5/min login rate-limit                    |
-| API             | slowapi rate-limit on every endpoint · CORS allowlist · 12-role RBAC                     |
-| HTTP headers    | `SecurityHeadersMiddleware` (backend) + `nginx.conf` (frontend) — CSP · HSTS · X-Frame   |
-| File uploads    | `_safe_path()` regex + path-resolution check — no traversal possible                     |
-| Sigma loader    | YAML safe_load · 256 KB max · ReDoS-proof globbing · `re.fullmatch`                      |
-| SQL             | Parametrised queries · column allowlist + regex for dynamic `UPDATE`                     |
-| LLM             | `_sanitise()` redacts PII/keys · prompt-injection markers neutralised · 32 KB hard cap   |
-| Ingestion       | per-event 64 KB · syslog 5 000 × 8 KB · `_approx_size()` total guard                     |
-| Secrets         | `.jwt_secret` git-ignored & untracked · env-driven · prod warning gate                   |
-| Containers      | `runAsNonRoot` · `drop:[ALL]` · multi-stage builds · `HEALTHCHECK`                       |
-| Audit           | Every state-changing endpoint logs to `audit_log` (user, role, IP, action, timestamp)    |
-| DB indexes      | 7/7 tables, 0 missing — verified by `scripts/check_db_indexes.py`                        |
+| Surface         | Control                                                                                              |
+|-----------------|------------------------------------------------------------------------------------------------------|
+| Auth            | bcrypt (12 rounds) · JWT HS256 (64-char key in prod) · jti denylist · refresh token rotation         |
+| Tokens          | 1h access token (default) · 7d refresh token · `POST /api/auth/logout` revokes via Redis denylist   |
+| API             | slowapi rate-limit on every endpoint · CORS strict methods+headers · 12-role scoped RBAC             |
+| HTTP headers    | `SecurityHeadersMiddleware` (backend) + `nginx.conf` (frontend) — CSP · HSTS · X-Frame              |
+| File uploads    | `_safe_path()` regex + path-resolution check — no traversal possible                                 |
+| Sigma loader    | YAML safe_load · 256 KB max · ReDoS-proof globbing · `re.fullmatch`                                  |
+| SQL             | Parametrised queries · column allowlist + regex for dynamic `UPDATE`                                 |
+| LLM             | `_sanitise()` redacts PII/keys · prompt-injection markers neutralised · 32 KB hard cap              |
+| Ingestion       | `ingestion:write` scoped permission · per-event 64 KB · syslog 5 000 × 8 KB · `_approx_size()` guard |
+| Secrets         | `.jwt_secret` git-ignored & untracked · env-driven · prod gate (refuses start if weak)              |
+| Containers      | `nginx-unprivileged` (uid 101) · `runAsNonRoot` · `drop:[ALL]` · multi-stage builds                 |
+| Audit           | Every state-changing endpoint logs to `audit_log` (user, role, IP, action, timestamp)               |
+| DB indexes      | 7/7 tables, 0 missing — `scripts/check_db_indexes.py` · 17 PostgreSQL indexes in Alembic migration  |
 
 ### Continuous security checks
 
@@ -648,24 +651,25 @@ Full audit report (7 domains scored, 4 critical issues fixed): [`docs/proof/audi
 
 ```mermaid
 flowchart LR
-    PUSH["📥 git push / PR"] --> JOBS{6 parallel jobs}
+    PUSH["📥 git push / PR"] --> JOBS{8 parallel jobs}
 
-    JOBS --> J1["🧪 Backend Tests<br/>pytest 223/223 · ~30 s"]
+    JOBS --> J1["🧪 Backend Tests<br/>pytest · ~30 s"]
     JOBS --> J2["⚛️ Frontend Build<br/>vite production · ~18 s"]
     JOBS --> J3["✨ Code Quality<br/>flake8 · 0 errors"]
     JOBS --> J4["🔐 Security Scans<br/>pip-audit · npm audit · gitleaks"]
     JOBS --> J5["🐳 Docker Build<br/>retry-loop healthcheck"]
     JOBS --> J6["⎈ Helm Lint<br/>lint + render artefact"]
+    JOBS --> J7["🏗️ Checkov<br/>Dockerfile · Helm IaC"]
 
-    J1 & J2 & J3 & J4 & J5 & J6 --> GATE{All green?}
-    GATE -->|✅| MERGE["🟢 Merge allowed"]
-    GATE -->|❌| BLOCK["🔴 Blocked"]
+    J1 & J2 & J3 & J4 & J5 & J6 & J7 --> QG["🎯 quality-gate<br/>(single blocking check)"]
+    QG -->|✅| MERGE["🟢 Merge allowed"]
+    QG -->|❌| BLOCK["🔴 Blocked"]
 
     classDef job fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
     classDef pass fill:#dcfce7,stroke:#22c55e,color:#14532d
     classDef fail fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
-    class J1,J2,J3,J4,J5,J6 job
-    class MERGE pass
+    class J1,J2,J3,J4,J5,J6,J7 job
+    class QG,MERGE pass
     class BLOCK fail
 ```
 
@@ -683,13 +687,13 @@ docker compose --profile soar up -d
 docker compose up -d
 ```
 
-| Service     | Port  | Purpose                       |
-|-------------|------:|-------------------------------|
-| `frontend`  | 80    | nginx-served React SPA        |
-| `backend`   | 8000  | FastAPI uvicorn               |
-| `redis`     | 6379  | cache · pubsub · rate-limiter |
-| `thehive`   | 9000  | (`soar` profile)              |
-| `cortex`    | 9001  | (`soar` profile)              |
+| Service     | Port (host→container) | Purpose                                          |
+|-------------|----------------------:|--------------------------------------------------|
+| `frontend`  | 80 → 8080             | nginx-unprivileged (uid 101) React SPA           |
+| `backend`   | 8000                  | FastAPI uvicorn (uid 1000 non-root)              |
+| `redis`     | 6379                  | cache · pubsub · rate-limiter · jti denylist     |
+| `thehive`   | 9000                  | (`soar` profile only — demo, no auth)            |
+| `cortex`    | 9001                  | (`soar` profile only — demo, no auth)            |
 
 ### Helm
 

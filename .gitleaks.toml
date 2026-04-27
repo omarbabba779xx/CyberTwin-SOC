@@ -1,0 +1,31 @@
+# CyberTwin SOC — Gitleaks configuration
+# Allowlist documented false positives. Each entry requires a justification.
+# Run locally: gitleaks detect --source . --no-banner
+
+title = "CyberTwin SOC"
+
+[extend]
+# Use the default gitleaks ruleset as the base
+useDefault = true
+
+[allowlist]
+description = "Project-level allowlist for reviewed false positives"
+
+# .env.example contains placeholder values — not real secrets
+paths = [
+    ".env.example",
+]
+
+# JWT secret placeholder in CI workflow and Helm secret template
+# These are documented placeholders, not real credentials
+regexes = [
+    # Helm chart placeholder (disabled template, clearly labelled REPLACE_ME)
+    "REPLACE_ME_WITH_A_48_CHAR_RANDOM_HEX_STRING",
+    # CI stub — used only for compose validation, clearly labelled ci-only
+    "ci-only-secret-for-compose-validation-000000000000",
+    # changeme-* passwords in auth.py are runtime defaults caught by check_production_safety()
+    "changeme-(admin|analyst|viewer)",
+]
+
+commits = []
+stopwords = []

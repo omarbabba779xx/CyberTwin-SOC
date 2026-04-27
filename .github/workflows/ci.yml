@@ -237,7 +237,7 @@ jobs:
               echo "Frontend is healthy after ${i} attempt(s)."
               exit 0
             fi
-            echo "Attempt ${i}/12 - waiting 5s for frontend..."
+            echo "Attempt ${i}/12 - waiting 5s for frontend (port 80→8080)..."
             sleep 5
           done
           echo "Frontend did not become healthy in time."
@@ -292,3 +292,55 @@ jobs:
           name: helm-rendered-${{ github.sha }}
           path: /tmp/rendered.yaml
           retention-days: 14
+
+  checkov:
+    runs-on: ubuntu-latest
+    name: Checkov IaC Security Scan
+    needs: [backend-tests, frontend-build]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Checkov on Dockerfile and Docker Compose
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          framework: dockerfile,secrets
+          quiet: true
+          soft_fail: true
+
+      - name: Run Checkov on Helm templates
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: deploy/helm
+          framework: helm
+          quiet: true
+          soft_fail: true
+
+  # ---------------------------------------------------------------------------
+  # Final quality gate — all required jobs must pass before merging to master
+  # ---------------------------------------------------------------------------
+  quality-gate:
+    runs-on: ubuntu-latest
+    name: Quality Gate
+    needs:
+      - backend-tests
+      - frontend-build
+      - lint
+      - security
+      - docker
+      - helm-lint
+
+    steps:
+      - name: All required quality gates passed
+        run: |
+          echo "=========================================="
+          echo "  CyberTwin SOC Quality Gate: PASSED"
+          echo "=========================================="
+          echo "  backend-tests  : OK"
+          echo "  frontend-build : OK"
+          echo "  lint           : OK"
+          echo "  security       : OK"
+          echo "  docker         : OK"
+          echo "  helm-lint      : OK"
+          echo "=========================================="
