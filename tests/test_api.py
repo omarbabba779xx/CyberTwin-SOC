@@ -175,7 +175,7 @@ class TestAPI:
         assert "token" in data
         assert data["username"] == "analyst"
         assert data["role"] == "analyst"
-        assert data["expires_in"] == 86400
+        assert data["expires_in"] == 3600
 
     async def test_login_invalid_credentials(self, client):
         resp = await client.post("/api/auth/login", json={

@@ -144,7 +144,7 @@ ROLES: dict[str, set[str]] = {
 
     "analyst": (
         {"run_simulation", "view_results", "manage_scenarios", "view_history"}
-        | {"case:read", "case:write", "case:assign",
+        | {"case:read", "case:write", "case:assign", "case:close",
            "simulation:run", "simulation:read",
            "ingestion:write", "ingestion:read",
            "feedback:write", "ai:evidence", "ai:run",

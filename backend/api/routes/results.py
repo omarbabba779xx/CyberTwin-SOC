@@ -119,8 +119,10 @@ def get_anomalies(request: Request, scenario_id: str,
 
 @router.get("/api/results/{scenario_id}/ai-evidence")
 @limiter.limit("30/minute")
-def get_ai_evidence_analysis(request: Request, scenario_id: str,
-                              user=Depends(require_permission("view_results"))):
+def get_ai_evidence_analysis(
+    request: Request, scenario_id: str,
+    user=Depends(require_permission("view_results")),
+):
     """Evidence-first AI analysis with PII masking and strict schema."""
     result = _get_cached_result(scenario_id)
     from backend.ai_analyst import AIAnalyst

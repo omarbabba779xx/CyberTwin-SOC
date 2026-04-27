@@ -6,7 +6,7 @@ import json
 from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, field_validator
 
 from backend.audit import log_action
 from backend.auth import require_permission

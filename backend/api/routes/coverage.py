@@ -64,8 +64,10 @@ def coverage_mitre_table(
 
 @router.get("/api/coverage/technique/{technique_id}")
 @limiter.limit("60/minute")
-def coverage_technique_detail(request: Request, technique_id: str,
-                               user=Depends(require_permission("view_results"))):
+def coverage_technique_detail(
+    request: Request, technique_id: str,
+    user=Depends(require_permission("view_results")),
+):
     snap = _compute_coverage_snapshot()
     for r in snap["records"]:
         if r["technique_id"] == technique_id:
@@ -115,15 +117,19 @@ def coverage_gaps(
 
 @router.get("/api/coverage/gaps/high-risk")
 @limiter.limit("30/minute")
-def coverage_high_risk_gaps(request: Request, limit: int = 25,
-                             user=Depends(require_permission("view_results"))):
+def coverage_high_risk_gaps(
+    request: Request, limit: int = 25,
+    user=Depends(require_permission("view_results")),
+):
     return coverage_gaps(request=request, high_risk_only=True, limit=limit, user=user)
 
 
 @router.post("/api/coverage/recalculate")
 @limiter.limit("10/minute")
-def coverage_recalculate(request: Request,
-                          user=Depends(require_permission("configure_system"))):
+def coverage_recalculate(
+    request: Request,
+    user=Depends(require_permission("configure_system")),
+):
     cache.delete(_COVERAGE_CACHE_KEY) if hasattr(cache, "delete") else None
     snap = _compute_coverage_snapshot()
     log_action("COVERAGE_RECALCULATE", username=user["sub"], role=user.get("role"),

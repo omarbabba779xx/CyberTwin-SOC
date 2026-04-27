@@ -30,8 +30,10 @@ def soar_status(request: Request, user=Depends(require_permission("view_results"
 
 @router.post("/api/soar/push/{result_id}")
 @limiter.limit("10/minute")
-async def push_to_thehive(result_id: str, request: Request,
-                           user=Depends(require_permission("simulation:run"))):
+async def push_to_thehive(
+    result_id: str, request: Request,
+    user=Depends(require_permission("simulation:run")),
+):
     result = _get_cached_result(result_id)
     from backend.soar import TheHiveClient
     loop = asyncio.get_event_loop()
@@ -49,8 +51,10 @@ async def push_to_thehive(result_id: str, request: Request,
 
 @router.post("/api/soar/analyze-iocs/{result_id}")
 @limiter.limit("5/minute")
-async def analyze_iocs_cortex(result_id: str, request: Request,
-                               user=Depends(require_permission("simulation:run"))):
+async def analyze_iocs_cortex(
+    result_id: str, request: Request,
+    user=Depends(require_permission("simulation:run")),
+):
     result = _get_cached_result(result_id)
     iocs = result.get("ai_analysis", {}).get("iocs", [])
     if not iocs:
@@ -69,24 +73,30 @@ async def analyze_iocs_cortex(result_id: str, request: Request,
 
 @router.get("/api/soar/analyzers")
 @limiter.limit("10/minute")
-def list_cortex_analyzers(request: Request, data_type: Optional[str] = None,
-                           user=Depends(require_permission("view_results"))):
+def list_cortex_analyzers(
+    request: Request, data_type: Optional[str] = None,
+    user=Depends(require_permission("view_results")),
+):
     from backend.soar import CortexClient
     return CortexClient().list_analyzers(data_type=data_type)
 
 
 @router.get("/api/connectors")
 @limiter.limit("60/minute")
-def list_enterprise_connectors(request: Request,
-                                user=Depends(require_permission("connector:read"))):
+def list_enterprise_connectors(
+    request: Request,
+    user=Depends(require_permission("connector:read")),
+):
     from backend.connectors import list_connectors
     return {"connectors": list_connectors()}
 
 
 @router.get("/api/connectors/{kind}/{name}/check")
 @limiter.limit("30/minute")
-def check_enterprise_connector(kind: str, name: str, request: Request,
-                                user=Depends(require_permission("connector:read"))):
+def check_enterprise_connector(
+    kind: str, name: str, request: Request,
+    user=Depends(require_permission("connector:read")),
+):
     from backend.connectors import get_connector
     from backend.connectors.base import ConnectorError
     try:
