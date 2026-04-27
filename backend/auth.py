@@ -66,7 +66,8 @@ def _load_or_create_secret() -> str:
 
 JWT_SECRET: str = _load_or_create_secret()
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
+JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "1"))
+REFRESH_EXPIRY_DAYS: int = int(os.getenv("REFRESH_EXPIRY_DAYS", "7"))
 
 # ---------------------------------------------------------------------------
 # Role definitions & permissions
@@ -212,34 +213,85 @@ security = HTTPBearer(auto_error=False)
 
 
 def create_token(username: str, role: str = "analyst") -> str:
-    """Create a signed JWT for *username* with the given *role*."""
+    """Create a signed access JWT for *username* with the given *role*.
+
+    Includes a unique ``jti`` (JWT ID) used for token revocation via the
+    Redis / in-memory denylist.
+    """
     if role not in ROLES:
         role = "viewer"
+    now = datetime.now(timezone.utc)
     payload = {
         "sub": username,
         "role": role,
         "permissions": list(ROLES[role]),
-        "iat": datetime.now(timezone.utc),
-        "exp": datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS),
+        "iat": now,
+        "exp": now + timedelta(hours=JWT_EXPIRY_HOURS),
+        "jti": secrets.token_hex(16),
+        "type": "access",
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def create_refresh_token(username: str, role: str = "analyst") -> str:
+    """Create a long-lived refresh JWT. Rotated on each use."""
+    if role not in ROLES:
+        role = "viewer"
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": username,
+        "role": role,
+        "iat": now,
+        "exp": now + timedelta(days=REFRESH_EXPIRY_DAYS),
+        "jti": secrets.token_hex(16),
+        "type": "refresh",
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+# ---------------------------------------------------------------------------
+# Token revocation denylist (Redis-backed when available, in-memory fallback)
+# ---------------------------------------------------------------------------
+
+def revoke_token(jti: str, remaining_ttl_seconds: int) -> None:
+    """Add *jti* to the revocation denylist with appropriate TTL.
+
+    Uses the shared cache (Redis when available). Once the token's natural
+    expiry passes the entry is evicted automatically.
+    """
+    from backend.cache import cache
+    cache.set(f"revoked_jti:{jti}", "1", ttl=max(remaining_ttl_seconds, 1))
+
+
+def is_token_revoked(jti: str) -> bool:
+    """Return True if *jti* appears in the denylist."""
+    from backend.cache import cache
+    return cache.get(f"revoked_jti:{jti}") is not None
 
 
 def verify_token(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict[str, Any]:
-    """Verify JWT and return the payload. Raises 401 if invalid/missing."""
+    """Verify JWT and return the payload. Raises 401 if invalid/missing/revoked."""
     if credentials is None:
         raise HTTPException(status_code=401, detail="Authentication required")
     try:
         payload = jwt.decode(
             credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM]
         )
-        return payload
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired — please log in again")
     except jwt.InvalidTokenError as exc:
         raise HTTPException(status_code=401, detail=f"Invalid token: {exc}")
+
+    if payload.get("type", "access") != "access":
+        raise HTTPException(status_code=401, detail="Refresh token cannot be used here")
+
+    jti = payload.get("jti")
+    if jti and is_token_revoked(jti):
+        raise HTTPException(status_code=401, detail="Token has been revoked — please log in again")
+
+    return payload
 
 
 def verify_token_optional(
@@ -249,11 +301,15 @@ def verify_token_optional(
     if credentials is None:
         return None
     try:
-        return jwt.decode(
+        payload = jwt.decode(
             credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM]
         )
     except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
         return None
+    jti = payload.get("jti")
+    if jti and is_token_revoked(jti):
+        return None
+    return payload
 
 
 def require_permission(permission: str):
@@ -337,10 +393,9 @@ def check_production_safety() -> None:
     # JWT secret
     env_secret = os.getenv("JWT_SECRET", "")
     if not env_secret:
-        problems.append("JWT_SECRET is not set (a random one was auto-generated, "
-                        "which is fine for dev but unsafe across replicas).")
-    elif len(env_secret) < 32:
-        problems.append(f"JWT_SECRET is too short ({len(env_secret)} chars, minimum 32).")
+        problems.append("JWT_SECRET is not set. Generate one with: openssl rand -hex 32")
+    elif len(env_secret) < 64:
+        problems.append(f"JWT_SECRET is too short ({len(env_secret)} chars, minimum 64 for production).")
     elif env_secret.lower() in _DEFAULT_JWT_SECRETS:
         problems.append("JWT_SECRET uses a known default value.")
 
