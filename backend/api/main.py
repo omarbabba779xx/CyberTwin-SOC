@@ -11,10 +11,7 @@ import json
 import logging
 import os
 import re
-import sys
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
-from pathlib import Path
 from typing import Any, Optional
 
 from dotenv import load_dotenv
@@ -22,8 +19,6 @@ from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconn
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, field_validator
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 load_dotenv()
@@ -39,18 +34,20 @@ logger = logging.getLogger("cybertwin")
 from backend.observability.logging_setup import auto_configure as _setup_logs
 _setup_logs()
 
-limiter = Limiter(key_func=get_remote_address)
-
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+# Singletons + helpers shared across routers (see backend/api/deps.py)
+from backend.api.deps import (  # noqa: E402
+    PROJECT_ROOT,
+    _client_ip,
+    _get_cached_result,
+    _safe_path,
+    limiter,
+    orchestrator as _orchestrator,
+)
 
 from backend.orchestrator import SimulationOrchestrator
-from backend.database import init_db, save_run, get_runs, get_run, get_runs_by_scenario, delete_run, get_stats
-from backend.auth import (
-    authenticate_user, create_token, verify_token, require_permission,
-)
-from backend.audit import init_audit_table, log_action, get_audit_log
+from backend.database import init_db, save_run
+from backend.auth import require_permission
+from backend.audit import init_audit_table, log_action
 from backend.cache import cache
 
 # ---------------------------------------------------------------------------
@@ -108,19 +105,30 @@ async def rate_limit_handler(request: Request, exc):
     return JSONResponse(status_code=429, content={"detail": "Too many requests. Please slow down."})
 
 
-_orchestrator = SimulationOrchestrator()
 init_db()
 init_audit_table()
 
 
 # ---------------------------------------------------------------------------
-# Request / Response models
+# Domain routers (progressive split of the legacy monolithic main.py)
 # ---------------------------------------------------------------------------
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
+from backend.api.routes import (  # noqa: E402
+    auth as auth_routes,
+    environment as environment_routes,
+    health as health_routes,
+    history as history_routes,
+)
 
+app.include_router(health_routes.router)
+app.include_router(auth_routes.router)
+app.include_router(environment_routes.router)
+app.include_router(history_routes.router)
+
+
+# ---------------------------------------------------------------------------
+# Request / Response models
+# ---------------------------------------------------------------------------
 
 class SimulationRequest(BaseModel):
     scenario_id: str
@@ -160,144 +168,12 @@ class CustomScenarioRequest(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Helper: get client IP
-# ---------------------------------------------------------------------------
-
-def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
-
-
-# ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
-
-@app.get("/")
-@limiter.limit("60/minute")
-def root(request: Request):
-    return {"name": "CyberTwin SOC API", "version": os.getenv("APP_VERSION", "3.0.0"), "status": "running", "cache": cache.backend}
-
-
-@app.get("/api/health")
-@limiter.limit("120/minute")
-def health(request: Request):
-    return {"status": "ok", "timestamp": datetime.now(timezone.utc).isoformat()}
-
-
-@app.get("/api/health/deep")
-@limiter.limit("60/minute")
-def health_deep(request: Request):
-    """Deep health probe: report dependency status (cache, DB, ingestion)."""
-    from fastapi.responses import JSONResponse
-    checks: dict[str, dict] = {}
-
-    # Cache backend
-    try:
-        cache.set("__health__", "ok", ttl=10) if hasattr(cache, "set") else None
-        checks["cache"] = {"status": "ok", "backend": cache.backend}
-    except Exception as exc:
-        checks["cache"] = {"status": "degraded", "error": str(exc)}
-
-    # Database
-    try:
-        from backend.database import get_stats
-        get_stats()
-        checks["database"] = {"status": "ok"}
-    except Exception as exc:
-        checks["database"] = {"status": "degraded", "error": str(exc)}
-
-    # Ingestion pipeline
-    try:
-        from backend.ingestion import get_pipeline
-        pipe = get_pipeline()
-        checks["ingestion"] = {
-            "status": "ok",
-            "buffer_size": pipe.buffer_size(),
-            "events_total": pipe.stats.total_events_received,
-        }
-    except Exception as exc:
-        checks["ingestion"] = {"status": "degraded", "error": str(exc)}
-
-    overall = "ok" if all(c["status"] == "ok" for c in checks.values()) else "degraded"
-    body = {
-        "status": overall,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "version": os.getenv("APP_VERSION", "3.0.0"),
-        "checks": checks,
-    }
-    return JSONResponse(body, status_code=200 if overall == "ok" else 503)
-
-
-@app.get("/api/metrics")
-@limiter.limit("60/minute")
-def metrics_endpoint(request: Request):
-    """Prometheus exposition format for scraping by Prometheus / Grafana Agent."""
-    from fastapi.responses import Response as FastAPIResponse
-    from backend.observability.metrics import render_metrics
-    body, content_type = render_metrics()
-    return FastAPIResponse(body, media_type=content_type)
-
-
-# ---- Authentication ------------------------------------------------------
-
-@app.post("/api/auth/login")
-@limiter.limit("5/minute")
-async def login(request: Request, data: LoginRequest):
-    ip = _client_ip(request)
-    user = authenticate_user(data.username, data.password)
-    if user is None:
-        log_action("LOGIN", username=data.username, ip_address=ip, status="failure")
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    from backend.auth import ROLES
-    token = create_token(user["username"], user["role"])
-    log_action("LOGIN", username=user["username"], role=user["role"], ip_address=ip)
-    return {
-        "token": token,
-        "access_token": token,
-        "token_type": "bearer",
-        "username": user["username"],
-        "role": user["role"],
-        "permissions": sorted(ROLES.get(user["role"], set())),
-        "expires_in": int(os.getenv("JWT_EXPIRY_HOURS", "24")) * 3600,
-    }
-
-
-@app.get("/api/auth/me")
-@limiter.limit("30/minute")
-def get_me(request: Request, user=Depends(verify_token)):
-    return {"username": user["sub"], "role": user.get("role", "viewer"), "permissions": user.get("permissions", [])}
-
-
-# ---- Audit Log (admin only) -----------------------------------------------
-
-@app.get("/api/audit")
-@limiter.limit("30/minute")
-def audit_log(request: Request, limit: int = 200, user=Depends(require_permission("view_audit_log"))):
-    log_action("VIEW_AUDIT_LOG", username=user["sub"], role=user.get("role"), ip_address=_client_ip(request))
-    return get_audit_log(limit=limit)
-
-
-# ---- Environment ---------------------------------------------------------
-
-@app.get("/api/environment")
-@limiter.limit("60/minute")
-def get_environment(request: Request):
-    return _orchestrator.environment.to_dict()
-
-
-@app.get("/api/environment/hosts")
-@limiter.limit("60/minute")
-def get_hosts(request: Request):
-    return list(_orchestrator.environment.get_hosts().values())
-
-
-@app.get("/api/environment/users")
-@limiter.limit("60/minute")
-def get_users(request: Request):
-    return list(_orchestrator.environment.get_users().values())
-
+#
+# Domain-grouped endpoints live under ``backend.api.routes.*`` and are
+# included near the bottom of this file. The remaining endpoints below are
+# being progressively migrated.
 
 # ---- Scenarios -----------------------------------------------------------
 
@@ -314,23 +190,6 @@ def get_scenario(request: Request, scenario_id: str):
     if scenario is None:
         raise HTTPException(404, f"Scenario '{scenario_id}' not found")
     return scenario
-
-
-# Strict identifier pattern used to defeat path traversal on every endpoint
-# that derives a filename from user-supplied data.
-_SAFE_ID_RE = re.compile(r"^[A-Za-z0-9_.-]{1,80}$")
-
-
-def _safe_path(base: Path, name: str, suffix: str) -> Path:
-    """Compose ``base / (name + suffix)`` while guaranteeing the resolved
-    path stays inside ``base``. Raises HTTP 400 on any traversal attempt.
-    """
-    if not _SAFE_ID_RE.match(name) or ".." in name:
-        raise HTTPException(400, f"Invalid identifier: {name!r}")
-    candidate = (base / f"{name}{suffix}").resolve()
-    if base.resolve() not in candidate.parents:
-        raise HTTPException(400, "Path traversal detected")
-    return candidate
 
 
 @app.post("/api/scenarios/custom")
@@ -561,13 +420,6 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
 
 # ---- Results (cache-backed) -----------------------------------------------
 
-def _get_cached_result(scenario_id: str) -> dict:
-    result = cache.get(f"result:{scenario_id}")
-    if result is None:
-        raise HTTPException(404, "No results found. Run a simulation first.")
-    return result
-
-
 @app.get("/api/results/{scenario_id}")
 @limiter.limit("60/minute")
 def get_full_results(request: Request, scenario_id: str, user=Depends(require_permission("view_results"))):
@@ -660,43 +512,6 @@ def get_anomalies(request: Request, scenario_id: str, user=Depends(require_permi
     detector = AnomalyDetector()
     anomalies = detector.detect(result["logs"])
     return {"total": len(anomalies), "anomalies": anomalies}
-
-
-# ---- History (SQLite) ----------------------------------------------------
-
-@app.get("/api/history")
-@limiter.limit("60/minute")
-def list_history(request: Request, limit: int = 50):
-    return get_runs(limit)
-
-
-@app.get("/api/history/stats")
-@limiter.limit("60/minute")
-def history_stats(request: Request):
-    return get_stats()
-
-
-@app.get("/api/history/{run_id}")
-@limiter.limit("60/minute")
-def history_detail(request: Request, run_id: int):
-    run = get_run(run_id)
-    if run is None:
-        raise HTTPException(404, "Run not found")
-    return run
-
-
-@app.get("/api/history/scenario/{scenario_id}")
-@limiter.limit("60/minute")
-def history_by_scenario(request: Request, scenario_id: str):
-    return get_runs_by_scenario(scenario_id)
-
-
-@app.delete("/api/history/{run_id}")
-@limiter.limit("30/minute")
-def history_delete(request: Request, run_id: int, user=Depends(require_permission("delete_history"))):
-    delete_run(run_id)
-    log_action("DELETE_HISTORY", username=user["sub"], role=user.get("role"), resource=str(run_id), ip_address=_client_ip(request))
-    return {"status": "deleted"}
 
 
 # ---- MITRE Reference Data ------------------------------------------------

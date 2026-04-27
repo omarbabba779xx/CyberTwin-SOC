@@ -96,7 +96,7 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    name: Security Scans (non-blocking)
+    name: Security Scans
     permissions:
       contents: read
       security-events: write   # for SARIF upload
@@ -119,11 +119,17 @@ jobs:
       - name: Install Python scanners
         run: pip install bandit pip-audit cyclonedx-bom --quiet
 
-      - name: Bandit — Python static security analysis
+      - name: Bandit — Python static security analysis (informational)
+        # NOTE: 5 medium findings are reviewed false positives — see
+        # docs/proof/security-scan-summary.md. Will become blocking once
+        # Bandit high-confidence is baseline-clean.
         run: bandit -r backend/ -ll --skip B101,B104 -f txt || true
 
-      - name: pip-audit — CVE scan on Python dependencies
-        run: pip-audit -r requirements.txt --strict || true
+      - name: pip-audit — CVE scan on Python dependencies (BLOCKING)
+        # Baseline: 0 known CVEs after the Apr 2026 dependency upgrade.
+        # If a new CVE is published in any pinned version, this gate will
+        # fail the build, forcing a bump. See docs/proof/security-scan-summary.md.
+        run: pip-audit -r requirements.txt --strict
 
       - name: Semgrep — multi-language SAST (Python + JS)
         continue-on-error: true
@@ -134,15 +140,16 @@ jobs:
                     --config=p/javascript \
                     --error || true
 
-      - name: Gitleaks — secret scanning
+      - name: Gitleaks — secret scanning (BLOCKING)
+        # Any secret matching the rules in .gitleaks.toml fails the build.
+        # Baseline: 0 verified secrets after the JWT-secret incident fix.
         uses: gitleaks/gitleaks-action@v2
-        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: npm audit — frontend dependencies
+      - name: npm audit — frontend dependencies (BLOCKING on high+)
         working-directory: frontend
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=high
 
       - name: Trivy — filesystem vulnerability scan
         uses: aquasecurity/trivy-action@master
