@@ -5,6 +5,31 @@ All notable changes to CyberTwin SOC are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] — 2026-04-27
+
+### Security
+
+- **JWT jti + revocation denylist** — every access token now carries a unique `jti` claim; `POST /api/auth/logout` stores it in Redis (or in-memory) with the token's remaining TTL, making logout effective immediately.
+- **Refresh token rotation** — `POST /api/auth/logout` and `POST /api/auth/refresh` implement short-lived access tokens (1h default) backed by 7-day rotating refresh tokens. Old refresh `jti` is revoked on each rotation.
+- **Access token lifetime reduced** — default `JWT_EXPIRY_HOURS` changed from 24 → 1.
+- **JWT secret minimum raised** — production startup now refuses a secret shorter than 64 chars (was 32).
+- **CORS restricted** — `allow_methods` and `allow_headers` changed from `["*"]` to an explicit allowlist (`GET, POST, PATCH, DELETE, OPTIONS` / `Authorization, Content-Type, X-Request-ID`).
+- **Ingestion permissions scoped** — all ingest endpoints now require `ingestion:write` or `ingestion:read` instead of the coarse `run_simulation` permission.
+- **SOAR permissions scoped** — `push` and `analyze-iocs` now require `simulation:run` instead of `run_simulation`.
+- **nginx-unprivileged** — frontend Docker image switched from `nginx:1.27-alpine` (root) to `nginxinc/nginx-unprivileged:1.27-alpine` (uid 101). Internal port changed 80 → 8080.
+- **Audit log cap** — `GET /api/audit` now enforces `min(limit, 1000)` server-side.
+- **gitleaks.toml** — added project-level allowlist for documented false positives.
+
+### Added
+
+- **12-router API architecture** — `backend/api/main.py` reduced to bootstrap + `include_router` calls. Business logic moved to: `scenarios`, `simulation`, `results`, `ingestion`, `coverage`, `soc`, `soar`, `mitre` (joins the existing `auth`, `health`, `environment`, `history`).
+- **SQLAlchemy + Alembic + PostgreSQL** — `backend/db/models.py` (10 tables, 17 composite indexes with `tenant_id`), `backend/db/session.py`, `alembic/env.py`, initial migration `alembic/versions/20260427_0001_initial_postgres_schema.py`. Set `DATABASE_URL=postgresql+psycopg2://…` to switch from SQLite.
+- **AI analyst security tests** — `tests/test_ai_analyst.py` extended with 20+ tests covering: prompt injection resilience, PII/secret redaction, no groundless APT attribution, IOC integrity, limitations field, evidence-first schema validation.
+- **CI quality-gate job** — single `quality-gate` job depending on all other jobs; branch protection can require this one check.
+- **Checkov IaC scan** — CI now runs `checkov` on Dockerfile and Helm templates (soft-fail informational).
+- **`RESTRICT_INTERNAL_ENDPOINTS=true`** env var to optionally require auth on `/api/health/deep` and `/api/metrics`.
+- **`POST /api/auth/logout`** and **`POST /api/auth/refresh`** endpoints.
+
 ## [Unreleased]
 
 ### Security / Hardening
