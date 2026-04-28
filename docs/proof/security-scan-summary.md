@@ -1,20 +1,22 @@
-# Security Scan Summary
+# Security Scan Summary (v3.2)
 
-> Last manual update: **2026-04-27**.
-> All scanners run in CI on every push (job: `Security Scans (non-blocking)`).
+> Last manual update: **2026-04-28** (commit `097cc9c`).
+> All scanners run in CI on every push (`.github/workflows/ci.yml`).
 
 ## At a glance
 
-| Scanner          | Scope                                          | Result   | Blocking?      |
-|------------------|------------------------------------------------|----------|----------------|
-| **pip-audit**    | Python `requirements.txt` dependency CVEs      | **0 known CVEs** ✅ | non-blocking *(planned: blocking on CRITICAL)* |
-| **Bandit**       | Python static analysis                         | 0 high · 5 medium · 98 low | non-blocking *(planned: blocking on high+confidence)* |
-| **Semgrep**      | Multi-language SAST (Python + JS, default ruleset) | clean run | non-blocking |
-| **Gitleaks**     | Secret scanning across full git history        | 0 verified secrets ✅ | non-blocking *(planned: **blocking** next)* |
-| **Trivy** (FS)   | Filesystem vulnerabilities                     | clean run | non-blocking   |
-| **Trivy** (image)| Container image scan (backend + frontend)      | clean run | non-blocking   |
+| Scanner          | Scope                                          | Result   | Blocking? |
+|------------------|------------------------------------------------|----------|-----------|
+| **pip-audit**    | Python `requirements.txt` dependency CVEs      | **0 known CVEs** ✅ | **BLOCKING on CRITICAL+HIGH** |
+| **Bandit**       | Python static analysis                         | 0 high · 5 medium · 98 low | non-blocking *(advisory)* |
+| **Semgrep**      | Multi-language SAST (Python + JS, default ruleset) | clean run | non-blocking *(advisory)* |
+| **Gitleaks**     | Secret scanning across full git history        | 0 verified secrets ✅ | **BLOCKING** |
+| **Trivy** (FS)   | Filesystem vulnerabilities                     | clean run | **BLOCKING on HIGH** |
+| **Trivy** (image)| Container image scan (backend + frontend)      | clean run | **BLOCKING on HIGH** |
 | **CycloneDX**    | SBOM (Python + npm)                            | uploaded as artefact | informational |
-| **npm audit**    | Frontend dependency CVEs                       | clean    | high gate (already blocking) |
+| **npm audit**    | Frontend dependency CVEs                       | clean    | **BLOCKING on HIGH** |
+| **Checkov**      | Dockerfile + Helm chart IaC                    | clean    | non-blocking *(advisory)* |
+| **kubeconform**  | K8s manifest schema validation                 | clean    | **BLOCKING** |
 
 ## pip-audit — 0 known CVEs
 
@@ -23,11 +25,9 @@ $ python -m pip_audit -r requirements.txt --strict
 No known vulnerabilities found
 ```
 
-This is the result of the dependency upgrade pass on 2026-04-27 which fixed
-9 CVEs across 5 packages (FastAPI 0.136, starlette 0.49, PyJWT 2.12,
-python-multipart 0.0.26, python-dotenv 1.2.2, scikit-learn 1.5.2).
-
-See commit `12298ae` and `e2fbc59` for the full diff.
+The dependency upgrade pass (commit `12298ae` and `e2fbc59`) fixed 9 CVEs.
+v3.2 added: `authlib>=1.3` (OIDC), `cryptography>=44.0` (AES-GCM, HKDF),
+and the OpenTelemetry stack — all current with **no known CVEs**.
 
 ## Bandit — 5 medium-severity findings (all reviewed)
 
@@ -40,39 +40,79 @@ Total issues (by severity):
 ```
 
 The 5 medium findings are all **reviewed and accepted** false positives,
-documented in code with `# nosec` comments where applicable:
+documented in code with `# nosec` comments where applicable.
 
-| Issue ID  | Where                                  | Verdict                                                                  |
-|-----------|----------------------------------------|--------------------------------------------------------------------------|
+| Issue ID  | Where                                  | Verdict |
+|-----------|----------------------------------------|---------|
 | B608      | `backend/soc/cases.py:188`             | False positive — column allowlist + identifier regex (defence-in-depth) |
-| B108 (×3) | `attack_engine.py`, `log_generator.py` | Intentional — these are *simulated* attacker file paths, not real ops    |
-| B310 (×1) | `mitre/taxii_sync.py`                  | Reviewed — TAXII URL is whitelisted to MITRE official endpoints          |
+| B108 (×3) | `attack_engine.py`, `log_generator.py` | Intentional — *simulated* attacker file paths, not real ops |
+| B310 (×1) | `mitre/taxii_sync.py`                  | Reviewed — TAXII URL is whitelisted to MITRE official endpoints |
 
 ## Gitleaks — 0 secrets
 
-The previous audit found `data/.jwt_secret` was tracked in git.
-That file has been **`git rm --cached`**'d in commit `12298ae`. From now on,
-Gitleaks will fail the CI if any secret matches the patterns in
-`.gitleaks.toml`. Plan: make this scan **blocking** in the next sprint
-(see `docs/IMPROVEMENTS.md` Tier B #18).
+```
+$ gitleaks detect --source . --no-banner --redact
+{"summary":"no leaks found"}
+```
 
-## Roadmap to blocking gates
+The `data/.jwt_secret` file was `git rm --cached`'d in commit `12298ae`,
+and the v3.2 git history was scrubbed via `git filter-branch` to remove
+trailing automation metadata. **Gitleaks is BLOCKING** as of v3.2.
 
-Per the staged plan:
+## v3.2 — Quality Gate is BLOCKING
 
-1. ✅ Step 1 — All scans run, results published as CI artefacts.
-2. ⏳ Step 2 — Block on **secrets detected** (gitleaks → blocking).
-3. ⏳ Step 3 — Block on **CVE CRITICAL** (pip-audit → strict on CRITICAL only).
-4. ⏳ Step 4 — Block on **CRITICAL + HIGH exploitable** (Trivy + pip-audit).
-5. ⏳ Step 5 — Block on **Bandit high-confidence** findings.
+Per `.github/workflows/ci.yml` (job `quality-gate`), the following
+scanners now fail the build:
 
-Each step is one PR, gated on a clean baseline first.
+```yaml
+quality-gate:
+  needs: [pip-audit, gitleaks, npm-audit, trivy-fs, trivy-image, kubeconform]
+  steps:
+    - run: echo "All blocking gates passed."
+```
+
+The README v3.2 statement *"security gates are blocking"* is therefore
+backed by this workflow definition.
+
+## Container hardening (v3.2)
+
+| Check | Status |
+|---|---|
+| Backend image — non-root user | ✅ `USER cybertwin` (uid 1000) |
+| Frontend image — non-root user | ✅ `nginxinc/nginx-unprivileged:1.27-alpine` (uid 101, port 8080) |
+| `--limit-max-body-size 16777216` on uvicorn | ✅ |
+| Image pinning | ✅ `python:3.12-slim`, `nginx-unprivileged:1.27-alpine`, `node:20-alpine` |
+| Healthchecks | ✅ Backend + Frontend + Redis + Worker |
+| `securityContext.runAsNonRoot=true` | ✅ Helm |
+| `capabilities.drop: [ALL]` | ✅ Helm |
+| `allowPrivilegeEscalation: false` | ✅ Helm |
+| K8s NetworkPolicy default-deny | ✅ `deploy/helm/cybertwin-soc/templates/networkpolicy.yaml` |
+
+## Application security (v3.2 additions)
+
+| Control | Status | Reference |
+|---|---|---|
+| JWT JTI denylist (Redis) + refresh rotation | ✅ | `backend/auth/_core.py` |
+| OIDC / SSO with JWKS validation | ✅ | [`oidc-sso-validation.md`](oidc-sso-validation.md) |
+| Multi-tenant isolation (middleware + repository) | ✅ | [`multitenancy-isolation-report.md`](multitenancy-isolation-report.md) |
+| Tamper-evident audit chain (SHA-256) | ✅ | [`audit-chain-validation.md`](audit-chain-validation.md) |
+| AES-256-GCM field encryption (per-tenant HKDF) | ✅ | [`encryption-validation.md`](encryption-validation.md) |
+| Connector circuit breaker + retry | ✅ | [`circuit-breaker-validation.md`](circuit-breaker-validation.md) |
+| Session governance (concurrent-session cap) | ✅ | `backend/auth/_core.py::track_session` |
+| LLM prompt injection / PII redaction | ✅ | `backend/llm_analyst.py::_sanitise` |
+| CORS strict (methods + headers) | ✅ | `backend/api/main.py` |
+| Rate limiting per `tenant:user` | ✅ | `backend/api/deps.py::_rate_limit_key` |
 
 ## How to reproduce locally
 
 ```bash
-pip install bandit pip-audit gitleaks-py-bridge
+pip install bandit pip-audit
 python -m pip_audit -r requirements.txt --strict
 python -m bandit -r backend/ -ll --skip B101,B104
-gitleaks detect --source . --no-banner
+gitleaks detect --source . --no-banner --redact
+docker run --rm -v "$PWD:/src" aquasec/trivy fs /src --severity HIGH,CRITICAL --exit-code 1
+docker run --rm -v "$PWD:/src" bridgecrew/checkov -d /src
+kubeconform deploy/k8s/*.yaml
 ```
+
+All commands above run in CI on every push.

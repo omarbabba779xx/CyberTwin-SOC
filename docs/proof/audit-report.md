@@ -1,8 +1,14 @@
-# CyberTwin SOC — Senior Architect Audit Report
+# CyberTwin SOC — Senior Architect Audit Report (v3.1 baseline — HISTORICAL)
 
-**Date**: 2026-04-27  
-**Auditor**: Automated deep-dive + manual code review  
-**Commit baseline**: `42863b7` (pre-audit)  
+> ⚠️ **This document describes the project state BEFORE the v3.2
+> Enterprise Readiness Roadmap (commits prior to `097cc9c`).**
+> For the current state, including how every "Remaining Issue" listed
+> below has been resolved, see [`audit-report-v3.2.md`](audit-report-v3.2.md).
+> This file is retained for historical traceability only.
+
+**Date**: 2026-04-27
+**Auditor**: Automated deep-dive + manual code review
+**Commit baseline**: `42863b7` (pre-audit)
 **Scope**: Security · Performance · Database · CI/CD · Docker/K8s · SOC Logic
 
 ---
