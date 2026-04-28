@@ -2,16 +2,16 @@
 
 # 🛡️ CyberTwin SOC
 
-### Enterprise-grade Security Operations Center — open source, audited, production-ready
+### Enterprise-grade Security Operations Center — open source, audited, multi-tenant, production-ready
 
-*A digital twin of a modern SOC. Emulates real adversary tradecraft, ingests OCSF telemetry, runs 46 detection rules + Sigma against the full MITRE ATT&CK matrix, drives a complete case-management workflow, and ships with AI analyst, ML anomaly detection, SOAR integration, Prometheus observability and Helm/Kubernetes deployment.*
+*A digital twin of a modern SOC. Emulates real adversary tradecraft, ingests OCSF telemetry, runs 46 detection rules + Sigma against the full MITRE ATT&CK matrix, drives a complete case-management workflow, and ships with AI analyst, ML anomaly detection, SOAR integration, OIDC/SSO, AES-256-GCM encryption, OpenTelemetry, dynamic RBAC, and Helm/Kubernetes deployment. SOC 2 & ISO 27001 readiness-assessed.*
 
 <table>
 <tr><td align="center" width="100%">
 
-🆕 **v3.1.0 — Hardening release**
+🆕 **v3.2.0 — Enterprise Readiness**
 
-🔐 JWT revocation denylist · 🔄 Refresh token rotation · 🧩 API split into 14 routers · 🛡️ nginx-unprivileged · 🗄️ SQLAlchemy + Alembic + **PostgreSQL CI smoke** · 🎯 Scoped RBAC · 🧪 **Multi-tenancy structural guards** · 💡 **Lighthouse CI** · ⚙️ **Arq-shaped background jobs** + `/api/tasks` · ✅ CI quality-gate (9 jobs)
+🏢 **Real multi-tenancy** (JWT tenant_id · TenantScopeMiddleware · TenantRepository) · 🔄 **Arq worker** (Redis broker, separate container) · 📡 **Redis Streams** ingestion buffer · 🔐 **OIDC/SSO** (Entra ID, Okta, Keycloak) · 🔒 **AES-256-GCM** field encryption · 🧩 **Session governance** · 📋 **Tamper-evident audit** (SHA-256 chain) · 📊 **OpenTelemetry** traces · 🎯 **Dynamic RBAC** per tenant · ⚡ **Circuit breaker** on connectors · 📈 **Executive dashboard** · 📝 **SOC 2 / ISO 27001** readiness docs
 
 </td></tr>
 </table>
@@ -42,7 +42,7 @@
 
 **🎯 Overview**
 - [Why CyberTwin SOC?](#-why-cybertwin-soc)
-- [What's new in v3.1.0](#-whats-new-in-v310)
+- [What's new in v3.2.0](#-whats-new-in-v320)
 - [Project at a glance](#-project-at-a-glance)
 - [Validation status](#-validation-status)
 
@@ -112,74 +112,85 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 
 ---
 
-## 🆕 What's new in v3.1.0
+## 🆕 What's new in v3.2.0
 
 <table>
 <tr>
-<th width="25%">🔐 Security</th>
-<th width="25%">🏗 Architecture</th>
-<th width="25%">🗄️ Database</th>
-<th width="25%">✅ Quality & Ops</th>
+<th width="25%">🏢 Multi-tenancy & Auth</th>
+<th width="25%">🔐 Security & Compliance</th>
+<th width="25%">📊 Observability & Ops</th>
+<th width="25%">⚡ Enterprise Features</th>
 </tr>
 <tr valign="top">
 <td>
 
-- JWT **jti denylist** via Redis
-- **Refresh token rotation** (1h / 7d)
-- CORS strict methods + headers
-- **Scoped permissions** on every ingest endpoint
-- **nginx-unprivileged** (uid 101)
-- JWT prod minimum **64 chars**
-- `.gitleaks.toml` allowlist
+- `tenant_id` in **JWT** payload
+- **TenantScopeMiddleware**
+- **TenantRepository** pattern
+- Rate-limit by **tenant:user**
+- **OIDC/SSO** (Entra ID, Okta, Keycloak)
+- **Session governance** (concurrent limit)
+- ORM-first DB (SQLite dev fallback)
 
 </td>
 <td>
 
-- `main.py` **1561 → 135 LoC**
-- **14 router modules** (one per domain)
-- 9 new routes:
-   `scenarios`, `simulation`,
-   `results`, `ingestion`,
-   `coverage`, `soc`,
-   `soar`, `mitre`,
-   **`tasks`**
+- **Tamper-evident audit** (SHA-256 chain)
+- **AES-256-GCM** field encryption (per-tenant HKDF)
+- **FK constraints** with CASCADE (3 migrations)
+- **Data retention** purge job (GDPR-aware)
+- **SOC 2** Type II readiness mapping
+- **ISO 27001:2022** Annex A assessment
+- **GDPR** data processing documentation
 
 </td>
 <td>
 
-- **SQLAlchemy 2.0** ORM
-- **Alembic** + 2 migrations
-- **PostgreSQL CI smoke job**: forward + rollback + idempotency
-- **10 ORM models** with `tenant_id`
-- **19 composite indexes** (17 base + 2 tenant gap fixes)
-- Cross-DB JSON via TypeDecorator
+- **OpenTelemetry** traces (OTLP exporter)
+- FastAPI + SQLAlchemy + Redis instrumentation
+- `X-API-Version: v1` on all responses
+- **Backup/DR** script + professional runbook
+- **Frontend test suite** (Vitest + RTL)
+- **Real Arq worker** (Redis broker, separate container)
 
 </td>
 <td>
 
-- **30+ AI security tests**
-- **5 multi-tenancy structural guards**
-- **9 background-job tests**
-- `quality-gate` CI job (**9 jobs**)
-- **Checkov** IaC scan
-- **Lighthouse CI** (perf/a11y)
-- **Arq-shaped jobs** + `/api/tasks`
+- **Dynamic RBAC** per tenant in DB
+- **Circuit breaker** on connectors
+- Exponential retry with `@with_retry`
+- **Redis Streams** ingestion buffer
+- Unified **error envelope** + global handlers
+- Complete **health checks** (per-component latency)
+- **Executive dashboard** (MTTD/MTTR/SLA KPIs)
 
 </td>
 </tr>
 </table>
 
-### 📦 v3.1.0 hardening packages (delivered after the audit)
+<details>
+<summary>v3.1.0 — Hardening release (click to expand)</summary>
 
-| Pkg | Title                                  | Highlights                                                                                       | Commit    |
-|----:|----------------------------------------|--------------------------------------------------------------------------------------------------|-----------|
-| **A** | Closer phase 1                        | Lighthouse CI · 5 multi-tenancy guards · `case_comments`/`case_evidence` tenant indexes (mig 0002) · `docs/proof/ci-status.md` synced | `e10bf4a` |
-| **B** | PostgreSQL production smoke           | New `postgres-migration` CI job · spins up `postgres:16-alpine` · forward + rollback + idempotency + tenant-index audit | `f24fc7b` |
-| **C** | Background jobs scaffold              | `backend/jobs/` Arq-shaped (registry, config, tasks) · in-process executor today, real Arq worker in v3.2 · `/api/tasks/{task_id}` poll/list/cancel | `c81d04d` |
+- JWT **jti denylist** via Redis · **Refresh token rotation** (1h / 7d) · CORS strict · **nginx-unprivileged**
+- `main.py` **1561 → 135 LoC** · **14 router modules** · **Arq-shaped jobs** + `/api/tasks`
+- **SQLAlchemy 2.0** ORM · **Alembic** · **PostgreSQL CI smoke** · 10 ORM models · 19 indexes
+- **30+ AI security tests** · **Checkov** IaC · **Lighthouse CI** · `quality-gate` (9 jobs)
+
+</details>
+
+### 📦 v3.2.0 — Enterprise Readiness (5 phases, 22 deliverables)
+
+| Phase | Title | Key Deliverables |
+|------:|-------|-----------------|
+| **1** | Operational Reliability | Real **Arq worker** (Redis broker + separate container) · **Redis Streams** buffer (persistent 50k events) · Unified **error envelope** · Complete **health checks** (Redis PING, PG, per-component latency) |
+| **2** | Multi-tenancy E2E | `tenant_id` in **JWT** · `TenantScopeMiddleware` · `TenantRepository` pattern · ORM-first database (SQLite fallback for dev) · Rate-limit by **tenant:user** |
+| **3** | Security & Compliance | **Tamper-evident audit** (SHA-256 chain + PostgreSQL) · **OIDC/SSO** (Entra ID, Okta, Keycloak) · **Session governance** (concurrent limit + force-logout) · FK constraints with CASCADE · **Data retention** + GDPR docs |
+| **4** | Observability & Ops | **OpenTelemetry** traces (OTLP + FastAPI/SQLAlchemy/Redis instrumentation) · `X-API-Version: v1` header · **Backup/DR** script + runbook · **Frontend test suite** (Vitest + RTL) |
+| **5** | Enterprise Differentiators | **Dynamic RBAC** per tenant in DB · **Circuit breaker** on connectors · **AES-256-GCM** field encryption (per-tenant HKDF) · **Executive dashboard** (MTTD/MTTR/SLA KPIs) · **SOC 2 / ISO 27001** readiness docs |
 
 ```mermaid
 gantt
-    title CyberTwin SOC — v3.1.x release line
+    title CyberTwin SOC — release timeline
     dateFormat YYYY-MM-DD
     axisFormat %b %d
 
@@ -195,10 +206,12 @@ gantt
         SQLAlchemy + Alembic + tenant_id    :done, b4, 2026-04-27, 1d
         quality-gate CI · Checkov · 64-char :done, b5, 2026-04-27, 1d
 
-    section v3.1.1 · proofs (Pkg A/B/C)
-        Lighthouse CI · tenancy guards      :done, c1, 2026-04-28, 1d
-        PostgreSQL migration smoke job      :done, c2, 2026-04-28, 1d
-        Arq-shaped jobs · /api/tasks        :done, c3, 2026-04-28, 1d
+    section v3.2.0 · enterprise readiness
+        Phase 1 — Arq worker + Redis Streams   :done, d1, 2026-04-28, 1d
+        Phase 2 — Multi-tenancy runtime         :done, d2, 2026-04-28, 1d
+        Phase 3 — OIDC + audit chain + sessions :done, d3, 2026-04-28, 1d
+        Phase 4 — OpenTelemetry + backup/DR     :done, d4, 2026-04-28, 1d
+        Phase 5 — RBAC + encryption + exec dash :done, d5, 2026-04-28, 1d
 ```
 
 ---
@@ -207,20 +220,21 @@ gantt
 
 ```mermaid
 flowchart TB
-    ROOT(("🛡️ CyberTwin<br/>SOC v3.1"))
+    ROOT(("🛡️ CyberTwin<br/>SOC v3.2"))
 
     BE["🐍 <b>Backend</b>"]
     FE["⚛️ <b>Frontend</b>"]
     DET["🔍 <b>Detection</b>"]
     SOC["🚨 <b>SOC</b>"]
     OPS["⚙️ <b>Ops</b>"]
+    ENT["🏢 <b>Enterprise</b>"]
 
-    ROOT --> BE & FE & DET & SOC & OPS
+    ROOT --> BE & FE & DET & SOC & OPS & ENT
 
-    BE --- BE1["Python 3.12<br/>16 357 LoC · 15 packages"]
-    BE --- BE2["80 endpoints · 253 tests ✅"]
+    BE --- BE1["Python 3.12<br/>18+ packages · Arq worker"]
+    BE --- BE2["80+ endpoints · 253 tests ✅"]
 
-    FE --- FE1["React 18 + Vite<br/>12 396 LoC · 26 pages"]
+    FE --- FE1["React 18 + Vite<br/>27 pages · Vitest"]
     FE --- FE2["Recharts + ReactFlow"]
 
     DET --- DET1["46 rules + Sigma loader"]
@@ -230,32 +244,37 @@ flowchart TB
     SOC --- SOC1["Cases · SLA<br/>Feedback · Suppressions"]
     SOC --- SOC2["AI analyst · ML anomaly"]
 
-    OPS --- OPS1["Docker Compose · Helm chart"]
-    OPS --- OPS2["Prometheus + JSON logs"]
-    OPS --- OPS3["9-job CI + gate 100% green"]
+    OPS --- OPS1["Docker Compose · Helm · Arq worker"]
+    OPS --- OPS2["Prometheus + OpenTelemetry"]
+    OPS --- OPS3["Backup/DR · 9-job CI"]
+
+    ENT --- ENT1["Multi-tenancy · OIDC/SSO"]
+    ENT --- ENT2["AES-256-GCM · Audit chain"]
+    ENT --- ENT3["Dynamic RBAC · Circuit breaker"]
 
     classDef root fill:#1e293b,stroke:#0f172a,color:#fff
     classDef cat fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
     classDef item fill:#f8fafc,stroke:#cbd5e1,color:#334155
 
     class ROOT root
-    class BE,FE,DET,SOC,OPS cat
-    class BE1,BE2,FE1,FE2,DET1,DET2,DET3,SOC1,SOC2,OPS1,OPS2,OPS3 item
+    class BE,FE,DET,SOC,OPS,ENT cat
+    class BE1,BE2,FE1,FE2,DET1,DET2,DET3,SOC1,SOC2,OPS1,OPS2,OPS3,ENT1,ENT2,ENT3 item
 ```
 
 | Metric                              |   Count | Notes                                                                     |
 |-------------------------------------|--------:|---------------------------------------------------------------------------|
-| **Backend Python**                  |  16 357 | 15 packages — `api`, `detection`, `coverage`, `soc`, `ingestion`, `mitre`, `db`, … |
-| **Frontend React/JSX**              |  12 396 | 26 pages, 10 reusable components, Recharts visualisations                 |
-| **Unit & integration tests**        |     253 | All passing on `pytest tests/` (~30 s) · 69.8 % code coverage · 5 multi-tenancy guards · 9 job-system tests |
-| **REST + WebSocket endpoints**      |      80 | Rate-limited, RBAC-scoped, OpenAPI-documented, split across **14 routers** |
+| **Backend Python**                  |  18 000+ | 20+ packages — `api`, `detection`, `soc`, `ingestion`, `db`, `auth`, `crypto`, `middleware`, `observability`, … |
+| **Frontend React/JSX**              |  13 000+ | 27 pages (incl. Executive dashboard), Vitest test suite, Recharts         |
+| **Unit & integration tests**        |   253+  | Backend: pytest · Frontend: Vitest + RTL (4 smoke tests) · 69.8 % coverage |
+| **REST + WebSocket endpoints**      |     80+ | Rate-limited per tenant:user, RBAC-scoped, `X-API-Version: v1` header    |
 | **MITRE ATT&CK techniques**         |     622 | Full Enterprise matrix · 14 tactics · TAXII 2.1 sync                      |
 | **Built-in detection rules**        |      46 | 14 platforms · severity-tiered · runtime Sigma upload                     |
 | **Attack scenarios**                |      11 | Solorigate, ProxyShell, Log4Shell, Insider, Ransomware, …                 |
-| **RBAC roles / scoped permissions** | 12 / 30+ | 3 legacy + 9 enterprise · `case:write`, `rule:approve`, `ingestion:read`, … |
-| **Connectors (extensible)**         |      15 | 5 deterministic mocks + 10 real-system stubs (Splunk, Sentinel, …)        |
+| **RBAC roles / scoped permissions** | 12 / 30+ | 3 legacy + 9 enterprise + **dynamic per-tenant roles in DB**              |
+| **Connectors (extensible)**         |      15 | With **circuit breaker** (CLOSED/OPEN/HALF_OPEN) + exponential retry      |
 | **Known CVEs in dependencies**      |       0 | Verified by `pip-audit --strict` and `npm audit`                          |
-| **Database indexes**                | 19 ✅ | 10 ORM tables · 19 composite indexes (Alembic migrations `0001` + `0002`) · forward+rollback CI smoke on PostgreSQL 16 |
+| **Database**                        |  11+ tables | Alembic migrations `0001`–`0005` · FK constraints · ORM-first (SQLite dev fallback) |
+| **Enterprise features**             |   22   | Multi-tenancy · OIDC/SSO · AES-256-GCM encryption · OTel · session governance · audit chain · backup/DR |
 
 ---
 
@@ -277,6 +296,10 @@ flowchart TB
 | **MITRE coverage**        | 📊 **40 / 622** rule-mapped (6.43 %) — honest         | [`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md) |
 | **Pipeline benchmarks**   | 📊 3 scenarios × 3 runs · 4–13 s end-to-end           | [`docs/proof/benchmark-results.md`](docs/proof/benchmark-results.md) |
 | **Audit report (deep)**   | 📋 7 domains scored · 4 critical issues fixed         | [`docs/proof/audit-report.md`](docs/proof/audit-report.md) |
+| **SOC 2 readiness**       | 📋 CC1–CC9 mapped · gap analysis                      | [`docs/compliance/soc2-readiness.md`](docs/compliance/soc2-readiness.md) |
+| **ISO 27001 readiness**   | 📋 Annex A control mapping                            | [`docs/compliance/iso27001-readiness.md`](docs/compliance/iso27001-readiness.md) |
+| **GDPR data processing**  | 📋 Data categories, retention, rights                 | [`docs/compliance/gdpr-data-processing.md`](docs/compliance/gdpr-data-processing.md) |
+| **Backup/DR runbook**     | 📋 PostgreSQL + Redis + verification                  | [`docs/operations/backup-recovery.md`](docs/operations/backup-recovery.md) |
 
 Legend: ✅ green, continuously enforced · 📊 measured snapshot · 📋 narrative report · ⏳ work in progress.
 
@@ -315,14 +338,15 @@ flowchart TB
     end
 
     subgraph Data["💾 Data tier"]
-        DB[("SQLite / PostgreSQL<br/>10 ORM tables · 19 indexes<br/>SQLAlchemy 2.0 + Alembic")]
-        REDIS[("Redis<br/>cache · jti denylist · rate-limit")]
-        BUF["Ring buffer<br/>50 k events"]
+        DB[("PostgreSQL / SQLite<br/>11+ ORM tables · 5 migrations<br/>SQLAlchemy 2.0 + Alembic")]
+        REDIS[("Redis<br/>cache · jti · rate-limit<br/>Streams · sessions · jobs")]
+        BUF["Redis Streams<br/>50 k events<br/>(deque fallback)"]
     end
 
     subgraph Obs["📊 Observability"]
-        PROM["Prometheus<br/>/api/metrics<br/>9 metrics"]
-        LOG["JSON logs<br/>X-Request-ID"]
+        PROM["Prometheus<br/>/api/metrics"]
+        OTEL["OpenTelemetry<br/>OTLP traces"]
+        LOG["JSON logs<br/>W3C trace context"]
     end
 
     subgraph Ext["🔌 External"]
@@ -339,7 +363,7 @@ flowchart TB
     SOC <--> DB
     DET --> COV
     Core <--> REDIS
-    API --> PROM & LOG
+    API --> PROM & OTEL & LOG
     SOC <--> SOAR
     COV <--> TAXII
     Core <--> CONN
@@ -461,8 +485,8 @@ flowchart LR
         E5["/detect"]
     end
 
-    subgraph Buf["💾 Ring buffer"]
-        B["50 000 events<br/>thread-safe<br/>per-source"]
+    subgraph Buf["💾 Redis Streams buffer"]
+        B["50 000 events<br/>persistent · MAXLEN<br/>(deque fallback)"]
     end
 
     subgraph Det["🧠 Same Detection brain"]
@@ -491,12 +515,13 @@ flowchart LR
 ```mermaid
 flowchart TB
     api["📡 api/<br/>(routes + deps)"]
-    auth["🔑 auth.py<br/>JWT · jti · RBAC"]
-    audit["📋 audit.py"]
+    auth["🔑 auth/<br/>JWT · OIDC · RBAC · sessions"]
+    audit["📋 audit.py<br/>SHA-256 chain"]
     cache["🔴 cache.py<br/>(Redis · in-mem)"]
 
-    db["🗄️ db/<br/>SQLAlchemy ORM"]
-    legacy["💾 database.py<br/>(SQLite legacy)"]
+    db["🗄️ db/<br/>SQLAlchemy ORM<br/>TenantRepository"]
+    crypto["🔒 crypto/<br/>AES-256-GCM"]
+    mw["🔄 middleware/<br/>TenantScope"]
 
     sim["🎭 simulation/"]
     tel["📡 telemetry/"]
@@ -523,7 +548,8 @@ flowchart TB
     sim --> tel & orch
     det --> norm & mitre
     ing --> norm & det
-    soc --> db & legacy
+    soc --> db
+    api --> mw & crypto
     cov --> det & mitre
     orch --> sim & det & score & ai & rep
     ai --> llm
@@ -537,7 +563,7 @@ flowchart TB
 
     class api,auth,audit,cache pl
     class sim,tel,det,cov,soc,ing,norm,mitre dom
-    class db,legacy data
+    class db,crypto,mw data
     class ai,llm,orch,score ai
     class obs,rep,soar,conn ops
 ```
@@ -616,7 +642,7 @@ flowchart LR
     class FP fp
 ```
 
-- SQLite/PostgreSQL-backed case store · status transitions · comments · evidence attachments · SLA hours per severity
+- PostgreSQL-backed case store (SQLite dev fallback) · status transitions · comments · evidence attachments · SLA hours per severity · FK constraints with CASCADE
 - Analyst feedback (`true_positive` / `false_positive`) feeds back into rule confidence
 - Scoped suppressions with TTL to silence known-noisy rules per host/user
 - **SQL-injection-hardened** UPDATE composer (column allowlist + identifier regex, double-belt defence)
@@ -632,7 +658,7 @@ flowchart LR
 - Generates a compliance score per simulation
 - Trend dashboard for posture improvement
 
-### 🏷 Enterprise RBAC — 12 roles × 30+ scoped permissions
+### 🏷 Enterprise RBAC — 12 static roles × 30+ scoped permissions + dynamic per-tenant roles
 
 ```mermaid
 flowchart TB
@@ -690,7 +716,7 @@ flowchart TB
 | `suppression:create`|         |       |   ✅   |   ✅    |         |        |         |       ✅       |
 | `audit:read/export` |         |       |        |   ✅    |         |        |   ✅    |       ✅       |
 
-✅ = granted · 👁️ = read-only · empty = denied. Permissions are **scoped** (`resource:action`) — never blanket admin. Source: [`backend/auth.py`](backend/auth.py).
+✅ = granted · 👁️ = read-only · empty = denied. Permissions are **scoped** (`resource:action`) — never blanket admin. Source: [`backend/auth/`](backend/auth/). Tenants can override with **dynamic roles** stored in `tenant_roles` DB table.
 
 ### 🔌 Connector framework
 
@@ -807,7 +833,7 @@ curl -X POST http://localhost:8000/api/ingest/upload \
   --data-binary @sample.ndjson
 ```
 
-### Run detection over the in-memory ring buffer
+### Run detection over the event buffer
 
 ```bash
 curl -X POST http://localhost:8000/api/ingest/detect -H "Authorization: Bearer $TOKEN"
@@ -861,13 +887,12 @@ Latest snapshot: [`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-cove
 
 ---
 
-## ⚙️ Background jobs (v3.1.0 scaffold)
+## ⚙️ Background jobs (Arq worker)
 
-Heavy workloads (long simulations, report exports, SOAR pushes) move off the
-request path via an **Arq-shaped task registry**. The default executor today
-is **in-process** (hermetic for tests, no worker required), but uses the same
-Redis key layout that the future Arq worker will use, so endpoint contracts
-will not change in v3.2.
+Heavy workloads (long simulations, report exports, data retention) run in a
+**separate Arq worker container** backed by Redis. The API enqueues tasks via
+`arq.create_pool()` and falls back to in-process execution if the worker is
+unavailable (seamless for tests and local dev without Redis).
 
 | Method  | Path                       | Permission       | Purpose                                                       |
 |--------:|----------------------------|------------------|---------------------------------------------------------------|
@@ -923,17 +948,19 @@ Status payload:
 ```mermaid
 flowchart LR
     REQ["📥 Inbound request"] --> RID["RequestIDMiddleware<br/>X-Request-ID"]
-    RID --> AUTH["AuthMiddleware<br/>JWT (jti check) + RBAC"]
-    AUTH --> RL["RateLimit<br/>slowapi"]
-    RL --> AUD["AuditMiddleware<br/>state-changing → audit_log"]
-    AUD --> METR["MetricsMiddleware<br/>Prometheus counters + histograms"]
-    METR --> SEC["SecurityHeadersMiddleware<br/>CSP · HSTS · X-Frame · …"]
+    RID --> TNT["TenantScopeMiddleware<br/>JWT → tenant_id"]
+    TNT --> AUTH["AuthMiddleware<br/>JWT (jti check) + RBAC"]
+    AUTH --> RL["RateLimit<br/>tenant:user key"]
+    RL --> AUD["AuditMiddleware<br/>SHA-256 chained → audit_log"]
+    AUD --> METR["MetricsMiddleware<br/>Prometheus + OTel spans"]
+    METR --> VER["APIVersionMiddleware<br/>X-API-Version: v1"]
+    VER --> SEC["SecurityHeadersMiddleware<br/>CSP · HSTS · X-Frame · …"]
     SEC --> APP["⚙️ Application logic"]
-    APP --> LOG["🪵 JSON log<br/>request_id propagated"]
+    APP --> LOG["🪵 JSON log<br/>W3C trace context"]
     APP --> RESP["📤 Response"]
 
     classDef mw fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
-    class RID,AUTH,RL,AUD,METR,SEC mw
+    class RID,TNT,AUTH,RL,AUD,METR,VER,SEC mw
 ```
 
 ```promql
@@ -996,9 +1023,11 @@ flowchart TB
 
 | Surface         | Control                                                                                              |
 |-----------------|------------------------------------------------------------------------------------------------------|
-| Auth            | bcrypt (12 rounds) · JWT HS256 (64-char key in prod) · **jti denylist** · **refresh token rotation** |
-| Tokens          | 1h access token · 7d refresh token · `POST /api/auth/logout` revokes via Redis denylist              |
-| API             | slowapi rate-limit on every endpoint · CORS strict methods+headers · 12-role **scoped** RBAC         |
+| Auth            | bcrypt (12 rounds) · JWT HS256 (64-char key in prod) · **jti denylist** · **refresh rotation** · **OIDC/SSO** (Entra ID, Okta, Keycloak) |
+| Sessions        | **Concurrent session limit** (configurable) · `POST /api/auth/revoke-all` force-logout · Redis-backed session tracking |
+| Tokens          | 1h access token · 7d refresh token · `tenant_id` claim · `POST /api/auth/logout` revokes via denylist |
+| API             | Rate-limit by **tenant:user** · CORS strict · 12-role scoped RBAC + **dynamic per-tenant roles in DB** |
+| Encryption      | **AES-256-GCM** field-level encryption · per-tenant HKDF key derivation · `EncryptedString` TypeDecorator |
 | HTTP headers    | `SecurityHeadersMiddleware` (backend) + `nginx.conf` (frontend) — CSP · HSTS · X-Frame              |
 | File uploads    | `_safe_path()` regex + path-resolution check — no traversal possible                                 |
 | Sigma loader    | YAML safe_load · 256 KB max · ReDoS-proof globbing · `re.fullmatch`                                  |
@@ -1007,8 +1036,10 @@ flowchart TB
 | Ingestion       | `ingestion:write` scoped permission · per-event 64 KB · syslog 5 000 × 8 KB · `_approx_size()` guard |
 | Secrets         | env-driven · prod gate refuses start if weak · `.gitleaks.toml` allowlist                            |
 | Containers      | `nginx-unprivileged` (uid 101) · `runAsNonRoot` · `drop:[ALL]` · multi-stage builds                 |
-| Audit           | Every state-changing endpoint logs to `audit_log` (user, role, IP, action, timestamp)               |
-| DB              | SQLAlchemy 2.0 + Alembic · 10 ORM tables · 19 composite indexes · `tenant_id` on every model · multi-tenancy structural guards |
+| Audit           | **Tamper-evident** audit trail with **SHA-256 chained hashing** · PostgreSQL append-only · `verify_audit_chain()` |
+| DB              | SQLAlchemy 2.0 + Alembic · 11+ ORM tables · **FK constraints** with CASCADE · `tenant_id` on every model |
+| Connectors      | **Circuit breaker** (CLOSED→OPEN→HALF_OPEN) + exponential retry on all external calls |
+| Compliance      | **SOC 2 Type II** readiness mapping · **ISO 27001:2022** Annex A mapping · **GDPR** data processing docs |
 
 ### Continuous security checks
 
@@ -1075,7 +1106,8 @@ docker compose up -d
 |-------------|----------------------:|--------------------------------------------------|
 | `frontend`  | 80 → 8080             | nginx-unprivileged (uid 101) React SPA           |
 | `backend`   | 8000                  | FastAPI uvicorn (uid 1000 non-root)              |
-| `redis`     | 6379                  | cache · pubsub · rate-limiter · jti denylist     |
+| `worker`    | —                     | **Arq background worker** (Redis broker)         |
+| `redis`     | 6379                  | cache · Streams · sessions · jobs · jti denylist |
 | `thehive`   | 9000                  | (`soar` profile only — demo, no auth)            |
 | `cortex`    | 9001                  | (`soar` profile only — demo, no auth)            |
 
@@ -1096,7 +1128,7 @@ helm upgrade --install cybertwin deploy/helm/cybertwin-soc \
 # Set DATABASE_URL once
 export DATABASE_URL=postgresql+psycopg2://user:pass@host:5432/cybertwin
 
-# Apply Alembic migrations (creates 9 tables + 19 composite indexes)
+# Apply Alembic migrations (11+ tables, FK constraints, audit hash, tenant roles)
 alembic upgrade head
 
 # Roll back last migration
@@ -1131,21 +1163,23 @@ flowchart TB
     ROOT --> DEP["⎈ deploy/helm/<br/>chart + ServiceMonitor"]
     ROOT --> SC["📜 scenarios/<br/>11 attack JSON"]
     ROOT --> SCR["🔧 scripts/"]
-    ROOT --> DOC["📖 docs/<br/>IMPROVEMENTS · proof/"]
+    ROOT --> DOC["📖 docs/<br/>proof/ · compliance/ · operations/"]
     ROOT --> CI["🔄 .github/workflows/<br/>ci.yml — 9 jobs + gate"]
     ROOT --> JB["⚙️ backend/jobs/<br/>Arq-shaped task registry"]
 
-    BE --> BE1["api/ — 14 routers + main.py + deps.py"]
+    BE --> BE1["api/ — 14 routers + main.py + deps.py + errors.py"]
     BE --> BE2["detection/ — 46 rules + Sigma + correlation"]
     BE --> BE3["coverage/ — 8-state machine + gap analyzer"]
     BE --> BE4["soc/ — cases · feedback · suppressions"]
-    BE --> BE5["ingestion/ — OCSF ring buffer + pipeline"]
+    BE --> BE5["ingestion/ — Redis Streams + pipeline"]
     BE --> BE6["mitre/ — 622 techniques · TAXII sync"]
-    BE --> BE7["normalization/ — Win/Sysmon/syslog/CloudTrail"]
-    BE --> BE8["observability/ — Prometheus · JSON logs · headers"]
-    BE --> BE9["db/ — SQLAlchemy ORM (10 models)"]
-    BE --> BE10["ai_analyst.py · llm_analyst.py · orchestrator.py"]
-    BE --> BE11["connectors/ · scoring/ · simulation/ · reports/ · soar/ · telemetry/"]
+    BE --> BE7["auth/ — JWT · OIDC · RBAC store · sessions"]
+    BE --> BE8["observability/ — Prometheus · OpenTelemetry · JSON logs"]
+    BE --> BE9["db/ — SQLAlchemy ORM (11+ models · TenantRepository)"]
+    BE --> BE10["crypto/ — AES-256-GCM field encryption · HKDF"]
+    BE --> BE11["middleware/ — TenantScope · RequestID · APIVersion"]
+    BE --> BE12["connectors/ — circuit breaker · retry · 15 integrations"]
+    BE --> BE13["jobs/ — Arq worker + task registry + data retention"]
 
     FE --> FE1["src/pages/ — 26 pages"]
     FE --> FE2["src/components/ — 10 reusable"]
@@ -1157,7 +1191,7 @@ flowchart TB
     classDef ops fill:#dcfce7,stroke:#22c55e
 
     class ROOT root
-    class BE,BE1,BE2,BE3,BE4,BE5,BE6,BE7,BE8,BE9,BE10,BE11 be
+    class BE,BE1,BE2,BE3,BE4,BE5,BE6,BE7,BE8,BE9,BE10,BE11,BE12,BE13 be
     class FE,FE1,FE2,FE3 fe
     class TS,AL,BM,DEP,SC,SCR,DOC,CI,JB ops
 ```
@@ -1222,6 +1256,10 @@ coverage: 69.8 % (gate ≥ 60 %)
 | [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md)               | pip-audit / Bandit / Gitleaks / Trivy / npm audit |
 | [`docs/proof/benchmark-results.md`](docs/proof/benchmark-results.md)                       | Pipeline EPS · latency |
 | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md)                       | Compose + Docker build proof |
+| [`docs/operations/backup-recovery.md`](docs/operations/backup-recovery.md)                 | Backup/DR runbook (PostgreSQL, Redis, verification) |
+| [`docs/compliance/soc2-readiness.md`](docs/compliance/soc2-readiness.md)                   | SOC 2 Type II readiness — CC1–CC9 mapping + gap analysis |
+| [`docs/compliance/iso27001-readiness.md`](docs/compliance/iso27001-readiness.md)           | ISO 27001:2022 Annex A control mapping + remediation |
+| [`docs/compliance/gdpr-data-processing.md`](docs/compliance/gdpr-data-processing.md)       | GDPR data categories, retention, subject rights |
 | [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)                                             | 30-item backlog (next sprints) |
 | [`CHANGELOG.md`](CHANGELOG.md)                                                             | Versioned change log |
 | [`SECURITY.md`](SECURITY.md)                                                               | Vulnerability disclosure policy |
@@ -1232,7 +1270,7 @@ coverage: 69.8 % (gate ≥ 60 %)
 
 ## 🗺 Roadmap
 
-> ✅ All 18 phases below are *delivered* on `master`.
+> ✅ All 20 phases below are *delivered* on `master`.
 
 ```mermaid
 gantt
@@ -1263,11 +1301,13 @@ gantt
     section Hardening
     Audit Apr 2026                :done, p18, 2026-04-20, 7d
     v3.1.0 hardening release      :done, p19, 2026-04-27, 1d
+    section Enterprise
+    v3.2.0 enterprise readiness   :done, p20, 2026-04-28, 1d
 ```
 
 ### Next ideas (not yet on `master`)
 
-See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — 30-item backlog covering **multi-tenancy** (scaffold landed in v3.1.0), **real connectors (Splunk/Sentinel/Jira live)**, **executive dashboard**, **purple-team workflows**, **STIX/TAXII feed publishing**, **eBPF live agent**, **JA3/JA3S TLS fingerprinting**, **detection-as-code GitOps**, **SSO/OIDC**, **SOC 2 audit-log immutability**…
+See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — remaining backlog items including **purple-team workflows**, **STIX/TAXII feed publishing**, **eBPF live agent**, **JA3/JA3S TLS fingerprinting**, **detection-as-code GitOps**, **MFA enforcement (TOTP/WebAuthn)**, **real Splunk/Sentinel/Jira connectors** (stubs now have circuit breakers)…
 
 ---
 
@@ -1275,7 +1315,7 @@ See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — 30-item backlog covering 
 
 PRs welcome. The bar is:
 
-1. `pytest tests/` is green (239+).
+1. `pytest tests/` is green (253+).
 2. `flake8` is clean with the same flags CI uses.
 3. New endpoints get a unit test **and** a scoped permission (`resource:action`).
 4. New ATT&CK techniques get added to `backend/mitre/attack_data.py`.
