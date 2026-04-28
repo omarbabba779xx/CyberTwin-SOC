@@ -1,7 +1,12 @@
 # Database Index Audit
 
-- Database: `C:\Users\omarb\CyberTwin SOC\data\cybertwin.db`
-- Tables checked: **7**
+> **Scope**: SQLite legacy audit (7 tables). For the full PostgreSQL schema
+> (10 ORM tables, 19 composite indexes, `tenant_id` coverage), see the
+> `postgres-migration` CI job which validates forward + rollback + index
+> completeness on every push.
+
+- Database: SQLite (`data/cybertwin.db`) — legacy path
+- Tables checked: **7** (pre-v3.1.0 schema)
 - Missing indexes: **0**
 
 ## `simulation_runs`

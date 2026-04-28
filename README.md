@@ -218,7 +218,7 @@ flowchart TB
     ROOT --> BE & FE & DET & SOC & OPS
 
     BE --- BE1["Python 3.12<br/>16 357 LoC · 15 packages"]
-    BE --- BE2["77 endpoints · 253 tests ✅"]
+    BE --- BE2["80 endpoints · 253 tests ✅"]
 
     FE --- FE1["React 18 + Vite<br/>12 396 LoC · 26 pages"]
     FE --- FE2["Recharts + ReactFlow"]
@@ -1040,16 +1040,19 @@ flowchart LR
     JOBS --> J5["🔐 Security Scans<br/>pip-audit · npm audit · gitleaks"]
     JOBS --> J6["🐳 Docker Build<br/>compose smoke + healthcheck"]
     JOBS --> J7["⎈ Helm Lint<br/>lint + render artefact"]
-    JOBS --> J8["🏗️ Checkov<br/>Dockerfile · Helm IaC"]
+    JOBS --> J8["🏗️ Checkov<br/>Dockerfile · Helm IaC<br/><i>soft-fail</i>"]
 
-    J1 & J2 & J3 & J4 & J5 & J6 & J7 & J8 --> QG["🎯 quality-gate<br/>(single blocking check<br/>for branch protection)"]
+    J1 & J2 & J3 & J4 & J5 & J6 & J7 --> QG["🎯 quality-gate<br/>(7 blocking jobs<br/>for branch protection)"]
+    J8 -.->|non-blocking| QG
     QG -->|✅| MERGE["🟢 Merge allowed"]
     QG -->|❌| BLOCK["🔴 Blocked"]
 
     classDef job fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    classDef soft fill:#fef3c7,stroke:#f59e0b,color:#78350f
     classDef pass fill:#dcfce7,stroke:#22c55e,color:#14532d
     classDef fail fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
-    class J1,J2,J3,J4,J5,J6,J7,J8 job
+    class J1,J2,J3,J4,J5,J6,J7 job
+    class J8 soft
     class QG,MERGE pass
     class BLOCK fail
 ```

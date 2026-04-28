@@ -7,7 +7,8 @@ description: |
 type: application
 version: 0.1.0
 appVersion: "3.0.0"
-icon: https://raw.githubusercontent.com/omarbabba779xx/CyberTwin-SOC/master/docs/logo.png
+# icon: https://raw.githubusercontent.com/omarbabba779xx/CyberTwin-SOC/master/docs/logo.png
+# TODO: uncomment once docs/logo.png is added to the repository
 keywords:
   - cybersecurity
   - soc

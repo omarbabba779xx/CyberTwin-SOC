@@ -84,7 +84,7 @@ For a full Docker setup, see the *Docker Deployment* section of `README.md`.
 
 ## Tests
 
-The project ships with **128 backend tests**. New features must include tests.
+The project ships with **253 backend tests**. New features must include tests.
 
 ```bash
 # Full suite
