@@ -178,22 +178,27 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 | **C** | Background jobs scaffold              | `backend/jobs/` Arq-shaped (registry, config, tasks) · in-process executor today, real Arq worker in v3.2 · `/api/tasks/{task_id}` poll/list/cancel | `c81d04d` |
 
 ```mermaid
-timeline
+gantt
     title CyberTwin SOC — v3.1.x release line
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+
     section v3.0.x · stabilised
-        Apr 19  : Live OCSF ingestion
-        Apr 20  : Helm chart + 6-job CI
-        Apr 25  : Senior architect audit
+        Live OCSF ingestion           :done, a1, 2026-04-19, 1d
+        Helm chart + 6-job CI         :done, a2, 2026-04-20, 1d
+        Senior architect audit        :done, a3, 2026-04-25, 1d
+
     section v3.1.0 · hardening
-        Apr 27  : JWT jti + refresh rotation
-                : nginx-unprivileged · CORS strict
-                : Split 13 routers · 30+ AI security tests
-                : SQLAlchemy + Alembic + tenant_id
-                : quality-gate CI · Checkov · 64-char JWT
+        JWT jti + refresh rotation          :done, b1, 2026-04-27, 1d
+        nginx-unprivileged · CORS strict    :done, b2, 2026-04-27, 1d
+        Split 13 routers · AI sec tests     :done, b3, 2026-04-27, 1d
+        SQLAlchemy + Alembic + tenant_id    :done, b4, 2026-04-27, 1d
+        quality-gate CI · Checkov · 64-char :done, b5, 2026-04-27, 1d
+
     section v3.1.1 · proofs (Pkg A/B/C)
-        Apr 28  : Lighthouse CI · multi-tenancy guards
-                : PostgreSQL migration smoke job
-                : Arq-shaped jobs · /api/tasks · 14th router
+        Lighthouse CI · tenancy guards      :done, c1, 2026-04-28, 1d
+        PostgreSQL migration smoke job      :done, c2, 2026-04-28, 1d
+        Arq-shaped jobs · /api/tasks        :done, c3, 2026-04-28, 1d
 ```
 
 ---
@@ -201,35 +206,41 @@ timeline
 ## 📊 Project at a glance
 
 ```mermaid
-mindmap
-  root(("🛡️<br/>CyberTwin<br/>SOC v3.1"))
-    Backend
-      Python 3.12
-      16 357 LoC
-      15 packages
-      77 endpoints
-      253 tests ✅
-    Frontend
-      React 18 + Vite
-      12 396 LoC
-      26 pages
-      Recharts + ReactFlow
-    Detection
-      46 rules
-      Sigma loader
-      622 MITRE techniques
-      14 tactics
-      OCSF 1.0
-    SOC
-      Cases · SLA
-      Feedback · Suppressions
-      AI analyst
-      ML anomaly
-    Ops
-      Docker Compose
-      Helm chart
-      Prometheus + JSON logs
-      9-job CI + gate 100% green
+flowchart TB
+    ROOT(("🛡️ CyberTwin<br/>SOC v3.1"))
+
+    BE["🐍 <b>Backend</b>"]
+    FE["⚛️ <b>Frontend</b>"]
+    DET["🔍 <b>Detection</b>"]
+    SOC["🚨 <b>SOC</b>"]
+    OPS["⚙️ <b>Ops</b>"]
+
+    ROOT --> BE & FE & DET & SOC & OPS
+
+    BE --- BE1["Python 3.12<br/>16 357 LoC · 15 packages"]
+    BE --- BE2["77 endpoints · 253 tests ✅"]
+
+    FE --- FE1["React 18 + Vite<br/>12 396 LoC · 26 pages"]
+    FE --- FE2["Recharts + ReactFlow"]
+
+    DET --- DET1["46 rules + Sigma loader"]
+    DET --- DET2["622 MITRE techniques · 14 tactics"]
+    DET --- DET3["OCSF 1.0"]
+
+    SOC --- SOC1["Cases · SLA<br/>Feedback · Suppressions"]
+    SOC --- SOC2["AI analyst · ML anomaly"]
+
+    OPS --- OPS1["Docker Compose · Helm chart"]
+    OPS --- OPS2["Prometheus + JSON logs"]
+    OPS --- OPS3["9-job CI + gate 100% green"]
+
+    classDef root fill:#1e293b,stroke:#0f172a,color:#fff
+    classDef cat fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    classDef item fill:#f8fafc,stroke:#cbd5e1,color:#334155
+
+    class ROOT root
+    class BE,FE,DET,SOC,OPS cat
+    class BE1,BE2,FE1,FE2,DET1,DET2,DET3,SOC1,SOC2,OPS1,OPS2,OPS3 item
 ```
 
 | Metric                              |   Count | Notes                                                                     |
