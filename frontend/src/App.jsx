@@ -35,7 +35,6 @@ const CaseManagement  = React.lazy(() => import('./pages/CaseManagement'))
 const SuppressionsPage = React.lazy(() => import('./pages/Suppressions'))
 const Ingestion       = React.lazy(() => import('./pages/Ingestion'))
 const Executive       = React.lazy(() => import('./pages/Executive'))
-const Executive       = React.lazy(() => import('./pages/Executive'))
 
 // ─── Loading Fallback for Suspense ───
 function LoadingFallback() {
