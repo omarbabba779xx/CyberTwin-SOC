@@ -1,6 +1,6 @@
 # Security Scan Summary (v3.2)
 
-> Last manual update: **2026-04-28** (commit `d0f4e3f`).
+> Last manual update: **2026-04-28** (commit rolling on `master`).
 > All scanners run in CI on every push (`.github/workflows/ci.yml`).
 
 ## At a glance
@@ -10,9 +10,9 @@
 | **pip-audit**    | Python `requirements.txt` dependency CVEs      | **0 known CVEs** ✅ | **BLOCKING on CRITICAL+HIGH** |
 | **Bandit (high-conf, high-sev)** | Python static analysis (`-iii -lll`) | **0 high · 0 medium** ✅ | **BLOCKING** *(new in v3.2)* |
 | **Bandit (full report)** | Python static analysis (low + medium tracking) | 103 low · 0 medium · 0 high | non-blocking *(advisory; promoted progressively)* |
-| **Semgrep (ERROR severity)** | Multi-language SAST (Python + JS) | clean run | non-blocking *(advisory; promoted to BLOCKING in v3.3)* |
+| **Semgrep (ERROR severity)** | Multi-language SAST (Python + JS) | clean run | **BLOCKING** |
 | **Gitleaks**     | Secret scanning across full git history        | 0 verified secrets ✅ | **BLOCKING** |
-| **Trivy** (FS)   | Filesystem vulnerabilities                     | clean run | non-blocking *(advisory)* |
+| **Trivy** (FS HIGH+CRITICAL) | Filesystem vulnerabilities (`ignore-unfixed: true`) | clean | **BLOCKING** |
 | **CycloneDX**    | SBOM (Python + npm)                            | uploaded as artefact | mandatory artefact (informational) |
 | **npm audit**    | Frontend dependency CVEs                       | clean    | **BLOCKING on HIGH** |
 | **Checkov**      | Dockerfile + Helm chart IaC                    | clean    | non-blocking *(advisory; CRITICAL → BLOCKING in v3.3)* |
@@ -20,17 +20,14 @@
 
 ### Progressive hardening plan
 
-The scans labelled "advisory; promoted to BLOCKING in v3.3" are run on
-every push today. They surface findings in the GitHub Actions summary
-but do not fail the build. The roadmap promotes them progressively:
-
-| Phase | Promotion | Scope | When |
+| Phase | Promotion | Scope | Status |
 |---|---|---|---|
-| 1 *(done)* | Bandit `-iii -lll` (high-conf high-sev) → BLOCKING | Python critical SAST | v3.2 |
-| 2 | Semgrep `--severity=ERROR` → BLOCKING | Python + JS critical SAST | v3.3 |
-| 3 | Checkov CRITICAL → BLOCKING | Dockerfile + Helm | v3.3 |
-| 4 | Trivy FS HIGH+ → BLOCKING | filesystem CVEs | v3.3 |
-| 5 | Bandit medium → tracked + capped | full SAST hygiene | v3.4 |
+| 1 | Bandit `-iii -lll` (high-conf high-sev) → BLOCKING | Python critical SAST | **done** |
+| 2 | Semgrep `--severity=ERROR` → BLOCKING | Python + JS | **done** |
+| 3 | Trivy FS HIGH+CRITICAL (with `ignore-unfixed: true`) → BLOCKING | CVEs in tracked files | **done** |
+| 4 | Bandit full medium bucket → tracked + capped gate | full SAST hygiene | planned |
+| 5 | Checkov CRITICAL subset → BLOCKING | Dockerfile + Helm | planned |
+| 6 | Lighthouse perf budget | frontend | planned |
 
 ## pip-audit — 0 known CVEs
 
@@ -103,6 +100,8 @@ are **blocking** today (any failure fails the merge):
 |---|---|
 | `pip-audit --strict` | any known CVE in pinned Python deps |
 | `bandit -iii -lll --skip B101,B104` | high-confidence high-severity SAST findings |
+| `semgrep ERROR` (Docker) | actionable multi-language findings |
+| `trivy fs` HIGH+CVSS gate | CVEs under `ignore-unfixed: true` |
 | `gitleaks-action@v2` | any verified secret matched by `.gitleaks.toml` |
 | `npm audit --audit-level=high` | HIGH or CRITICAL frontend CVEs |
 | `flake8` | any non-style lint violation |
@@ -110,23 +109,9 @@ are **blocking** today (any failure fails the merge):
 | `alembic upgrade head` + downgrade smoke (PG 16) | schema drift |
 | Docker compose smoke (build + healthcheck) | image regression |
 
-The following are **advisory today** and surface findings without
-gating the merge. Each row is honestly labelled as advisory in
-`.github/workflows/ci.yml` and has a planned promotion to BLOCKING:
+**Still advisory:** Bandit low/medium backlog (`bandit -ll`), Checkov IaC (`soft_fail` — noise control), Lighthouse CI budgets (soft gate), CycloneDX SBOM artefacts (never fails the workflow).
 
-| Gate | Surface | Promotion target |
-|---|---|---|
-| Bandit full (`-ll`) | medium-severity SAST | v3.4 (medium → tracked + capped) |
-| Semgrep `--severity=ERROR` | Python + JS critical SAST | v3.3 |
-| Trivy FS `HIGH,CRITICAL` | filesystem CVEs | v3.3 |
-| Checkov | Dockerfile + Helm IaC | v3.3 (CRITICAL → blocking) |
-| CycloneDX SBOM | Python + npm | mandatory artefact, never blocking |
-| Lighthouse CI | frontend perf / a11y | v3.3 (perf budget hard gate) |
-
-The README statement *"security gates are blocking"* therefore refers
-to the **blocking** column above, not to the advisory column. We do not
-claim "security scan totally blocking end-to-end"; we explicitly publish
-the dual blocking + advisory contract and a written promotion roadmap.
+Semgrep/Trivy also emit informational SARIF uploads before the fatal step so Code Scanning still receives artefacts when a blocking regression occurs.
 
 ## Container hardening (v3.2)
 

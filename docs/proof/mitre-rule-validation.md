@@ -1,14 +1,15 @@
 # MITRE ATT&CK — Rule-level Validation
 
-**Commit**: `0ca70b7`
+**Commit**: `master` (see `tests/test_rule_validation.py` for live count)
 **Date**: 2026-04-28
 **Test file**: [`tests/test_rule_validation.py`](../../tests/test_rule_validation.py)
 **Catalog**: 622 ATT&CK Enterprise techniques (TAXII 2.1 sync)
 **Rule-mapped today**: **40** (6.43 %)
-**Validated by behavioural test today**: **8 techniques** across 6 priority tactics
-(see `TestPriorityMITRECoverage` class). Each has both a positive
-fixture that fires the rule AND a negative fixture that proves the
-rule does NOT fire on look-alike benign events.
+**Validated by behavioural test today**: **12 unique techniques**
+in `TestPriorityMITRECoverage` (**21 paired positive/negative tests**)
+plus **5 label-quality scenarios** in
+[`tests/test_ground_truth.py`](../../tests/test_ground_truth.py) that
+drive the full `DetectionEngine`.
 
 The reviewer is right that **the headline number is "rule-mapped", not
 "validated"**. This file makes that distinction explicit and tracks

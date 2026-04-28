@@ -277,10 +277,11 @@ jobs:
   #     npm audit (high+)  — frontend CVEs
   #     Bandit (high-conf) — Python static analysis, high-confidence only
   #
-  # Advisory (run on every push, surfaced in summary, do not fail the build):
-  #     Semgrep            — multi-language SAST, ERROR-severity
-  #     Trivy FS           — filesystem CVE scan (uses ignore-unfixed)
-  #     Checkov            — Dockerfile / Helm IaC (separate job)
+  # Advisory (surfaced without failing the workflow):
+  #     Bandit full (`-ll`) — low/medium tracking
+  #     Checkov             — Dockerfile / Helm (separate job, soft_fail)
+  # Artefact-only (always exits 0 before blocking steps):
+  #     Trivy SARIF+json    — uploads to security-reports + Code Scanning
   #
   # Artefacts (informational, retained 30 d):
   #     CycloneDX SBOM     — Python + npm
@@ -347,11 +348,9 @@ jobs:
         # by removing the `|| true` and lowering the severity flags.
         run: bandit -r backend/ -ll --skip B101,B104 -f txt || true
 
-      - name: Semgrep — multi-language SAST (Python + JS) [advisory]
-        # `--severity=ERROR` filters to ERROR-class findings only. We will
-        # promote this to a blocking gate once the existing ERROR backlog is
-        # zero, see ROADMAP.md.
-        continue-on-error: true
+      - name: Semgrep ERROR — Python + JS SAST [BLOCKING]
+        # Severity=ERROR narrows findings to actionable issues. Promotion to
+        # blocking replaces the advisory soft step from earlier v3.2 roadmap.
         run: |
           docker run --rm -v "$PWD:/src" semgrep/semgrep:latest \
             semgrep --config=p/security-audit \
@@ -359,9 +358,9 @@ jobs:
                     --config=p/javascript \
                     --severity=ERROR \
                     --error \
-                    || true
+                    /src
 
-      - name: Trivy — filesystem CVE scan [advisory, SARIF artefact]
+      - name: Trivy — filesystem CVE scan artefacts (HIGH+ SARIF + JSON)
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
@@ -373,7 +372,7 @@ jobs:
           format: sarif
           output: trivy-fs.sarif
 
-      - name: Trivy — also produce a human-readable JSON report
+      - name: Trivy JSON report (paired with SARIF)
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
@@ -383,6 +382,19 @@ jobs:
           format: json
           output: trivy-fs.json
           exit-code: '0'
+
+      - name: Trivy — filesystem HIGH+ CVE scan [BLOCKING]
+        # Second pass with exit-code 1 so any HIGH/CRITICAL finding fails CI.
+        # The informational runs above always exit 0 so artefacts exist even
+        # when this step fails (upload-artifact uses if: always()).
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '1'
+          format: table
 
       - name: Bandit — JSON report (artefact)
         run: bandit -r backend/ -ll --skip B101,B104 -f json -o bandit-report.json || true

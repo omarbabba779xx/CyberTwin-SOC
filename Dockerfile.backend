@@ -43,6 +43,10 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"
 
+# Request bodies are capped at the ASGI layer inside the app
+# (`MaxBodySizeMiddleware`, default 16 MiB, overridable via MAX_REQUEST_BODY_BYTES),
+# not via a uvicorn CLI flag (none exists for max body size).
+
 CMD ["uvicorn", "backend.api.main:app", \
      "--host", "0.0.0.0", \
      "--port", "8000", \

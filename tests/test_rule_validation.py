@@ -442,6 +442,131 @@ class TestPriorityMITRECoverage:
         }]
         assert rule.condition(events) == []
 
+    # --- Lateral movement (T1021.002) ------------------------------------
+
+    def test_T1021_002_psexec_admin_share_fires(self):
+        """RULE-019: PsExec + ADMIN$ lateral movement signature."""
+        rule = _rule("RULE-019")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": (
+                r"psexec \\DC01\ADMIN$ cmd /c whoami"
+            ),
+            "host": "WIN-WRK",
+            "user": "bob",
+        }]
+        assert rule.condition(events), "RULE-019 must fire on psexec + ADMIN$"
+
+    def test_T1021_002_negative_plain_notepad(self):
+        """RULE-019: generic notepad must NOT fire."""
+        rule = _rule("RULE-019")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "notepad.exe C:\\notes.txt",
+            "host": "WIN-WRK",
+            "user": "bob",
+        }]
+        assert rule.condition(events) == []
+
+    # --- Defense evasion (T1070.004) --------------------------------------
+
+    def test_T1070_004_wevtutil_clear_fires(self):
+        """RULE-026: event log clearing via wevtutil."""
+        rule = _rule("RULE-026")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "wevtutil cl Security",
+            "host": "DC01",
+            "user": "maluser",
+        }]
+        assert rule.condition(events), "RULE-026 must fire on wevtutil cl"
+
+    def test_T1070_004_negative_get_eventlog(self):
+        """RULE-026: read-only Get-EventLog must NOT fire."""
+        rule = _rule("RULE-026")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "powershell Get-EventLog -LogName Security -Newest 5",
+            "host": "DC01",
+            "user": "admin",
+        }]
+        assert rule.condition(events) == []
+
+    # --- Ransomware (T1486) ----------------------------------------------
+
+    def test_T1486_ransom_note_fires(self):
+        """RULE-044: README / DECRYPT pattern in description."""
+        rule = _rule("RULE-044")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "description": "User opened README_DECRYPT.TXT on Desktop",
+            "host": "FS01",
+            "user": "alice",
+        }]
+        assert rule.condition(events), "RULE-044 must fire on ransom-note pattern"
+
+    def test_T1486_negative_normal_readme(self):
+        """RULE-044: benign README for software install must NOT fire."""
+        rule = _rule("RULE-044")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "description": "Opened README.txt from Visual Studio installer",
+            "host": "DEV01",
+            "user": "dev",
+        }]
+        assert rule.condition(events) == []
+
+    # --- Cloud identity (T1552.005) ---------------------------------------
+
+    def test_T1552_005_imds_curl_fires(self):
+        """RULE-043: curl to link-local IMDS for role credentials."""
+        rule = _rule("RULE-043")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": (
+                "curl -s http://169.254.169.254/latest/meta-data/iam/"
+                "security-credentials/"
+            ),
+            "host": "i-deadbeef",
+            "user": "ec2-user",
+        }]
+        assert rule.condition(events), "RULE-043 must fire on IMDS URL in command_line"
+
+    def test_T1552_005_negative_internal_http(self):
+        """RULE-043: generic HTTP to internal app must NOT fire."""
+        rule = _rule("RULE-043")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "curl http://10.0.0.12/health",
+            "host": "i-deadbeef",
+            "user": "ec2-user",
+        }]
+        assert rule.condition(events) == []
+
 
 # ---------------------------------------------------------------------------
 # Engine-level integration check — the engine itself must produce alerts

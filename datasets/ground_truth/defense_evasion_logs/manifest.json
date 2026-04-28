@@ -1,0 +1,18 @@
+{
+  "id": "defense_evasion_logs",
+  "description": "Security.evtx wipe via standard Windows tooling (T1070.004).",
+  "mitre_anchor": ["T1070.004"],
+  "expected_rule_ids": ["RULE-026"],
+  "forbidden_rule_ids": [],
+  "events": [
+    {
+      "timestamp": "2026-04-28T09:57:44+00:00",
+      "log_source": "process",
+      "event_type": "process_create",
+      "host": "DC01",
+      "user": "maluser",
+      "process_name": "wevtutil.exe",
+      "command_line": "wevtutil.exe cl Security /bu:C:\\backup\\sec.evtx"
+    }
+  ]
+}

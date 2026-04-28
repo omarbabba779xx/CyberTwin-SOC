@@ -3,75 +3,39 @@
 > Last manual update: **2026-04-28** · python 3.12.10 · pytest 9.x
 > Continuously refreshed by the `backend-tests` CI job on every push.
 
-## Pytest summary (v3.2) — 819 tests collected
+## Pytest summary (v3.2) — **836** tests collected
 
-This number is reproducible from a clean clone. It comes from
-`pytest --collect-only`, not from a hand-curated table:
+This number is the **only** authoritative headline. It includes every
+expanded `@pytest.mark.parametrize` case (especially the exhaustive
+per-rule matrix inside `tests/test_rule_validation.py`).
 
+```bash
+$ python -m pytest tests/ --collect-only -q
+836 tests collected
 ```
-$ python -m pytest tests/ --collect-only 2>&1 | tail -1
-819 tests collected in 1.54s
-```
 
-The `backend-tests` CI job runs `pytest -q` on every push and uploads
-the JUnit XML + HTML coverage as the `pytest-${SHA}` artefact (retained
-14 days). See `docs/proof/ci-status.md` for the latest CI run.
+### Modules under `tests/`
 
-## Per-file breakdown — only files that actually exist
+Twenty-nine `test_*.py` modules, including **`test_ground_truth.py`**
+(labelled SOC detection scenarios in `datasets/ground_truth/`),
+**`test_rule_validation.py`** (~440 parametrized cases — rules ×
+structures), and integration suites for connectors, auth-session,
+PostgreSQL-backed paths, ingestion, SOC workflow, tracing, OIDC,
+field-level encryption, and request-body limits.
 
-The list below is generated from the working tree at commit `9cd6275`.
-Counts come from `def test_` occurrences in each file; total matches
-`pytest --collect-only`.
+Historical references to phantom files (`test_anomaly.py`, `test_sigma.py`,
+etc.) are **invalid** — they never existed on `master`; any MITRE /
+Sigma behaviour is exercised through `test_rule_validation.py` and
+`test_phase5.py` today.
 
-| File                              | Tests |
-|-----------------------------------|------:|
-| `test_ai_analyst.py`              | 27 |
-| `test_api.py`                     | (file-level – pulled at run time) |
-| `test_arq_jobs.py`                | 10 |
-| `test_attack_engine.py`           | 10 |
-| `test_audit_chain.py`             | 8  |
-| `test_auth.py`                    | 24 |
-| `test_auth_session.py`            | 15 |
-| `test_circuit_breaker.py`         | 12 |
-| `test_connector_splunk.py`        | 12 |
-| `test_connector_thehive.py`       | 16 |
-| `test_coverage.py`                | 22 |
-| `test_detection.py`               | 13 |
-| `test_environment.py`             | 12 |
-| `test_field_encryption.py`        | 16 |
-| `test_ingestion.py`               | 25 |
-| `test_ingestion_buffer.py`        | 10 |
-| `test_jobs.py`                    | 3  |
-| `test_multitenancy.py`            | 5  |
-| `test_oidc.py`                    | 16 |
-| `test_orchestrator.py`            | 11 |
-| `test_phase5.py`                  | 21 |
-| `test_request_body_limit.py`      | 4  |
-| `test_rule_validation.py`         | 78 |
-| `test_scoring.py`                 | 18 |
-| `test_soc.py`                     | 27 |
-| `test_telemetry.py`               | 14 |
-| `test_tenant_isolation.py`        | 12 |
-| `test_tracing.py`                 | 6  |
-| **Total** (`pytest --collect-only`) | **819** |
-
-The previous version of this document referenced files that do not
-exist in the working tree (`test_anomaly.py`, `test_cases.py`,
-`test_correlation.py`, `test_mitre.py`, `test_normalization.py`,
-`test_observability.py`, `test_reports.py`, `test_sigma.py`,
-`test_workflow.py`, `test_llm_analyst.py`). They have been removed —
-their functional coverage is exercised by the live files above
-(e.g. MITRE coverage is in `test_phase5.py` and `test_rule_validation.py`,
-case CRUD is in `test_soc.py`, ingestion + parsing is in
-`test_ingestion.py`, AI Analyst evidence-first is in `test_ai_analyst.py`).
-
-## Coverage of code paths (819 tests)
+## Coverage of code paths (836 tests)
 
 The suite exercises:
 
 - **Detection** — rule match, false positives, severity weighting,
   suppressions (`test_detection.py`, `test_rule_validation.py` —
-  including `TestPriorityMITRECoverage` for the 8 priority techniques).
+  including `TestPriorityMITRECoverage` for **12 validated techniques**
+  plus **`tests/test_ground_truth.py`** against frozen manifests).
 - **Sigma loader** — YAML parsing, regex hardening, glob fullmatch
   semantics (`test_phase5.py`).
 - **Coverage center** — 8-state machine, high-risk gap counting,
@@ -113,8 +77,8 @@ The suite exercises:
 
 ```bash
 python -m pip install -r requirements.txt
-python -m pytest tests/ -q                  # 819 passed
-python -m pytest tests/ --collect-only      # 819 tests collected
+python -m pytest tests/ -q                  # 836 passed
+python -m pytest tests/ --collect-only -q # 836 tests collected
 python -m pytest tests/ --cov=backend --cov-report=term-missing
 ```
 

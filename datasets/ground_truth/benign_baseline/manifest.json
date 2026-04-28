@@ -1,0 +1,28 @@
+{
+  "id": "benign_baseline",
+  "description": "Single successful intra-VLAN login — should not yield high-fidelity SOC alerts.",
+  "mitre_anchor": [],
+  "expected_rule_ids": [],
+  "forbidden_rule_ids": [],
+  "max_alerts_allowed": 2,
+  "events": [
+    {
+      "timestamp": "2026-04-28T14:05:01+00:00",
+      "log_source": "authentication",
+      "event_type": "logon_success",
+      "user": "alice",
+      "src_ip": "10.0.0.5",
+      "host": "LAPTOP-A"
+    },
+    {
+      "timestamp": "2026-04-28T14:05:02+00:00",
+      "log_source": "process",
+      "event_type": "process_create",
+      "user": "alice",
+      "host": "LAPTOP-A",
+      "process_name": "explorer.exe",
+      "command_line": "C:\\Windows\\explorer.exe",
+      "description": "Explorer shell start"
+    }
+  ]
+}

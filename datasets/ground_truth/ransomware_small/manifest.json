@@ -1,0 +1,19 @@
+{
+  "id": "ransomware_small",
+  "description": "Single process event referencing a ransomware note dropped on disk (T1486).",
+  "mitre_anchor": ["T1486"],
+  "expected_rule_ids": ["RULE-044"],
+  "forbidden_rule_ids": [],
+  "events": [
+    {
+      "timestamp": "2026-04-28T10:05:01+00:00",
+      "log_source": "process",
+      "event_type": "process_create",
+      "host": "FS01",
+      "user": "SYSTEM",
+      "process_name": "malware.exe",
+      "command_line": "malware.exe --readme README_DECRYPT.TXT",
+      "description": "User opened README_DECRYPT.TXT ransom instructions on Desktop"
+    }
+  ]
+}

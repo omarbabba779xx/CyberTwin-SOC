@@ -31,7 +31,7 @@ command.
 | File | What it proves | How to regenerate |
 |---|---|---|
 | `ci-status.md` | CI pipeline state on `master` | `gh run list --workflow ci.yml` |
-| `test-report-v3.2.md` | **Backend (806) + frontend (10) + coverage (69.8 %)** | `pytest tests/ --cov=backend` + `cd frontend && npx vitest --run` |
+| `test-report-v3.2.md` | **Backend (~836) + frontend (10) + coverage (69.8 %)** | `pytest tests/ --cov=backend` + `cd frontend && npx vitest --run` |
 | `coverage-report.md` | Per-module test breakdown | `pytest tests/ --cov=backend --cov-report=term-missing` |
 | `frontend-tests-report.md` | Vitest results for the React UI | `cd frontend && npm test` |
 | `frontend-lighthouse-report.md` | Frontend perf / a11y / best-practices / SEO | CI artefact `lighthouse-${SHA}` |
@@ -39,12 +39,14 @@ command.
 | `database-indexing-report.md` | Tenant_id-covering indexes on every multi-tenant table | (validated by the `postgres-migration` CI job) |
 | `mitre-coverage-snapshot.md` | Rule → ATT&CK technique mapping today | `python -m benchmarks.mitre_snapshot` |
 | `mitre-rule-validation.md` | **Rule-mapped vs validated split + roadmap** | `pytest tests/test_rule_validation.py -v` |
+| `ground-truth-validation.md` | **Precision/recall on synthetic labelled scenarios** | `pytest tests/test_ground_truth.py -v` |
 
 ## Performance proofs
 
 | File | Tool | Reproduce |
 |---|---|---|
-| `benchmark-results.md` | In-process pipeline (deterministic) | `python -m benchmarks.bench_pipeline` |
+| `benchmark-results.md` | Single index: k6/Locust/WS/postgres/docker/lighthouse + supporting in-process pipeline | `python -m benchmarks.bench_pipeline` |
+| `benchmark-helm-production.md` | 3-replica Helm / k6 runbook *(numbers filled per release)* | see runbook in file |
 | `benchmark-http-k6.md` | k6 — HTTP API p95 | `k6 run benchmarks/k6_api.js …` |
 | `benchmark-ingestion-locust.md` | Locust — sustained EPS | `locust -f benchmarks/locust_ingestion.py …` |
 | `benchmark-websocket.md` | asyncio + `websockets` lib | `python benchmarks/ws_load.py …` |

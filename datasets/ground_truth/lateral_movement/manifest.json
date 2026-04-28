@@ -1,0 +1,18 @@
+{
+  "id": "lateral_movement",
+  "description": "PsExec-style SMB admin share lateral movement indicators (T1021.002).",
+  "mitre_anchor": ["T1021.002"],
+  "expected_rule_ids": ["RULE-019"],
+  "forbidden_rule_ids": [],
+  "events": [
+    {
+      "timestamp": "2026-04-28T11:02:33+00:00",
+      "log_source": "process",
+      "event_type": "process_create",
+      "host": "WRKSTN-42",
+      "user": "domain\\operator",
+      "process_name": "psexec64.exe",
+      "command_line": "psexec64.exe \\\\FILE-SRV\\\\ADMIN$ -s powershell.exe -enc JAB="
+    }
+  ]
+}
