@@ -17,7 +17,7 @@
 </table>
 
 [![CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
-[![Tests](https://img.shields.io/badge/tests-253%20passing-brightgreen)](#-quality--testing)
+[![Tests](https://img.shields.io/badge/tests-806%20passing-brightgreen)](#-quality--testing)
 [![Coverage](https://img.shields.io/badge/coverage-69.8%25-success)](#-quality--testing)
 [![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![React](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
@@ -232,7 +232,7 @@ flowchart TB
     ROOT --> BE & FE & DET & SOC & OPS & ENT
 
     BE --- BE1["Python 3.12<br/>18+ packages · Arq worker"]
-    BE --- BE2["80+ endpoints · 253 tests ✅"]
+    BE --- BE2["80+ endpoints · 806 tests ✅"]
 
     FE --- FE1["React 18 + Vite<br/>27 pages · Vitest"]
     FE --- FE2["Recharts + ReactFlow"]
@@ -265,7 +265,7 @@ flowchart TB
 |-------------------------------------|--------:|---------------------------------------------------------------------------|
 | **Backend Python**                  |  18 000+ | 20+ packages — `api`, `detection`, `soc`, `ingestion`, `db`, `auth`, `crypto`, `middleware`, `observability`, … |
 | **Frontend React/JSX**              |  13 000+ | 27 pages (incl. Executive dashboard), Vitest test suite, Recharts         |
-| **Unit & integration tests**        |   253+  | Backend: pytest · Frontend: Vitest + RTL (4 smoke tests) · 69.8 % coverage |
+| **Unit & integration tests**        |    816  | Backend: pytest (806) · Frontend: Vitest + RTL (10 across 4 suites) · see [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
 | **REST + WebSocket endpoints**      |     80+ | Rate-limited per tenant:user, RBAC-scoped, `X-API-Version: v1` header    |
 | **MITRE ATT&CK techniques**         |     622 | Full Enterprise matrix · 14 tactics · TAXII 2.1 sync                      |
 | **Built-in detection rules**        |      46 | 14 platforms · severity-tiered · runtime Sigma upload                     |
@@ -284,7 +284,8 @@ flowchart TB
 
 | Area                      | Status                                                | Evidence |
 |---------------------------|-------------------------------------------------------|----------|
-| **Backend tests**         | ✅ 253 passing                                          | [`docs/proof/coverage-report.md`](docs/proof/coverage-report.md) |
+| **Backend tests**         | ✅ 806 passing                                          | [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
+| **Frontend tests**        | ✅ 10 passing (Vitest + RTL)                           | [`docs/proof/frontend-tests-report.md`](docs/proof/frontend-tests-report.md) |
 | **Code coverage**         | ✅ 69.8 % (gate: ≥ 60 %)                               | `pytest --cov=backend` |
 | **Frontend build**        | ✅ Passing                                             | GitHub Actions `Frontend Build` job |
 | **Docker build**          | ✅ Retry-loop healthcheck on `/api/health` & `/health` | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
@@ -383,7 +384,7 @@ flowchart TB
     class SOAR,TAXII,CONN ext
 ```
 
-### 🔐 Token lifecycle (v3.1.0)
+### 🔐 Token lifecycle (v3.2.0)
 
 ```mermaid
 sequenceDiagram
@@ -1115,8 +1116,8 @@ docker compose up -d
 
 ```bash
 helm upgrade --install cybertwin deploy/helm/cybertwin-soc \
-  --set image.backend.tag=v3.1.0 \
-  --set image.frontend.tag=v3.1.0 \
+  --set image.backend.tag=v3.2.0 \
+  --set image.frontend.tag=v3.2.0 \
   --set ingress.host=soc.example.com \
   --set ingress.tls.enabled=true \
   --set serviceMonitor.enabled=true
@@ -1157,7 +1158,7 @@ flowchart TB
     ROOT["📁 CyberTwin-SOC"]
     ROOT --> BE["🐍 backend/<br/>16 357 LoC · Python 3.12"]
     ROOT --> FE["⚛️ frontend/<br/>12 396 LoC · React 18 + Vite"]
-    ROOT --> TS["🧪 tests/<br/>253 tests · 100 % passing"]
+    ROOT --> TS["🧪 tests/<br/>806 tests · 100 % passing"]
     ROOT --> AL["🗄️ alembic/<br/>migration infra"]
     ROOT --> BM["📊 benchmarks/<br/>k6 · locust · pipeline · MITRE snapshot"]
     ROOT --> DEP["⎈ deploy/helm/<br/>chart + ServiceMonitor"]
@@ -1238,7 +1239,7 @@ pip-audit -r requirements.txt --strict
 Current `master`:
 
 ```
-============================ 253 passed in 30.94s ============================
+============================ 806 passed in 38.4s =============================
 flake8: 0 errors · pip-audit: 0 CVE · npm audit: 0 high · gitleaks: 0 leaks
 coverage: 69.8 % (gate ≥ 60 %)
 ```
@@ -1315,7 +1316,7 @@ See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — remaining backlog items i
 
 PRs welcome. The bar is:
 
-1. `pytest tests/` is green (253+).
+1. `pytest tests/` is green (806+).
 2. `flake8` is clean with the same flags CI uses.
 3. New endpoints get a unit test **and** a scoped permission (`resource:action`).
 4. New ATT&CK techniques get added to `backend/mitre/attack_data.py`.
