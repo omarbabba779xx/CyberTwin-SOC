@@ -55,8 +55,9 @@ command.
 
 | File | What it proves | How to regenerate |
 |---|---|---|
-| `security-scan-summary.md` | pip-audit / Bandit / Semgrep / Gitleaks / Trivy / Checkov / kubeconform | see commands inside the file |
+| `security-scan-summary.md` | pip-audit / Bandit / Semgrep / Gitleaks / Trivy / Checkov / kubeconform — including the explicit blocking vs advisory contract | see commands inside the file |
 | `docker-validation.md` | `docker compose config` + smoke run + CI gate description | see commands inside the file |
+| `production-deployment.md` | Production hardening guide: required env vars, TLS / reverse-proxy, secret management, NetworkPolicy, `values-secure.yaml` | see commands inside the file |
 
 ## Honesty rule
 

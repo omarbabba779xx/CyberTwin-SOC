@@ -1,0 +1,179 @@
+## =============================================================================
+## CyberTwin SOC — production / hardened Helm values
+## =============================================================================
+##
+## Use this overlay on top of `values.yaml` for any environment that ships
+## real customer data. It enables every defence-in-depth control that is
+## OFF by default in `values.yaml` for developer ergonomics:
+##
+##   - read-only root filesystem (with explicit emptyDir for /tmp)
+##   - NetworkPolicy default-deny + scoped allow rules
+##   - higher replica counts + tighter resource caps
+##   - pod anti-affinity across nodes
+##   - PodDisruptionBudget for zero-downtime upgrades
+##
+## Apply with:
+##
+##   helm upgrade --install cybertwin deploy/helm/cybertwin-soc \
+##     --values deploy/helm/cybertwin-soc/values.yaml \
+##     --values deploy/helm/cybertwin-soc/values-secure.yaml \
+##     --set ingress.host=soc.example.com
+##
+## Each section explains WHY the control is enabled, not just what it does.
+## =============================================================================
+
+# ---------------------------------------------------------------------------
+# Pod-level hardening — applied to every workload (backend, frontend, worker)
+# ---------------------------------------------------------------------------
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault   # block uncommon syscalls; opt-in vs Unconfined
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true   # ← key change vs values.yaml (false there)
+  privileged: false
+  runAsNonRoot: true
+  capabilities:
+    drop: ["ALL"]
+  seccompProfile:
+    type: RuntimeDefault
+
+# Mount writable scratch space under /tmp because the root FS is read-only.
+# uvicorn writes nothing else to disk; logs go to stdout.
+extraVolumes:
+  - name: tmp-scratch
+    emptyDir:
+      sizeLimit: 64Mi
+extraVolumeMounts:
+  - name: tmp-scratch
+    mountPath: /tmp
+    readOnly: false
+
+# ---------------------------------------------------------------------------
+# Backend — production replica count + tighter caps
+# ---------------------------------------------------------------------------
+backend:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: 1500m
+      memory: 1.5Gi
+  podAntiAffinity:
+    enabled: true
+    topologyKey: kubernetes.io/hostname
+  env:
+    ENV: production
+    PYTHONUNBUFFERED: "1"
+    REDIS_URL: redis://cybertwin-redis:6379
+    ENABLE_JSON_LOGS: "1"
+    LOG_LEVEL: INFO
+    # Force HTTPS-only cookie + HSTS at the app layer in addition to the ingress
+    SECURE_COOKIES: "1"
+    HSTS_MAX_AGE: "31536000"
+  # No env-vars-with-secrets here. Use existingSecret to mount JWT_SECRET,
+  # AUTH_*_PASSWORD, OIDC_CLIENT_SECRET, SOAR/SIEM API keys, etc.
+  existingSecret: cybertwin-secrets
+
+# ---------------------------------------------------------------------------
+# Frontend — read-only nginx-unprivileged + production replica count
+# ---------------------------------------------------------------------------
+frontend:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# Ingress — TLS-only, HSTS, modern ciphers
+# ---------------------------------------------------------------------------
+ingress:
+  enabled: true
+  className: nginx
+  host: soc.example.com   # OVERRIDE PER ENVIRONMENT
+  tls:
+    enabled: true
+    secretName: cybertwin-tls
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/hsts: "true"
+    nginx.ingress.kubernetes.io/hsts-include-subdomains: "true"
+    nginx.ingress.kubernetes.io/hsts-max-age: "31536000"
+    nginx.ingress.kubernetes.io/proxy-body-size: "16m"
+    nginx.ingress.kubernetes.io/limit-rps: "200"
+    nginx.ingress.kubernetes.io/limit-connections: "200"
+
+# ---------------------------------------------------------------------------
+# NetworkPolicy — default-deny + explicit allow rules
+# ---------------------------------------------------------------------------
+# Enabled in the secure overlay. The default-deny policy blocks all pod
+# egress; the allow rules let backend → redis, backend → postgres (if
+# external), and ingress-controller → backend. Anything else (e.g. a
+# compromised pod calling out to an attacker C2) is dropped at the CNI.
+networkPolicy:
+  enabled: true
+  ingressNamespace: ingress-nginx       # the namespace running the ingress
+  allowedEgressNamespaces:               # additional egress targets
+    - kube-system                        # CoreDNS
+    - monitoring                         # Prometheus / Grafana
+  externalEgress:                        # optional CIDR allow-list
+    enabled: false
+    cidrs: []
+
+# ---------------------------------------------------------------------------
+# PodDisruptionBudget — zero-downtime upgrades
+# ---------------------------------------------------------------------------
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2   # keep at least 2/3 backend pods up during voluntary disruption
+
+# ---------------------------------------------------------------------------
+# Probes — production-grade liveness + readiness + startup
+# ---------------------------------------------------------------------------
+probes:
+  liveness:
+    httpGet: { path: /api/health, port: 8000 }
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readiness:
+    httpGet: { path: /api/health/ready, port: 8000 }
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 2
+  startup:
+    httpGet: { path: /api/health, port: 8000 }
+    failureThreshold: 30   # allow up to 5 min for DB migrations on first boot
+    periodSeconds: 10
+
+# ---------------------------------------------------------------------------
+# Observability — ServiceMonitor + OpenTelemetry collector wiring
+# ---------------------------------------------------------------------------
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /api/metrics
+
+tracing:
+  enabled: true
+  exporter: otlp
+  endpoint: http://otel-collector.observability:4317
+  sampler: parentbased_traceidratio
+  samplerArg: "0.1"   # 10 % sampling in production

@@ -54,12 +54,14 @@ jobs:
           pip install -r requirements.txt
           pip install pytest pytest-cov pytest-asyncio httpx
 
-      - name: Run tests with coverage
+      - name: Run tests with coverage (XML + HTML + JUnit)
         run: |
           python -m pytest tests/ \
             --cov=backend \
             --cov-report=xml \
+            --cov-report=html \
             --cov-report=term-missing \
+            --junitxml=pytest-junit.xml \
             -q
 
       - name: Upload coverage to Codecov
@@ -67,6 +69,17 @@ jobs:
         with:
           file: coverage.xml
         continue-on-error: true   # Codecov flakes occasionally; not a blocker
+
+      - name: Upload pytest report (JUnit XML + coverage HTML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-${{ github.sha }}
+          path: |
+            pytest-junit.xml
+            coverage.xml
+            htmlcov/
+          retention-days: 14
 
   # ---------------------------------------------------------------------------
   # 2. PostgreSQL Migration Smoke — Alembic forward + rollback + index check
@@ -310,7 +323,10 @@ jobs:
       - name: pip-audit — CVE scan on Python deps [BLOCKING]
         # Baseline: 0 known CVEs after the Apr 2026 dep upgrade. A new CVE
         # in any pinned version fails the build, forcing a bump.
-        run: pip-audit -r requirements.txt --strict
+        # We also export the JSON report as an artefact for traceability.
+        run: |
+          pip-audit -r requirements.txt --strict
+          pip-audit -r requirements.txt -f json -o pip-audit-report.json || true
 
       - name: Gitleaks — secret scanning [BLOCKING]
         # Any secret matching .gitleaks.toml fails the build. Baseline:
@@ -345,7 +361,7 @@ jobs:
                     --error \
                     || true
 
-      - name: Trivy — filesystem CVE scan [advisory]
+      - name: Trivy — filesystem CVE scan [advisory, SARIF artefact]
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
@@ -354,6 +370,42 @@ jobs:
           severity: CRITICAL,HIGH
           ignore-unfixed: true
           exit-code: '0'
+          format: sarif
+          output: trivy-fs.sarif
+
+      - name: Trivy — also produce a human-readable JSON report
+        uses: aquasecurity/trivy-action@master
+        continue-on-error: true
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          format: json
+          output: trivy-fs.json
+          exit-code: '0'
+
+      - name: Bandit — JSON report (artefact)
+        run: bandit -r backend/ -ll --skip B101,B104 -f json -o bandit-report.json || true
+
+      - name: Upload security reports (Bandit JSON + Trivy SARIF/JSON + pip-audit)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports-${{ github.sha }}
+          path: |
+            bandit-report.json
+            trivy-fs.sarif
+            trivy-fs.json
+            pip-audit-report.json
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Upload Trivy SARIF to GitHub code scanning (advisory)
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        continue-on-error: true
+        with:
+          sarif_file: trivy-fs.sarif
 
       # --- SBOM artefacts (mandatory, retained 30 d) ---------------------
 
