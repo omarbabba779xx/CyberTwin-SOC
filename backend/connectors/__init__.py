@@ -8,8 +8,8 @@ Today this module ships:
   - `BaseConnector`               common contract
   - Five "Connector" interfaces   one per category (SIEM/SOAR/EDR/ITSM/TI)
   - Concrete `MockConnector`      offline-friendly, deterministic
-  - Stubs (raise NotImplementedError) for Splunk / Sentinel / Elastic /
-    Jira / MISP / OpenCTI - so the registry is shipped wired and ready
+  - Production integrations: Splunk, TheHive, **Sentinel, Jira, MISP**
+  - Remaining stubs (Elastic / OpenCTI / …) raising until implemented
     to be filled with real API calls when credentials are available.
 
 The registry exposes `get_connector(kind, name)` so endpoints can route
@@ -22,7 +22,8 @@ from .base import (
 )
 from .registry import register, get_connector, list_connectors
 from . import mock, stubs   # noqa: F401  -- side-effect: populate registry
-from . import thehive, splunk   # noqa: F401  -- side-effect: register production connectors
+from . import thehive, splunk   # noqa: F401  -- register SIEM/SOAR
+from . import sentinel, jira, misp   # noqa: F401  -- Sentinel / Jira / MISP
 
 __all__ = [
     "BaseConnector", "SIEMConnector", "SOARConnector", "EDRConnector",

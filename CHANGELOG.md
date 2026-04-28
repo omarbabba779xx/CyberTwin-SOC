@@ -5,6 +5,27 @@ All notable changes to CyberTwin SOC are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Connectors**: Microsoft Sentinel (Log Analytics query API), Jira Cloud (REST v3), MISP (`restSearch`) — `mock_mode` + tests; registry now lists **five** hardened integrations alongside Splunk + TheHive.
+- **Dependabot**: `.github/dependabot.yml` for pip, npm (`frontend/`), and GitHub Actions.
+- **Playwright**: `frontend/e2e/` smoke suite + `playwright-e2e` CI job (Chromium).
+- **Soar module tests**: `tests/test_soar_clients.py` for Cortex/TheHive helper clients.
+
+### Changed
+
+- **Coverage gate**: `--cov-fail-under=71` in CI (**goal remains 80 %+** roadmap).
+- **Pins**: `authlib==1.6.11`, `cryptography==46.0.7` (pip-audit clean).
+- **Frontend**: remove duplicate `executive` route key blocking production `vite build` (required for Playwright preview).
+
+### Documentation
+
+- `docs/demo/README.md` — recruiter GIF storyboard placeholder.
+
+---
+
 ## [3.1.1] — 2026-04-28
 
 ### Quality & CI

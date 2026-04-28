@@ -10,8 +10,7 @@ from __future__ import annotations
 from typing import Any
 
 from .base import (
-    ConnectorResult, EDRConnector, ITSMConnector, SIEMConnector,
-    TIConnector,
+    ConnectorResult, EDRConnector, ITSMConnector, SIEMConnector, TIConnector,
 )
 from .registry import register
 
@@ -27,21 +26,6 @@ def _todo(name: str):
 # ---- SIEM stubs ------------------------------------------------------------
 # Note: Splunk is now implemented in backend/connectors/splunk.py.
 # Stubs below remain as scaffolding for the pending integrations.
-
-@register
-class SentinelSIEM(SIEMConnector):
-    name = "sentinel"
-    _is_stub = True
-
-    def check_connection(self) -> ConnectorResult:
-        _todo(self.name)
-
-    def search(self, query: str, *, limit: int = 100) -> ConnectorResult:
-        _todo(self.name)
-
-    def push_alert(self, alert: dict[str, Any]) -> ConnectorResult:
-        _todo(self.name)
-
 
 @register
 class ElasticSIEM(SIEMConnector):
@@ -82,27 +66,11 @@ class CrowdStrikeEDR(EDRConnector):
 
 
 @register
-class JiraITSM(ITSMConnector):
-    name = "jira"
-    _is_stub = True
-    def check_connection(self) -> ConnectorResult: _todo(self.name)
-    def create_ticket(self, **kw): _todo(self.name)
-
-
-@register
 class ServiceNowITSM(ITSMConnector):
     name = "servicenow"
     _is_stub = True
     def check_connection(self) -> ConnectorResult: _todo(self.name)
     def create_ticket(self, **kw): _todo(self.name)
-
-
-@register
-class MISPTIConnector(TIConnector):
-    name = "misp"
-    _is_stub = True
-    def check_connection(self) -> ConnectorResult: _todo(self.name)
-    def lookup(self, *a, **kw): _todo(self.name)
 
 
 @register

@@ -142,11 +142,9 @@ class TestConnectors:
 
     def test_stub_raises_not_implemented(self):
         from backend.connectors import get_connector
-        # `splunk` and `thehive` are now production-grade implementations
-        # (see backend/connectors/splunk.py + thehive.py). The remaining
-        # stubs cover sentinel/elastic/jira/servicenow/misp/opencti.
+        # Production: splunk, sentinel, thehive, jira, misp. Stubs: elastic, …
         with pytest.raises(NotImplementedError):
-            get_connector("siem", "sentinel").check_connection()
+            get_connector("siem", "elastic").check_connection()
 
     def test_unknown_connector_raises(self):
         from backend.connectors import get_connector
@@ -176,8 +174,8 @@ class TestConnectorAPI:
         assert body["success"] is True
 
     def test_check_stub_returns_501(self, client, auth_headers):
-        # sentinel is still a stub; splunk is now production-grade.
-        r = client.get("/api/connectors/siem/sentinel/check", headers=auth_headers)
+        # elastic remains a stub (NotImplementedError → HTTP 501).
+        r = client.get("/api/connectors/siem/elastic/check", headers=auth_headers)
         assert r.status_code == 501
 
     def test_check_unknown_returns_404(self, client, auth_headers):

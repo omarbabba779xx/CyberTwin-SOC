@@ -162,7 +162,6 @@ export default function App() {
     suppressions:  <SuppressionsPage                              token={token} />,
     ingestion:     <Ingestion                                     token={token} />,
     executive:     <Executive                                     token={token} />,
-    executive:     <Executive />,
   }
 
   return (

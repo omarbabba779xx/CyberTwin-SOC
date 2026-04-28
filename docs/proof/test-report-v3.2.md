@@ -10,9 +10,10 @@
 
 | Surface | Count | Failures | Skipped | Tool |
 |---|---:|---:|---:|---|
-| Backend (Python) | **836** | 0 | 3 (env-conditional) | `pytest tests/` |
+| Backend (Python) | **855** | 0 | 3 (env-conditional) | `pytest tests/` |
 | Frontend (React) | **10** | 0 | 0 | `npx vitest --run` |
-| **Total (backend + frontend)** | **846** | **0** | 3 skips (backend pytest only) | — |
+| E2E (Playwright) | **2** | 0 | 0 | `cd frontend && npm run test:e2e` |
+| **Total** | **867** | **0** | 3 skips (backend pytest only) | — |
 
 ## Reproduce
 

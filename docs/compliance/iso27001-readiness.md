@@ -112,7 +112,7 @@ This document evaluates CyberTwin SOC's alignment with ISO/IEC 27001:2022 Annex 
 | A.8.26 | Application security requirements | Partial | OWASP headers; no formal requirements specification |
 | A.8.27 | Secure system architecture | Implemented | Layered architecture, ORM, middleware stack |
 | A.8.28 | Secure coding | Implemented | Bandit, flake8, type hints, input validation |
-| A.8.29 | Security testing in development | Implemented | 836 tests including 30+ security-focused tests |
+| A.8.29 | Security testing in development | Implemented | 855+ pytest including 30+ security-focused tests |
 | A.8.30 | Outsourced development | N/A | Not outsourced |
 | A.8.31 | Separation of environments | Partial | Docker profiles; no formal env separation policy |
 | A.8.33 | Test information | Partial | Synthetic test data; no formal test data policy |

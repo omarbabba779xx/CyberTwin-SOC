@@ -1,4 +1,4 @@
-# Connectors Validation Report (TheHive + Splunk)
+# Connectors Validation Report (TheHive · Splunk · Sentinel · Jira · MISP)
 
 **Commit**: `224b757`
 **Date**: 2026-04-28
@@ -129,18 +129,32 @@ hive = get_connector(
 print(hive.health())
 ```
 
+## Microsoft Sentinel (`siem`, `sentinel`)
+
+| Concern | Notes |
+|---|---|
+| Test file | [`tests/test_connector_sentinel.py`](../../tests/test_connector_sentinel.py) |
+| API | `POST /v1/workspaces/{wid}/query` (Log Analytics) |
+| `push_alert` | Stubbed honesty message — incidents usually flow via Sentinel rules / Graph APIs |
+
+## Jira (`itsm`, `jira`)
+
+| Concern | Notes |
+|---|---|
+| Test file | [`tests/test_connector_jira.py`](../../tests/test_connector_jira.py) |
+| Auth | Email + API token as Basic (`base64(email:token)`) |
+| API | REST v3 `POST /rest/api/3/issue` with Atlassian document-format description |
+
+## MISP (`ti`, `misp`)
+
+| Concern | Notes |
+|---|---|
+| Test file | [`tests/test_connector_misp.py`](../../tests/test_connector_misp.py) |
+| REST | Primary `POST /attributes/restSearch` for lookups |
+
 ## Limits / next steps
 
-- TheHive — webhook callbacks (incoming alerts from TheHive into
-  CyberTwin) are NOT yet implemented.
-- Splunk — saved-search export and KV-store integration are NOT yet
-  implemented; only HEC-style alert push and search REST API are.
-- Real-cluster integration tests run nightly only when the
-  `THEHIVE_INTEGRATION_URL` / `SPLUNK_INTEGRATION_URL` secrets are
-  populated. The CI matrix exposed in this repo runs only the
-  mock-mode tests, which exercise every code path *except* the
-  socket-level send/receive.
-- Sentinel, Elastic, Jira, ServiceNow, MISP, OpenCTI remain
-  registered as stubs (raise `NotImplementedError`) — see
-  `backend/connectors/stubs.py`. They are next in the production
-  pipeline.
+- TheHive — webhook callbacks into CyberTwin are still NOT implemented.
+- Splunk — saved-search exports / KV-store not implemented.
+- **Elastic, ServiceNow, OpenCTI**, … remain stubs — see [`backend/connectors/stubs.py`](../../backend/connectors/stubs.py).
+- Real integrations against customer clusters still require secrets + nightly jobs.

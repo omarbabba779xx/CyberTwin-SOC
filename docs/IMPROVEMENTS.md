@@ -76,9 +76,9 @@ Analysts often work in air-gapped environments. Cache the dashboards for read-on
 ## Tier B — Nice quality bumps
 
 ### 13. Playwright E2E journeys + README walkthrough GIF (~90 s)
-**Value: 5/5 · Effort: 2 weeks**
+**Value: 5/5 · Effort: 2 weeks · Progress: SPA smoke landed (`frontend/e2e/`, CI `playwright-e2e`)**
 
-Vitest + RTL only mounts components. Ship headless journeys (login → launch simulation → triage alerts → open/close case → optional PDF) and anchor a recruiter-friendly GIF/Loom beside the Architecture section once stable in CI (`npx playwright test` gated like backend).
+Vitest + RTL mount components — **done:** Chromium smoke loads `/` + `#root`. **Next:** full journeys (login → simulation → SOC case → export) + recorded GIF (`docs/demo/README.md` storyboard).
 
 ### 14. Replace SQLite-backed audit log with append-only WORM
 **Value: 3/5 · Effort: 1 week**

@@ -1,4 +1,4 @@
-<div align="center">
+
 
 # 🛡️ CyberTwin SOC
 
@@ -6,61 +6,66 @@
 
 *A digital twin of a modern SOC.* **Architecture and CI are production-oriented** (Compose, Helm, OIDC/SSO, audit chain, multi-tenant isolation, observability gates) — **feature maturity stays advanced POC / pilot‑grade**, not turnkey enterprise product: see **[Scope & honesty](#scope-honesty--limits)**. Emulates adversary tradecraft, ingests OCSF telemetry, runs 46 rules + Sigma, case workflow, AI analyst / ML anomaly, SOAR adapters, AES‑256‑GCM, Helm/K8s. SOC 2 & ISO 27001 **readiness** docs — not audited certification statements.
 
-<table>
-<tr><td align="center" width="100%">
+
+|     |
+| --- |
+|     |
+
 
 🆕 **v3.2.0 — Enterprise Readiness**
 
 🏢 **Real multi-tenancy** (JWT tenant_id · TenantScopeMiddleware · TenantRepository) · 🔄 **Arq worker** (Redis broker, separate container) · 📡 **Redis Streams** ingestion buffer · 🔐 **OIDC/SSO** (Entra ID, Okta, Keycloak) · 🔒 **AES-256-GCM** field encryption · 🧩 **Session governance** · 📋 **Tamper-evident audit** (SHA-256 chain) · 📊 **OpenTelemetry** traces · 🎯 **Dynamic RBAC** per tenant · ⚡ **Circuit breaker** on connectors · 📈 **Executive dashboard** · 📝 **SOC 2 / ISO 27001** readiness docs
 
-</td></tr>
-</table>
 
-[![CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
-[![Backend tests](https://img.shields.io/badge/backend%20pytest-836-passing-brightgreen)](#-quality--testing)
-[![Automated tests](https://img.shields.io/badge/automated%20total-846-success)](#-quality--testing)
-[![Coverage](https://img.shields.io/badge/coverage-69.8%25-success)](#-quality--testing)
-[![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://python.org)
-[![React](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
-[![CVE](https://img.shields.io/badge/known%20CVEs-0-brightgreen)](#-security-posture)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![MITRE](https://img.shields.io/badge/MITRE%20ATT%26CK-622%20techniques-red)](https://attack.mitre.org/)
-[![OCSF](https://img.shields.io/badge/OCSF-1.0-blueviolet)](https://schema.ocsf.io/)
-[![Helm](https://img.shields.io/badge/Helm-chart%20linted-0F1689?logo=helm&logoColor=white)](deploy/helm)
-[![SBOM](https://img.shields.io/badge/SBOM-CycloneDX-2596be)](https://cyclonedx.org/)
 
-[**🚀 Quick start**](#-quick-start) · [**🏗 Architecture**](#-architecture) · [**🚀 Features**](#-features) · [**🔐 Security**](#-security-posture) · [**📚 Documentation**](#-documentation) · [**🗺 Roadmap**](#-roadmap)
+[CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
+[Backend tests](#-quality--testing)
+[Automated tests](#-quality--testing)
+[Coverage](#-quality--testing)
+[Python](https://python.org)
+[React](https://react.dev)
+[CVE](#-security-posture)
+[License](LICENSE)
+[MITRE](https://attack.mitre.org/)
+[OCSF](https://schema.ocsf.io/)
+[Helm](deploy/helm)
+[SBOM](https://cyclonedx.org/)
 
-</div>
+**[🚀 Quick start](#-quick-start)** · **[🏗 Architecture](#-architecture)** · **[🚀 Features](#-features)** · **[🔐 Security](#-security-posture)** · **[📚 Documentation](#-documentation)** · **[🗺 Roadmap](#-roadmap)**
+
+
 
 ---
 
 ## 📖 Table of contents
 
-<table>
-<tr>
-<td width="33%" valign="top">
+
+|     |
+| --- |
+|     |
+
 
 **🎯 Overview**
+
 - [Why CyberTwin SOC?](#-why-cybertwin-soc)
 - [What's new in v3.2.0](#-whats-new-in-v320)
 - [Project at a glance](#-project-at-a-glance)
 - [Validation status](#-validation-status)
 
-</td>
-<td width="33%" valign="top">
+
 
 **🏗 Engineering**
+
 - [Architecture](#-architecture)
 - [Features](#-features)
 - [Live OCSF ingestion](#-live-telemetry-ingestion-ocsf)
 - [Detection Coverage Center](#-detection-coverage-center)
 - [SOC workflow](#-soc-workflow)
 
-</td>
-<td width="33%" valign="top">
+
 
 **🔐 Operations**
+
 - [Quick start](#-quick-start)
 - [Security posture](#-security-posture)
 - [CI/CD pipeline](#-cicd-pipeline)
@@ -68,9 +73,7 @@
 - [Production deployment](#-production-deployment)
 - [Quality & testing](#-quality--testing)
 
-</td>
-</tr>
-</table>
+
 
 ---
 
@@ -100,30 +103,30 @@ flowchart LR
     class D mes
 ```
 
+
+
 It answers, in concrete numbers — not bullet points — questions every CISO and detection engineer eventually asks:
 
-| Question | Where the answer lives |
-|----------|------------------------|
-| *Of the 622 published ATT&CK techniques, which can my SOC actually detect today?* | **Detection Coverage Center** — 8 honest states (Validated / Failed / Untested / Rule-only / Not-covered / …) |
-| *What's the false-positive rate of my detection rules in the last 30 days?* | **SOC Workflow** — analyst feedback loop on every alert |
-| *If a Solorigate-style supply-chain attack hits us today, will we catch it before exfiltration?* | Run `scenario apt_campaign` and read the report |
-| *Are my log sources sufficient for detecting credential dumping?* | `required_logs` per technique × `available_logs` per host group |
-| *How fast can analysts triage? What's the SLA breach rate?* | SOC cases store SLA, status transitions and time-to-close |
-| *Which detection-engineer change broke detection?* | Versioned rule store + benchmark comparison |
+
+| Question                                                                                         | Where the answer lives                                                                                        |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| *Of the 622 published ATT&CK techniques, which can my SOC actually detect today?*                | **Detection Coverage Center** — 8 honest states (Validated / Failed / Untested / Rule-only / Not-covered / …) |
+| *What's the false-positive rate of my detection rules in the last 30 days?*                      | **SOC Workflow** — analyst feedback loop on every alert                                                       |
+| *If a Solorigate-style supply-chain attack hits us today, will we catch it before exfiltration?* | Run `scenario apt_campaign` and read the report                                                               |
+| *Are my log sources sufficient for detecting credential dumping?*                                | `required_logs` per technique × `available_logs` per host group                                               |
+| *How fast can analysts triage? What's the SLA breach rate?*                                      | SOC cases store SLA, status transitions and time-to-close                                                     |
+| *Which detection-engineer change broke detection?*                                               | Versioned rule store + benchmark comparison                                                                   |
+
 
 ---
 
 ## 🆕 What's new in v3.2.0
 
-<table>
-<tr>
-<th width="25%">🏢 Multi-tenancy & Auth</th>
-<th width="25%">🔐 Security & Compliance</th>
-<th width="25%">📊 Observability & Ops</th>
-<th width="25%">⚡ Enterprise Features</th>
-</tr>
-<tr valign="top">
-<td>
+
+| 🏢 Multi-tenancy & Auth | 🔐 Security & Compliance | 📊 Observability & Ops | ⚡ Enterprise Features |
+| ----------------------- | ------------------------ | ---------------------- | --------------------- |
+|                         |                          |                        |                       |
+
 
 - `tenant_id` in **JWT** payload
 - **TenantScopeMiddleware**
@@ -133,8 +136,7 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 - **Session governance** (concurrent limit)
 - ORM-first DB (SQLite dev fallback)
 
-</td>
-<td>
+
 
 - **Tamper-evident audit** (SHA-256 chain)
 - **AES-256-GCM** field encryption (per-tenant HKDF)
@@ -144,8 +146,7 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 - **ISO 27001:2022** Annex A assessment
 - **GDPR** data processing documentation
 
-</td>
-<td>
+
 
 - **OpenTelemetry** traces (OTLP exporter)
 - FastAPI + SQLAlchemy + Redis instrumentation
@@ -154,8 +155,7 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 - **Frontend test suite** (Vitest + RTL)
 - **Real Arq worker** (Redis broker, separate container)
 
-</td>
-<td>
+
 
 - **Dynamic RBAC** per tenant in DB
 - **Circuit breaker** on connectors
@@ -165,29 +165,28 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 - Complete **health checks** (per-component latency)
 - **Executive dashboard** (MTTD/MTTR/SLA KPIs)
 
-</td>
-</tr>
-</table>
 
-<details>
-<summary>v3.1.0 — Hardening release (click to expand)</summary>
+
+v3.1.0 — Hardening release (click to expand)
 
 - JWT **jti denylist** via Redis · **Refresh token rotation** (1h / 7d) · CORS strict · **nginx-unprivileged**
 - `main.py` **1561 → 135 LoC** · **14 router modules** · **Arq-shaped jobs** + `/api/tasks`
 - **SQLAlchemy 2.0** ORM · **Alembic** · **PostgreSQL CI smoke** · 10 ORM models · 19 indexes
 - **30+ AI security tests** · **Checkov** IaC · **Lighthouse CI** · `quality-gate` (9 jobs)
 
-</details>
+
 
 ### 📦 v3.2.0 — Enterprise Readiness (5 phases, 22 deliverables)
 
-| Phase | Title | Key Deliverables |
-|------:|-------|-----------------|
-| **1** | Operational Reliability | Real **Arq worker** (Redis broker + separate container) · **Redis Streams** buffer (persistent 50k events) · Unified **error envelope** · Complete **health checks** (Redis PING, PG, per-component latency) |
-| **2** | Multi-tenancy E2E | `tenant_id` in **JWT** · `TenantScopeMiddleware` · `TenantRepository` pattern · ORM-first database (SQLite fallback for dev) · Rate-limit by **tenant:user** |
-| **3** | Security & Compliance | **Tamper-evident audit** (SHA-256 chain + PostgreSQL) · **OIDC/SSO** (Entra ID, Okta, Keycloak) · **Session governance** (concurrent limit + force-logout) · FK constraints with CASCADE · **Data retention** + GDPR docs |
-| **4** | Observability & Ops | **OpenTelemetry** traces (OTLP + FastAPI/SQLAlchemy/Redis instrumentation) · `X-API-Version: v1` header · **Backup/DR** script + runbook · **Frontend test suite** (Vitest + RTL) |
-| **5** | Enterprise Differentiators | **Dynamic RBAC** per tenant in DB · **Circuit breaker** on connectors · **AES-256-GCM** field encryption (per-tenant HKDF) · **Executive dashboard** (MTTD/MTTR/SLA KPIs) · **SOC 2 / ISO 27001** readiness docs |
+
+| Phase | Title                      | Key Deliverables                                                                                                                                                                                                          |
+| ----- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | Operational Reliability    | Real **Arq worker** (Redis broker + separate container) · **Redis Streams** buffer (persistent 50k events) · Unified **error envelope** · Complete **health checks** (Redis PING, PG, per-component latency)              |
+| **2** | Multi-tenancy E2E          | `tenant_id` in **JWT** · `TenantScopeMiddleware` · `TenantRepository` pattern · ORM-first database (SQLite fallback for dev) · Rate-limit by **tenant:user**                                                              |
+| **3** | Security & Compliance      | **Tamper-evident audit** (SHA-256 chain + PostgreSQL) · **OIDC/SSO** (Entra ID, Okta, Keycloak) · **Session governance** (concurrent limit + force-logout) · FK constraints with CASCADE · **Data retention** + GDPR docs |
+| **4** | Observability & Ops        | **OpenTelemetry** traces (OTLP + FastAPI/SQLAlchemy/Redis instrumentation) · `X-API-Version: v1` header · **Backup/DR** script + runbook · **Frontend test suite** (Vitest + RTL)                                         |
+| **5** | Enterprise Differentiators | **Dynamic RBAC** per tenant in DB · **Circuit breaker** on connectors · **AES-256-GCM** field encryption (per-tenant HKDF) · **Executive dashboard** (MTTD/MTTR/SLA KPIs) · **SOC 2 / ISO 27001** readiness docs          |
+
 
 ```mermaid
 gantt
@@ -215,6 +214,8 @@ gantt
         Phase 5 — RBAC + encryption + exec dash :done, d5, 2026-04-28, 1d
 ```
 
+
+
 ---
 
 ## 📊 Project at a glance
@@ -233,7 +234,7 @@ flowchart TB
     ROOT --> BE & FE & DET & SOC & OPS & ENT
 
     BE --- BE1["Python 3.12<br/>18+ packages · Arq worker"]
-    BE --- BE2["80+ endpoints · 836 pytest · 846 total QA ✅"]
+    BE --- BE2["80+ endpoints · 855 pytest · 867 automated QA ✅"]
 
     FE --- FE1["React 18 + Vite<br/>27 pages · Vitest"]
     FE --- FE2["Recharts + ReactFlow"]
@@ -262,20 +263,24 @@ flowchart TB
     class BE1,BE2,FE1,FE2,DET1,DET2,DET3,SOC1,SOC2,OPS1,OPS2,OPS3,ENT1,ENT2,ENT3 item
 ```
 
-| Metric                              |   Count | Notes                                                                     |
-|-------------------------------------|--------:|---------------------------------------------------------------------------|
-| **Backend Python**                  |  18 000+ | 20+ packages — `api`, `detection`, `soc`, `ingestion`, `db`, `auth`, `crypto`, `middleware`, `observability`, … |
-| **Frontend React/JSX**              |  13 000+ | 27 pages (incl. Executive dashboard), Vitest test suite, Recharts         |
-| **Unit & integration tests**        |    846  | Backend: pytest (836) · Frontend: Vitest + RTL (10 across 4 suites) · see [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
-| **REST + WebSocket endpoints**      |     80+ | Rate-limited per tenant:user, RBAC-scoped, `X-API-Version: v1` header    |
-| **MITRE ATT&CK techniques**         |     622 | Full Enterprise matrix · 14 tactics · TAXII 2.1 sync                      |
-| **Built-in detection rules**        |      46 | 14 platforms · severity-tiered · runtime Sigma upload                     |
-| **Attack scenarios**                |      11 | Solorigate, ProxyShell, Log4Shell, Insider, Ransomware, …                 |
-| **RBAC roles / scoped permissions** | 12 / 30+ | 3 legacy + 9 enterprise + **dynamic per-tenant roles in DB**              |
-| **Connectors (extensible)**         |  15 (2 production-grade) | TheHive + Splunk fully implemented (REST, retry, breaker, pagination, mock_mode) — 13 stubs with the same hardening surface |
-| **Known CVEs in dependencies**      |       0 | Verified by `pip-audit --strict` and `npm audit`                          |
-| **Database**                        |  11+ tables | Alembic migrations `0001`–`0005` · FK constraints · ORM-first (SQLite dev fallback) |
-| **Enterprise features**             |   22   | Multi-tenancy · OIDC/SSO · AES-256-GCM encryption · OTel · session governance · audit chain · backup/DR |
+
+
+
+| Metric                              | Count                       | Notes                                                                                                                                                          |
+| ----------------------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Backend Python**                  | 18 000+                     | 20+ packages — `api`, `detection`, `soc`, `ingestion`, `db`, `auth`, `crypto`, `middleware`, `observability`, …                                                |
+| **Frontend React/JSX**              | 13 000+                     | 27 pages (incl. Executive dashboard), Vitest test suite, Recharts                                                                                              |
+| **Unit & integration tests**        | 867                         | Backend: pytest (855) · Vitest RTL (10) · Playwright smoke (2) · see `[docs/proof/test-report-v3.2.md](docs/proof/test-report-v3.2.md)`                        |
+| **REST + WebSocket endpoints**      | 80+                         | Rate-limited per tenant:user, RBAC-scoped, `X-API-Version: v1` header                                                                                          |
+| **MITRE ATT&CK techniques**         | 622                         | Full Enterprise matrix · 14 tactics · TAXII 2.1 sync                                                                                                           |
+| **Built-in detection rules**        | 46                          | 14 platforms · severity-tiered · runtime Sigma upload                                                                                                          |
+| **Attack scenarios**                | 11                          | Solorigate, ProxyShell, Log4Shell, Insider, Ransomware, …                                                                                                      |
+| **RBAC roles / scoped permissions** | 12 / 30+                    | 3 legacy + 9 enterprise + **dynamic per-tenant roles in DB**                                                                                                   |
+| **Connectors (extensible)**         | 15 (**5** production-grade) | Splunk, Sentinel (Log Analytics), TheHive, **Jira**, **MISP** — REST + retry + breaker + `mock_mode` tests; 10 remaining stubs share the same hardened surface |
+| **Known CVEs in dependencies**      | 0                           | Verified by `pip-audit --strict` and `npm audit`                                                                                                               |
+| **Database**                        | 11+ tables                  | Alembic migrations `0001`–`0005` · FK constraints · ORM-first (SQLite dev fallback)                                                                            |
+| **Enterprise features**             | 22                          | Multi-tenancy · OIDC/SSO · AES-256-GCM encryption · OTel · session governance · audit chain · backup/DR                                                        |
+
 
 ---
 
@@ -283,41 +288,46 @@ flowchart TB
 
 CyberTwin SOC is built for teams that want a **credible SOC twin** backed by reproducible artefacts — **not** a turnkey commercial SIEM substitute. Useful framing:
 
-| Topic | Straight answer |
-|------|-----------------|
-| **Test counts** | **836** `pytest` + **10** Vitest (**846** total). Backend badge = pytest only — see [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md). |
-| **MITRE rule-mapped** | **40 / 622 (6.43 %)** ([`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)). Honest for a POC benchmark; far from exhaustive enterprise detection coverage. |
-| **Frontend quality** | **Vitest RTL smoke suites** (`frontend-tests-report`). **Playwright/E2E** on login → simulation → case lifecycle is backlog ([`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)). |
-| **Connectors** | **15** surface areas; **2** fully implemented & tested integrations (Splunk, TheHive) — **13** hardened stubs exposing the same breaker/retry/error surface ([Connector framework diagram](#connector-framework)). |
-| **Demo visuals** | **No** official walk-through GIF/video yet — high-value recruiter asset; tracked with E2E work. |
-| **Source layout** | Key entry points (**e.g.** [`backend/api/main.py`](backend/api/main.py), [`backend/detection/engine.py`](backend/detection/engine.py)) are normal PEP 8 modules. If GitHub “raw” or diff looks like one mega-line, reopen the formatted view or clone locally — the repo itself is maintainability-oriented. |
+
+| Topic                 | Straight answer                                                                                                                                                                                                                                                                                              |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Test counts**       | **867** automated runs (**855** `pytest` + **10** Vitest + **2** Playwright). Authoritative proof: `[docs/proof/test-report-v3.2.md](docs/proof/test-report-v3.2.md)`.                                                                                                                                       |
+| **MITRE rule-mapped** | **40 / 622 (6.43 %)** (`[docs/proof/mitre-coverage-snapshot.md](docs/proof/mitre-coverage-snapshot.md)`). Honest for a POC benchmark; far from exhaustive enterprise detection coverage.                                                                                                                     |
+| **Frontend quality**  | Vitest RTL (`frontend-tests-report`) + Playwright `**frontend/e2e/`** smoke in CI — extended login→case journeys still backlog (`[docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md)`).                                                                                                                             |
+| **Connectors**        | **15** surface areas; **2** fully implemented & tested integrations (Splunk, TheHive) — **13** hardened stubs exposing the same breaker/retry/error surface ([Connector framework diagram](#connector-framework)).                                                                                           |
+| **Demo visuals**      | **No** binary GIF in-repo yet — storyboard lives in `[docs/demo/README.md](docs/demo/README.md)`.                                                                                                                                                                                                            |
+| **Source layout**     | Key entry points (**e.g.** `[backend/api/main.py](backend/api/main.py)`, `[backend/detection/engine.py](backend/detection/engine.py)`) are normal PEP 8 modules. If GitHub “raw” or diff looks like one mega-line, reopen the formatted view or clone locally — the repo itself is maintainability-oriented. |
+
 
 ---
 
 ## ✅ Validation status
 
-> **Honesty rule** — every claim in this README has a corresponding artefact in [`docs/proof/`](docs/proof/). When a number changes, both the README and the proof file are updated in the same commit.
+> **Honesty rule** — every claim in this README has a corresponding artefact in `[docs/proof/](docs/proof/)`. When a number changes, both the README and the proof file are updated in the same commit.
 
-| Area                      | Status                                                | Evidence |
-|---------------------------|-------------------------------------------------------|----------|
-| **Backend tests**         | ✅ 836 passing                                          | [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
-| **Frontend tests**        | ✅ 10 passing (Vitest + RTL smoke)                     | [`docs/proof/frontend-tests-report.md`](docs/proof/frontend-tests-report.md) |
-| **Combined automated QA** | ✅ **846** (836 + 10)                                  | Same as [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) summary row |
-| **Code coverage**         | ✅ 69.8 % (gate: ≥ 60 %)                               | `pytest --cov=backend` |
-| **Frontend build**        | ✅ Passing                                             | GitHub Actions `Frontend Build` job |
-| **Docker build**          | ✅ Retry-loop healthcheck on `/api/health` & `/health` | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
-| **Helm chart**            | ✅ Lint + render in CI                                 | `helm-lint` job + uploaded `helm-rendered-{sha}` artefact |
-| **Compose profiles**      | ✅ default + `soar`                                    | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
-| **Code quality**          | ✅ flake8 = 0 errors                                   | `Code Quality` CI job |
-| **Security gates**        | ✅ `pip-audit`, `npm audit`, `gitleaks` — **blocking** | [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md) |
-| **Known CVEs**            | ✅ **0**                                               | [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md) |
-| **MITRE coverage**        | 📊 **40 / 622** rule-mapped (6.43 %) — honest         | [`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md) |
-| **Pipeline benchmarks**   | 📊 3 scenarios × 3 runs · 4–13 s end-to-end           | [`docs/proof/benchmark-results.md`](docs/proof/benchmark-results.md) |
-| **Audit report (deep)**   | 📋 7 domains scored · 4 critical issues fixed         | [`docs/proof/audit-report.md`](docs/proof/audit-report.md) |
-| **SOC 2 readiness**       | 📋 CC1–CC9 mapped · gap analysis                      | [`docs/compliance/soc2-readiness.md`](docs/compliance/soc2-readiness.md) |
-| **ISO 27001 readiness**   | 📋 Annex A control mapping                            | [`docs/compliance/iso27001-readiness.md`](docs/compliance/iso27001-readiness.md) |
-| **GDPR data processing**  | 📋 Data categories, retention, rights                 | [`docs/compliance/gdpr-data-processing.md`](docs/compliance/gdpr-data-processing.md) |
-| **Backup/DR runbook**     | 📋 PostgreSQL + Redis + verification                  | [`docs/operations/backup-recovery.md`](docs/operations/backup-recovery.md) |
+
+| Area                      | Status                                                | Evidence                                                                             |
+| ------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| **Backend tests**         | ✅ 855 passing                                         | `[docs/proof/test-report-v3.2.md](docs/proof/test-report-v3.2.md)`                   |
+| **Frontend tests**        | ✅ 10 passing (Vitest + RTL smoke)                     | `[docs/proof/frontend-tests-report.md](docs/proof/frontend-tests-report.md)`         |
+| **Playwright E2E**        | ✅ 2 smoke (Chromium)                                  | `[frontend/e2e/](frontend/e2e/)`                                                     |
+| **Combined automated QA** | ✅ **867** (855 + 10 + 2)                              | Proof files above                                                                    |
+| **Code coverage**         | ✅ ~72 % (gate: ≥ 72 %, **goal 80 %+**)                | `pytest --cov=backend --cov-fail-under=72`                                           |
+| **Frontend build**        | ✅ Passing                                             | GitHub Actions `Frontend Build` job                                                  |
+| **Docker build**          | ✅ Retry-loop healthcheck on `/api/health` & `/health` | `[docs/proof/docker-validation.md](docs/proof/docker-validation.md)`                 |
+| **Helm chart**            | ✅ Lint + render in CI                                 | `helm-lint` job + uploaded `helm-rendered-{sha}` artefact                            |
+| **Compose profiles**      | ✅ default + `soar`                                    | `[docs/proof/docker-validation.md](docs/proof/docker-validation.md)`                 |
+| **Code quality**          | ✅ flake8 = 0 errors                                   | `Code Quality` CI job                                                                |
+| **Security gates**        | ✅ `pip-audit`, `npm audit`, `gitleaks` — **blocking** | `[docs/proof/security-scan-summary.md](docs/proof/security-scan-summary.md)`         |
+| **Known CVEs**            | ✅ **0**                                               | `[docs/proof/security-scan-summary.md](docs/proof/security-scan-summary.md)`         |
+| **MITRE coverage**        | 📊 **40 / 622** rule-mapped (6.43 %) — honest         | `[docs/proof/mitre-coverage-snapshot.md](docs/proof/mitre-coverage-snapshot.md)`     |
+| **Pipeline benchmarks**   | 📊 3 scenarios × 3 runs · 4–13 s end-to-end           | `[docs/proof/benchmark-results.md](docs/proof/benchmark-results.md)`                 |
+| **Audit report (deep)**   | 📋 7 domains scored · 4 critical issues fixed         | `[docs/proof/audit-report.md](docs/proof/audit-report.md)`                           |
+| **SOC 2 readiness**       | 📋 CC1–CC9 mapped · gap analysis                      | `[docs/compliance/soc2-readiness.md](docs/compliance/soc2-readiness.md)`             |
+| **ISO 27001 readiness**   | 📋 Annex A control mapping                            | `[docs/compliance/iso27001-readiness.md](docs/compliance/iso27001-readiness.md)`     |
+| **GDPR data processing**  | 📋 Data categories, retention, rights                 | `[docs/compliance/gdpr-data-processing.md](docs/compliance/gdpr-data-processing.md)` |
+| **Backup/DR runbook**     | 📋 PostgreSQL + Redis + verification                  | `[docs/operations/backup-recovery.md](docs/operations/backup-recovery.md)`           |
+
 
 Legend: ✅ green, continuously enforced · 📊 measured snapshot · 📋 narrative report · ⏳ work in progress.
 
@@ -403,6 +413,8 @@ flowchart TB
     class SOAR,TAXII,CONN ext
 ```
 
+
+
 ### 🔐 Token lifecycle (v3.2.0)
 
 ```mermaid
@@ -447,6 +459,8 @@ sequenceDiagram
     end
 ```
 
+
+
 ### End-to-end simulation pipeline
 
 ```mermaid
@@ -480,6 +494,8 @@ sequenceDiagram
     API-->>WS: progress · phase · alerts (live)
     API-->>U: 200 + report URL
 ```
+
+
 
 ### Live SOC ingestion (OCSF)
 
@@ -529,6 +545,8 @@ flowchart LR
     class B buf
     class R det
 ```
+
+
 
 ### Backend module dependency graph
 
@@ -588,17 +606,21 @@ flowchart TB
     class obs,rep,soar,conn ops
 ```
 
+
+
 ---
 
 ## 🚀 Features
 
 ### 🎭 Adversary simulation engine
+
 - **11 turn-key scenarios** — Solorigate, ProxyShell, Log4Shell, Insider, Lateral movement, Cryptominer, Watering Hole, Living-off-the-Land, Ransomware, Cloud Attack, DDoS Infrastructure
 - **28 baked-in attack techniques** with MITRE ATT&CK ID on every event
 - **Path-traversal-proof scenario builder** with strict id validation
 - **Realistic timeline generator** that interleaves benign user activity with adversarial actions
 
 ### 🔍 Multi-source detection engine
+
 - **46 built-in rules** — Windows EID, Sysmon, Linux audit, web access, DNS, network, AWS CloudTrail, Azure activity, Office 365
 - **Sigma loader** — upload `*.yml` rules at runtime, **ReDoS-hardened** (`re.escape` + `fullmatch`, 256 KB body cap)
 - **Severity tiering** + confidence weighting + tactic-diversity bonus
@@ -623,9 +645,12 @@ stateDiagram-v2
     note right of TESTED_FAILED: Regression (blocks merge)
 ```
 
+
+
 8 honest states (`NOT_COVERED`, `RULE_EXISTS`, `RULE_UNTESTED`, `TESTED_DETECTED`, `TESTED_FAILED`, `LOG_MISSING`, `MUTED`, `DEPRECATED`) with **time-to-detect**, **severity-weighted confidence**, and **per-tactic risk score** weighted toward Initial Access, Privilege Escalation and Exfiltration.
 
 ### 🤖 AI Analyst (LLM + deterministic fallback)
+
 - Ollama-compatible (Llama 3, Mistral, Qwen) with automatic fallback to a **fully deterministic NLG template**, so reports are always produced
 - **Evidence-first** narrative — every claim grounded on an alert ID or log timestamp
 - **Prompt-injection hardened** — `_sanitise()` redacts AWS/GCP/JWT/PEM keys, emails, passwords, credit cards, neutralises injection markers, hard-caps the prompt at 32 KB
@@ -633,6 +658,7 @@ stateDiagram-v2
 - **30+ adversarial tests** in `tests/test_ai_analyst.py` covering prompt-injection, PII redaction, APT attribution guard and IOC integrity
 
 ### 📈 ML anomaly detection & UEBA
+
 - IsolationForest baseline trained on benign telemetry
 - Per-user behavioural drift score
 - Configurable contamination rate; warm-start on retrain
@@ -662,18 +688,22 @@ flowchart LR
     class FP fp
 ```
 
+
+
 - PostgreSQL-backed case store (SQLite dev fallback) · status transitions · comments · evidence attachments · SLA hours per severity · FK constraints with CASCADE
 - Analyst feedback (`true_positive` / `false_positive`) feeds back into rule confidence
 - Scoped suppressions with TTL to silence known-noisy rules per host/user
 - **SQL-injection-hardened** UPDATE composer (column allowlist + identifier regex, double-belt defence)
 
 ### 🤝 SOAR integration
+
 - Optional `--profile soar` in docker-compose
 - **TheHive 5** — auto-create cases, attach observables
 - **Cortex 3** — run analyzers, enrich IOCs
 - Bidirectional webhook in/out
 
 ### 🧪 Compliance benchmarking
+
 - Maps every detection capability to **NIST CSF v1.1** sub-categories (`DE.AE-2`, `DE.CM-7`, …) and **CIS Controls v8** (CIS 8.11, CIS 13.6, …)
 - Generates a compliance score per simulation
 - Trend dashboard for posture improvement
@@ -721,22 +751,26 @@ flowchart TB
     class PA plat
 ```
 
-| Permission scope    | analyst | tier1 | senior | manager | det_eng | hunter | auditor | platform_admin |
-|---------------------|:-------:|:-----:|:------:|:-------:|:-------:|:------:|:-------:|:--------------:|
-| `simulation:run`    |   ✅    |       |   ✅   |   ✅    |    ✅   |   ✅   |         |       ✅       |
-| `case:read/write`   |   ✅    |   ✅  |   ✅   |   ✅    |    ✅   |   ✅   |   👁️    |       ✅       |
-| `case:assign`       |   ✅    |       |   ✅   |   ✅    |         |        |         |       ✅       |
-| `case:close`        |   ✅    |       |   ✅   |   ✅    |         |        |         |       ✅       |
-| `rule:create`       |         |       |        |         |    ✅   |        |         |       ✅       |
-| `rule:approve`      |         |       |   ✅   |   ✅    |    ✅   |        |         |       ✅       |
-| `rule:deploy`       |         |       |        |         |    ✅   |        |         |       ✅       |
-| `ingestion:write`   |   ✅    |       |   ✅   |   ✅    |         |   ✅   |         |       ✅       |
-| `ingestion:read`    |   ✅    |   ✅  |   ✅   |   ✅    |         |   ✅   |   👁️    |       ✅       |
-| `ai:evidence`       |   ✅    |   ✅  |   ✅   |   ✅    |         |   ✅   |         |       ✅       |
-| `suppression:create`|         |       |   ✅   |   ✅    |         |        |         |       ✅       |
-| `audit:read/export` |         |       |        |   ✅    |         |        |   ✅    |       ✅       |
 
-✅ = granted · 👁️ = read-only · empty = denied. Permissions are **scoped** (`resource:action`) — never blanket admin. Source: [`backend/auth/`](backend/auth/). Tenants can override with **dynamic roles** stored in `tenant_roles` DB table.
+
+
+| Permission scope     | analyst | tier1 | senior | manager | det_eng | hunter | auditor | platform_admin |
+| -------------------- | ------- | ----- | ------ | ------- | ------- | ------ | ------- | -------------- |
+| `simulation:run`     | ✅       |       | ✅      | ✅       | ✅       | ✅      |         | ✅              |
+| `case:read/write`    | ✅       | ✅     | ✅      | ✅       | ✅       | ✅      | 👁️     | ✅              |
+| `case:assign`        | ✅       |       | ✅      | ✅       |         |        |         | ✅              |
+| `case:close`         | ✅       |       | ✅      | ✅       |         |        |         | ✅              |
+| `rule:create`        |         |       |        |         | ✅       |        |         | ✅              |
+| `rule:approve`       |         |       | ✅      | ✅       | ✅       |        |         | ✅              |
+| `rule:deploy`        |         |       |        |         | ✅       |        |         | ✅              |
+| `ingestion:write`    | ✅       |       | ✅      | ✅       |         | ✅      |         | ✅              |
+| `ingestion:read`     | ✅       | ✅     | ✅      | ✅       |         | ✅      | 👁️     | ✅              |
+| `ai:evidence`        | ✅       | ✅     | ✅      | ✅       |         | ✅      |         | ✅              |
+| `suppression:create` |         |       | ✅      | ✅       |         |        |         | ✅              |
+| `audit:read/export`  |         |       |        | ✅       |         |        | ✅       | ✅              |
+
+
+✅ = granted · 👁️ = read-only · empty = denied. Permissions are **scoped** (`resource:action`) — never blanket admin. Source: `[backend/auth/](backend/auth/)`. Tenants can override with **dynamic roles** stored in `tenant_roles` DB table.
 
 ### 🔌 Connector framework
 
@@ -783,6 +817,8 @@ classDiagram
     class OpenCTIStub
 ```
 
+
+
 ---
 
 ## ⚡ Quick start
@@ -800,12 +836,14 @@ cp .env.example .env
 docker compose up -d
 ```
 
-| Service        | URL                                         | Notes                                        |
-|----------------|---------------------------------------------|----------------------------------------------|
-| Frontend       | <http://localhost>                          | nginx-unprivileged, port 80→8080             |
-| API + OpenAPI  | <http://localhost:8000/docs>                |                                              |
-| Prometheus     | <http://localhost:8000/api/metrics>         | restrict via `RESTRICT_INTERNAL_ENDPOINTS=true` |
-| Health (deep)  | <http://localhost:8000/api/health/deep>     | restrict via env var in prod                 |
+
+| Service       | URL                                                                            | Notes                                           |
+| ------------- | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| Frontend      | [http://localhost](http://localhost)                                           | nginx-unprivileged, port 80→8080                |
+| API + OpenAPI | [http://localhost:8000/docs](http://localhost:8000/docs)                       |                                                 |
+| Prometheus    | [http://localhost:8000/api/metrics](http://localhost:8000/api/metrics)         | restrict via `RESTRICT_INTERNAL_ENDPOINTS=true` |
+| Health (deep) | [http://localhost:8000/api/health/deep](http://localhost:8000/api/health/deep) | restrict via env var in prod                    |
+
 
 ### Option B — Local development
 
@@ -897,24 +935,26 @@ curl http://localhost:8000/api/coverage \
 
 > The number of validated techniques is conservative on purpose: **a rule is validated only when a scenario exercises the technique AND the rule fires.** This is the number a CISO actually wants — not the catalogue size with optimistic mapping.
 
-Latest snapshot: [`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)
+Latest snapshot: `[docs/proof/mitre-coverage-snapshot.md](docs/proof/mitre-coverage-snapshot.md)`
 
 ---
 
 ## 🎫 SOC workflow
 
-| Method  | Path                                  | Permission         | Purpose                                    |
-|--------:|---------------------------------------|--------------------|--------------------------------------------|
-| `POST`  | `/api/cases`                          | `case:write`       | Open a case from an alert                  |
-| `GET`   | `/api/cases`                          | `case:read`        | List with filters & SLA status             |
-| `GET`   | `/api/cases/{id}`                     | `case:read`        | Fetch full case (comments + evidence)      |
-| `PATCH` | `/api/cases/{id}`                     | `case:write`       | Update status/assignee (allowlist)         |
-| `POST`  | `/api/cases/{id}/comments`            | `case:write`       | Append a comment                           |
-| `POST`  | `/api/cases/{id}/evidence`            | `case:write`       | Attach evidence artefact                   |
-| `POST`  | `/api/cases/{id}/assign`              | `case:assign`      | Assign analyst                             |
-| `POST`  | `/api/cases/{id}/close`               | `case:close`       | Close with closure reason                  |
-| `POST`  | `/api/alerts/{alert_id}/feedback`     | `feedback:write`   | TP / FP feedback for a rule                |
-| `POST`  | `/api/suppressions`                   | `suppression:create` | Add scoped suppression with TTL          |
+
+| Method  | Path                              | Permission           | Purpose                               |
+| ------- | --------------------------------- | -------------------- | ------------------------------------- |
+| `POST`  | `/api/cases`                      | `case:write`         | Open a case from an alert             |
+| `GET`   | `/api/cases`                      | `case:read`          | List with filters & SLA status        |
+| `GET`   | `/api/cases/{id}`                 | `case:read`          | Fetch full case (comments + evidence) |
+| `PATCH` | `/api/cases/{id}`                 | `case:write`         | Update status/assignee (allowlist)    |
+| `POST`  | `/api/cases/{id}/comments`        | `case:write`         | Append a comment                      |
+| `POST`  | `/api/cases/{id}/evidence`        | `case:write`         | Attach evidence artefact              |
+| `POST`  | `/api/cases/{id}/assign`          | `case:assign`        | Assign analyst                        |
+| `POST`  | `/api/cases/{id}/close`           | `case:close`         | Close with closure reason             |
+| `POST`  | `/api/alerts/{alert_id}/feedback` | `feedback:write`     | TP / FP feedback for a rule           |
+| `POST`  | `/api/suppressions`               | `suppression:create` | Add scoped suppression with TTL       |
+
 
 ---
 
@@ -925,11 +965,13 @@ Heavy workloads (long simulations, report exports, data retention) run in a
 `arq.create_pool()` and falls back to in-process execution if the worker is
 unavailable (seamless for tests and local dev without Redis).
 
-| Method  | Path                       | Permission       | Purpose                                                       |
-|--------:|----------------------------|------------------|---------------------------------------------------------------|
-| `GET`   | `/api/tasks`               | `view_results`   | List registered task types                                    |
-| `GET`   | `/api/tasks/{task_id}`     | `view_results`   | Poll status (`queued` / `running` / `succeeded` / `failed`)   |
-| `DELETE`| `/api/tasks/{task_id}`     | `simulation:run` | Cancel (cooperative for in-process executor today)            |
+
+| Method   | Path                   | Permission       | Purpose                                                     |
+| -------- | ---------------------- | ---------------- | ----------------------------------------------------------- |
+| `GET`    | `/api/tasks`           | `view_results`   | List registered task types                                  |
+| `GET`    | `/api/tasks/{task_id}` | `view_results`   | Poll status (`queued` / `running` / `succeeded` / `failed`) |
+| `DELETE` | `/api/tasks/{task_id}` | `simulation:run` | Cancel (cooperative for in-process executor today)          |
+
 
 ```mermaid
 sequenceDiagram
@@ -955,6 +997,8 @@ sequenceDiagram
     CACHE-->>API: {status, progress, result}
     API-->>U: 200 {status: succeeded, progress: 100, result: ...}
 ```
+
+
 
 Status payload:
 
@@ -993,6 +1037,8 @@ flowchart LR
     classDef mw fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
     class RID,TNT,AUTH,RL,AUD,METR,VER,SEC mw
 ```
+
+
 
 ```promql
 # p95 API latency per endpoint
@@ -1056,40 +1102,46 @@ flowchart TB
     class N,A1,A2,A3,A4,R1,R2,R3,R4,C1,C2,C3,C4,I1,I2,I3,S1,S2,S3 ctrl
 ```
 
-| Surface         | Control                                                                                              |
-|-----------------|------------------------------------------------------------------------------------------------------|
-| Auth            | bcrypt (12 rounds) · JWT HS256 (64-char key in prod) · **jti denylist** · **refresh rotation** · **OIDC/SSO** (Entra ID, Okta, Keycloak) |
-| Sessions        | **Concurrent session limit** (configurable) · `POST /api/auth/revoke-all` force-logout · Redis-backed session tracking |
-| Tokens          | 1h access token · 7d refresh token · `tenant_id` claim · `POST /api/auth/logout` revokes via denylist |
-| API             | Rate-limit by **tenant:user** · CORS strict · 12-role scoped RBAC + **dynamic per-tenant roles in DB** |
-| Encryption      | **AES-256-GCM** field-level encryption · per-tenant HKDF key derivation · `EncryptedString` TypeDecorator |
-| HTTP headers    | `SecurityHeadersMiddleware` (backend) + `nginx.conf` (frontend) — CSP · HSTS · X-Frame              |
-| File uploads    | `_safe_path()` regex + path-resolution check — no traversal possible                                 |
-| Sigma loader    | YAML safe_load · 256 KB max · ReDoS-proof globbing · `re.fullmatch`                                  |
-| SQL             | Parametrised queries · column allowlist + regex for dynamic `UPDATE` · SQLAlchemy 2.0 ORM            |
-| LLM             | `_sanitise()` redacts PII/keys · prompt-injection markers neutralised · 32 KB hard cap              |
-| Ingestion       | `ingestion:write` scoped permission · per-event 64 KB · syslog 5 000 × 8 KB · `_approx_size()` guard |
-| Secrets         | env-driven · prod gate refuses start if weak · `.gitleaks.toml` allowlist                            |
-| Containers      | `nginx-unprivileged` (uid 101) · `runAsNonRoot` · `drop:[ALL]` · multi-stage builds                 |
-| Audit           | **Tamper-evident** audit trail with **SHA-256 chained hashing** · PostgreSQL append-only · `verify_audit_chain()` |
-| DB              | SQLAlchemy 2.0 + Alembic · 11+ ORM tables · **FK constraints** with CASCADE · `tenant_id` on every model |
-| Connectors      | **Circuit breaker** (CLOSED→OPEN→HALF_OPEN) + exponential retry on all external calls |
-| Compliance      | **SOC 2 Type II** readiness mapping · **ISO 27001:2022** Annex A mapping · **GDPR** data processing docs |
+
+
+
+| Surface      | Control                                                                                                                                  |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Auth         | bcrypt (12 rounds) · JWT HS256 (64-char key in prod) · **jti denylist** · **refresh rotation** · **OIDC/SSO** (Entra ID, Okta, Keycloak) |
+| Sessions     | **Concurrent session limit** (configurable) · `POST /api/auth/revoke-all` force-logout · Redis-backed session tracking                   |
+| Tokens       | 1h access token · 7d refresh token · `tenant_id` claim · `POST /api/auth/logout` revokes via denylist                                    |
+| API          | Rate-limit by **tenant:user** · CORS strict · 12-role scoped RBAC + **dynamic per-tenant roles in DB**                                   |
+| Encryption   | **AES-256-GCM** field-level encryption · per-tenant HKDF key derivation · `EncryptedString` TypeDecorator                                |
+| HTTP headers | `SecurityHeadersMiddleware` (backend) + `nginx.conf` (frontend) — CSP · HSTS · X-Frame                                                   |
+| File uploads | `_safe_path()` regex + path-resolution check — no traversal possible                                                                     |
+| Sigma loader | YAML safe_load · 256 KB max · ReDoS-proof globbing · `re.fullmatch`                                                                      |
+| SQL          | Parametrised queries · column allowlist + regex for dynamic `UPDATE` · SQLAlchemy 2.0 ORM                                                |
+| LLM          | `_sanitise()` redacts PII/keys · prompt-injection markers neutralised · 32 KB hard cap                                                   |
+| Ingestion    | `ingestion:write` scoped permission · per-event 64 KB · syslog 5 000 × 8 KB · `_approx_size()` guard                                     |
+| Secrets      | env-driven · prod gate refuses start if weak · `.gitleaks.toml` allowlist                                                                |
+| Containers   | `nginx-unprivileged` (uid 101) · `runAsNonRoot` · `drop:[ALL]` · multi-stage builds                                                      |
+| Audit        | **Tamper-evident** audit trail with **SHA-256 chained hashing** · PostgreSQL append-only · `verify_audit_chain()`                        |
+| DB           | SQLAlchemy 2.0 + Alembic · 11+ ORM tables · **FK constraints** with CASCADE · `tenant_id` on every model                                 |
+| Connectors   | **Circuit breaker** (CLOSED→OPEN→HALF_OPEN) + exponential retry on all external calls                                                    |
+| Compliance   | **SOC 2 Type II** readiness mapping · **ISO 27001:2022** Annex A mapping · **GDPR** data processing docs                                 |
+
 
 ### Continuous security checks
 
-| Tool          | Scope                                          | Status |
-|---------------|------------------------------------------------|:------:|
-| **pip-audit** | Python dependency CVEs                         | ✅ **blocking** · 0 known CVE |
-| **npm audit** | Frontend dependency CVEs (high+)               | ✅ **blocking** · 0 high |
-| **Gitleaks**  | Secret scanning across full git history        | ✅ **blocking** · 0 leaks |
-| **Bandit**    | Python static security analysis                | ⚠ non-blocking · 0 high |
-| **Semgrep**   | Multi-language SAST                            | ⚠ non-blocking |
-| **Trivy**     | Filesystem + container vuln scan               | ⚠ non-blocking |
-| **Checkov**   | IaC scan (Dockerfile + Helm)                   | ⚠ non-blocking |
-| **CycloneDX** | SBOM (Python + npm)                            | 📦 artefact upload |
 
-Full audit report (7 domains scored, 4 critical issues fixed): [`docs/proof/audit-report.md`](docs/proof/audit-report.md).
+| Tool          | Scope                                   | Status                       |
+| ------------- | --------------------------------------- | ---------------------------- |
+| **pip-audit** | Python dependency CVEs                  | ✅ **blocking** · 0 known CVE |
+| **npm audit** | Frontend dependency CVEs (high+)        | ✅ **blocking** · 0 high      |
+| **Gitleaks**  | Secret scanning across full git history | ✅ **blocking** · 0 leaks     |
+| **Bandit**    | Python static security analysis         | ⚠ non-blocking · 0 high      |
+| **Semgrep**   | Multi-language SAST                     | ⚠ non-blocking               |
+| **Trivy**     | Filesystem + container vuln scan        | ⚠ non-blocking               |
+| **Checkov**   | IaC scan (Dockerfile + Helm)            | ⚠ non-blocking               |
+| **CycloneDX** | SBOM (Python + npm)                     | 📦 artefact upload           |
+
+
+Full audit report (7 domains scored, 4 critical issues fixed): `[docs/proof/audit-report.md](docs/proof/audit-report.md)`.
 
 ---
 
@@ -1099,7 +1151,7 @@ Full audit report (7 domains scored, 4 critical issues fixed): [`docs/proof/audi
 flowchart LR
     PUSH["📥 git push / PR"] --> JOBS{9 parallel jobs}
 
-    JOBS --> J1["🧪 Backend Tests<br/>pytest · ~30 s · cov ≥ 60 %"]
+    JOBS --> J1["🧪 Backend Tests<br/>pytest · ~30 s · cov ≥ 72 %"]
     JOBS --> J2["🐘 PostgreSQL Migration<br/>upgrade · downgrade · idempotency"]
     JOBS --> J3["⚛️ Frontend Build<br/>vite + Lighthouse CI"]
     JOBS --> J4["✨ Code Quality<br/>flake8 · 0 errors"]
@@ -1123,6 +1175,8 @@ flowchart LR
     class BLOCK fail
 ```
 
+
+
 ---
 
 ## 🚢 Production deployment
@@ -1137,14 +1191,16 @@ docker compose --profile soar up -d
 docker compose up -d
 ```
 
-| Service     | Port (host→container) | Purpose                                          |
-|-------------|----------------------:|--------------------------------------------------|
-| `frontend`  | 80 → 8080             | nginx-unprivileged (uid 101) React SPA           |
-| `backend`   | 8000                  | FastAPI uvicorn (uid 1000 non-root)              |
-| `worker`    | —                     | **Arq background worker** (Redis broker)         |
-| `redis`     | 6379                  | cache · Streams · sessions · jobs · jti denylist |
-| `thehive`   | 9000                  | (`soar` profile only — demo, no auth)            |
-| `cortex`    | 9001                  | (`soar` profile only — demo, no auth)            |
+
+| Service    | Port (host→container) | Purpose                                          |
+| ---------- | --------------------- | ------------------------------------------------ |
+| `frontend` | 80 → 8080             | nginx-unprivileged (uid 101) React SPA           |
+| `backend`  | 8000                  | FastAPI uvicorn (uid 1000 non-root)              |
+| `worker`   | —                     | **Arq background worker** (Redis broker)         |
+| `redis`    | 6379                  | cache · Streams · sessions · jobs · jti denylist |
+| `thehive`  | 9000                  | (`soar` profile only — demo, no auth)            |
+| `cortex`   | 9001                  | (`soar` profile only — demo, no auth)            |
+
 
 ### Helm
 
@@ -1192,7 +1248,7 @@ flowchart TB
     ROOT["📁 CyberTwin-SOC"]
     ROOT --> BE["🐍 backend/<br/>16 357 LoC · Python 3.12"]
     ROOT --> FE["⚛️ frontend/<br/>12 396 LoC · React 18 + Vite"]
-    ROOT --> TS["🧪 tests/<br/>846 automated (836 py +10 UI)<br/>100 % passing"]
+    ROOT --> TS["🧪 tests/<br/>867 automated (855 py +10 RTL +2 E2E)<br/>100 % passing"]
     ROOT --> AL["🗄️ alembic/<br/>migration infra"]
     ROOT --> BM["📊 benchmarks/<br/>k6 · locust · pipeline · MITRE snapshot"]
     ROOT --> DEP["⎈ deploy/helm/<br/>chart + ServiceMonitor"]
@@ -1231,6 +1287,8 @@ flowchart TB
     class TS,AL,BM,DEP,SC,SCR,DOC,CI,JB ops
 ```
 
+
+
 ---
 
 ## 🧪 Quality & testing
@@ -1241,7 +1299,7 @@ flowchart TB
 flowchart TB
     E2E["🌐 End-to-end<br/>compose smoke · CI Postgres job<br/>breadth-first scenarios"]
     API["🔌 API · integration routers<br/>test_api · test_soc · test_ingestion · test_jobs<br/>router + workflow coverage"]
-    UNIT["⚙️ Domain-heavy pytest (~bulk of 836)<br/>auth · tenancy · detection · rules · SOC · crypto · orch…"]
+    UNIT["⚙️ Domain-heavy pytest (~bulk of 855)<br/>auth · tenancy · detection · rules · SOC · crypto · orch…"]
 
     UNIT --> API --> E2E
 
@@ -1253,13 +1311,15 @@ flowchart TB
     class E2E e
 ```
 
+
+
 ### Run locally
 
 ```bash
 # Full suite
 python -m pytest tests/ -v
 
-# With coverage (gate: ≥ 60 %)
+# With coverage (gate: ≥ 72 %, goal 80 %+)
 python -m pytest tests/ --cov=backend --cov-report=term-missing
 
 # CI-equivalent lint
@@ -1282,24 +1342,26 @@ coverage: 69.8 % (gate ≥ 60 %)
 
 ## 📚 Documentation
 
-| Document | Purpose |
-|----------|---------|
-| [`docs/proof/audit-report.md`](docs/proof/audit-report.md)                                 | Senior architect audit · 7 domains scored · 4 critical fixes |
-| [`docs/proof/coverage-report.md`](docs/proof/coverage-report.md)                           | Pytest summary · code-path coverage |
-| [`docs/proof/database-indexing-report.md`](docs/proof/database-indexing-report.md)         | DB index audit · 7 tables · 0 missing |
-| [`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)           | Honest 6.43 % rule-mapped snapshot |
-| [`docs/proof/security-scan-summary.md`](docs/proof/security-scan-summary.md)               | pip-audit / Bandit / Gitleaks / Trivy / npm audit |
-| [`docs/proof/benchmark-results.md`](docs/proof/benchmark-results.md)                       | Pipeline EPS · latency |
-| [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md)                       | Compose + Docker build proof |
-| [`docs/operations/backup-recovery.md`](docs/operations/backup-recovery.md)                 | Backup/DR runbook (PostgreSQL, Redis, verification) |
-| [`docs/compliance/soc2-readiness.md`](docs/compliance/soc2-readiness.md)                   | SOC 2 Type II readiness — CC1–CC9 mapping + gap analysis |
-| [`docs/compliance/iso27001-readiness.md`](docs/compliance/iso27001-readiness.md)           | ISO 27001:2022 Annex A control mapping + remediation |
-| [`docs/compliance/gdpr-data-processing.md`](docs/compliance/gdpr-data-processing.md)       | GDPR data categories, retention, subject rights |
-| [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)                                             | Tiered backlog (Playwright GIF, connectors, polish) |
-| [`CHANGELOG.md`](CHANGELOG.md)                                                             | Versioned change log |
-| [`SECURITY.md`](SECURITY.md)                                                               | Vulnerability disclosure policy |
-| [`CONTRIBUTING.md`](CONTRIBUTING.md)                                                       | How to contribute |
-| [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)                                                 | Community standards |
+
+| Document                                                                             | Purpose                                                      |
+| ------------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `[docs/proof/audit-report.md](docs/proof/audit-report.md)`                           | Senior architect audit · 7 domains scored · 4 critical fixes |
+| `[docs/proof/coverage-report.md](docs/proof/coverage-report.md)`                     | Pytest summary · code-path coverage                          |
+| `[docs/proof/database-indexing-report.md](docs/proof/database-indexing-report.md)`   | DB index audit · 7 tables · 0 missing                        |
+| `[docs/proof/mitre-coverage-snapshot.md](docs/proof/mitre-coverage-snapshot.md)`     | Honest 6.43 % rule-mapped snapshot                           |
+| `[docs/proof/security-scan-summary.md](docs/proof/security-scan-summary.md)`         | pip-audit / Bandit / Gitleaks / Trivy / npm audit            |
+| `[docs/proof/benchmark-results.md](docs/proof/benchmark-results.md)`                 | Pipeline EPS · latency                                       |
+| `[docs/proof/docker-validation.md](docs/proof/docker-validation.md)`                 | Compose + Docker build proof                                 |
+| `[docs/operations/backup-recovery.md](docs/operations/backup-recovery.md)`           | Backup/DR runbook (PostgreSQL, Redis, verification)          |
+| `[docs/compliance/soc2-readiness.md](docs/compliance/soc2-readiness.md)`             | SOC 2 Type II readiness — CC1–CC9 mapping + gap analysis     |
+| `[docs/compliance/iso27001-readiness.md](docs/compliance/iso27001-readiness.md)`     | ISO 27001:2022 Annex A control mapping + remediation         |
+| `[docs/compliance/gdpr-data-processing.md](docs/compliance/gdpr-data-processing.md)` | GDPR data categories, retention, subject rights              |
+| `[docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md)`                                       | Tiered backlog (Playwright GIF, connectors, polish)          |
+| `[CHANGELOG.md](CHANGELOG.md)`                                                       | Versioned change log                                         |
+| `[SECURITY.md](SECURITY.md)`                                                         | Vulnerability disclosure policy                              |
+| `[CONTRIBUTING.md](CONTRIBUTING.md)`                                                 | How to contribute                                            |
+| `[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)`                                           | Community standards                                          |
+
 
 ---
 
@@ -1340,9 +1402,11 @@ gantt
     v3.2.0 enterprise readiness   :done, p20, 2026-04-28, 1d
 ```
 
+
+
 ### Next ideas (not yet on `master`)
 
-See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — remaining backlog items including **purple-team workflows**, **STIX/TAXII feed publishing**, **eBPF live agent**, **JA3/JA3S TLS fingerprinting**, **detection-as-code GitOps**, **MFA enforcement (TOTP/WebAuthn)**, and the **Sentinel / Elastic / Jira / ServiceNow / MISP / OpenCTI** connector implementations (TheHive + Splunk are already production-grade — see [`docs/proof/connectors-validation.md`](docs/proof/connectors-validation.md)).
+See `[docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md)` — remaining backlog items including **purple-team workflows**, **STIX/TAXII feed publishing**, **eBPF live agent**, **JA3/JA3S TLS fingerprinting**, **detection-as-code GitOps**, **MFA enforcement (TOTP/WebAuthn)**, and the **Sentinel / Elastic / Jira / ServiceNow / MISP / OpenCTI** connector implementations (TheHive + Splunk are already production-grade — see `[docs/proof/connectors-validation.md](docs/proof/connectors-validation.md)`).
 
 ---
 
@@ -1350,23 +1414,22 @@ See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — remaining backlog items i
 
 PRs welcome. The bar is:
 
-1. `pytest tests/` is green (836+).
+1. `pytest tests/` is green (855+) and frontend `npm run test:e2e` passes locally when touching UI.
 2. `flake8` is clean with the same flags CI uses.
 3. New endpoints get a unit test **and** a scoped permission (`resource:action`).
 4. New ATT&CK techniques get added to `backend/mitre/attack_data.py`.
 5. No secrets, no hard-coded credentials, no path-traversal-prone string ops.
 6. Security scans (`pip-audit`, `npm audit`, `gitleaks`) stay green — they are blocking.
 
-Read [`CONTRIBUTING.md`](CONTRIBUTING.md) and [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) before opening a PR.
+Read `[CONTRIBUTING.md](CONTRIBUTING.md)` and `[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)` before opening a PR.
 
-**License**: MIT — see [`LICENSE`](LICENSE).
+**License**: MIT — see `[LICENSE](LICENSE)`.
 
 ---
 
-<div align="center">
+
 
 **Built with ❤️ for the cybersecurity community.**
 
 If this project saves your team a sprint, **[⭐ star the repo](https://github.com/omarbabba779xx/CyberTwin-SOC)** — it's the only metric I track.
 
-</div>
