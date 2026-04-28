@@ -22,6 +22,7 @@ from .base import (
 )
 from .registry import register, get_connector, list_connectors
 from . import mock, stubs   # noqa: F401  -- side-effect: populate registry
+from . import thehive, splunk   # noqa: F401  -- side-effect: register production connectors
 
 __all__ = [
     "BaseConnector", "SIEMConnector", "SOARConnector", "EDRConnector",

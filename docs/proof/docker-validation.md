@@ -1,7 +1,8 @@
-# Docker Compose Validation
+# Docker Compose Validation (v3.2)
 
-> Last manual update: **2026-04-27**.
+> Last manual update: **2026-04-28** (commit `224b757`).
 > Auto-validated on every push by the `Docker Build` job in `ci.yml`.
+> v3.2 added the `worker` (Arq) service alongside `backend`/`frontend`/`redis`.
 
 ## What CI validates
 
@@ -25,7 +26,8 @@ in order, and **fails the build on any gate**:
 |----------------|---------|--------------|-------------|
 | `redis`        | ✅      | ✅            | redis-cli ping |
 | `backend`      | ✅      | ✅            | `/api/health` |
-| `frontend`     | ✅      | ✅            | nginx `/health` |
+| `worker` (Arq) | ✅      | ✅            | container alive (no HTTP) |
+| `frontend`     | ✅      | ✅            | nginx `/health` (port 8080, unprivileged) |
 | `thehive`      | —       | ✅            | TCP probe |
 | `cortex`       | —       | ✅            | TCP probe |
 | `elasticsearch`| —       | ✅            | cluster yellow |
@@ -79,13 +81,32 @@ fails after 30 × 5s and 12 × 5s respectively, container logs from
 `backend`, `frontend` and `redis` are dumped automatically (see step
 "Dump container logs on failure" in `ci.yml`).
 
-## Hardenings still planned
+## v3.2 hardenings already shipped
 
-Per `docs/IMPROVEMENTS.md`:
+- ✅ Frontend now uses `nginxinc/nginx-unprivileged:1.27-alpine` on
+  port 8080 (resolves the K8s PSS `runAsNonRoot` blocker).
+- ✅ `worker` service runs Arq with the same non-root user as backend
+  and shares the Redis broker.
+- ✅ docker-compose `restart: unless-stopped` on every long-running service.
+- ✅ Quality-gated by Checkov on every push (Dockerfile + secrets +
+  Helm framework).
+
+## Hardenings still planned
 
 - **Tier B**: per-service `resources.limits` (memory + CPU) in compose,
   matching what the Helm chart already enforces.
 - **Tier B**: `read_only: true` + `tmpfs` for backend after data dir is
   factored out.
-- **Tier C**: switch frontend to `nginxinc/nginx-unprivileged` so the K8s
-  PSS `runAsNonRoot` policy can be satisfied without port shifting.
+
+## Reproduce the docker-startup benchmark
+
+```bash
+python benchmarks/docker_startup.py \
+  --backend-url http://localhost:8000/api/health \
+  --frontend-url http://localhost:8080/health \
+  --output benchmarks/results/docker-startup.json
+```
+
+The script measures `compose up`, backend ready, frontend ready and
+total wall-clock time. Output is JSON (consumed downstream by Grafana
+or Excel).

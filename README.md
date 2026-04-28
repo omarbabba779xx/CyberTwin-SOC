@@ -271,7 +271,7 @@ flowchart TB
 | **Built-in detection rules**        |      46 | 14 platforms · severity-tiered · runtime Sigma upload                     |
 | **Attack scenarios**                |      11 | Solorigate, ProxyShell, Log4Shell, Insider, Ransomware, …                 |
 | **RBAC roles / scoped permissions** | 12 / 30+ | 3 legacy + 9 enterprise + **dynamic per-tenant roles in DB**              |
-| **Connectors (extensible)**         |      15 | With **circuit breaker** (CLOSED/OPEN/HALF_OPEN) + exponential retry      |
+| **Connectors (extensible)**         |  15 (2 production-grade) | TheHive + Splunk fully implemented (REST, retry, breaker, pagination, mock_mode) — 13 stubs with the same hardening surface |
 | **Known CVEs in dependencies**      |       0 | Verified by `pip-audit --strict` and `npm audit`                          |
 | **Database**                        |  11+ tables | Alembic migrations `0001`–`0005` · FK constraints · ORM-first (SQLite dev fallback) |
 | **Enterprise features**             |   22   | Multi-tenancy · OIDC/SSO · AES-256-GCM encryption · OTel · session governance · audit chain · backup/DR |
@@ -1307,7 +1307,7 @@ gantt
 
 ### Next ideas (not yet on `master`)
 
-See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — remaining backlog items including **purple-team workflows**, **STIX/TAXII feed publishing**, **eBPF live agent**, **JA3/JA3S TLS fingerprinting**, **detection-as-code GitOps**, **MFA enforcement (TOTP/WebAuthn)**, **real Splunk/Sentinel/Jira connectors** (stubs now have circuit breakers)…
+See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — remaining backlog items including **purple-team workflows**, **STIX/TAXII feed publishing**, **eBPF live agent**, **JA3/JA3S TLS fingerprinting**, **detection-as-code GitOps**, **MFA enforcement (TOTP/WebAuthn)**, and the **Sentinel / Elastic / Jira / ServiceNow / MISP / OpenCTI** connector implementations (TheHive + Splunk are already production-grade — see [`docs/proof/connectors-validation.md`](docs/proof/connectors-validation.md)).
 
 ---
 
