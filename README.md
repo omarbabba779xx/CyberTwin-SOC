@@ -17,7 +17,7 @@
 </table>
 
 [![CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
-[![Tests](https://img.shields.io/badge/tests-806%20passing-brightgreen)](#-quality--testing)
+[![Tests](https://img.shields.io/badge/tests-836%20passing-brightgreen)](#-quality--testing)
 [![Coverage](https://img.shields.io/badge/coverage-69.8%25-success)](#-quality--testing)
 [![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![React](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
@@ -81,18 +81,18 @@ CyberTwin SOC is **not** a SIEM, not a SOAR, and not yet another dashboard. It i
 
 ```mermaid
 flowchart LR
-    A["🎭 <b>SIMULATE</b><br/>11 scenarios<br/>28 attack techniques<br/>Custom Sigma"]
-    B["🔍 <b>DETECT</b><br/>46 rules + Sigma<br/>622 MITRE techniques<br/>OCSF normalisation"]
-    C["🚨 <b>RESPOND</b><br/>SOC cases · SLA<br/>SOAR (TheHive + Cortex)<br/>Suppressions · Feedback"]
-    D["📊 <b>MEASURE</b><br/>Coverage Center<br/>NIST CSF + CIS<br/>Benchmarks"]
+    A["SIMULATE<br/>11 scenarios<br/>28 attack techniques<br/>Custom Sigma"]
+    B["DETECT<br/>46 rules + Sigma<br/>622 MITRE techniques<br/>OCSF normalisation"]
+    C["RESPOND<br/>SOC cases · SLA<br/>SOAR · Suppressions · Feedback"]
+    D["MEASURE<br/>Coverage Center<br/>NIST CSF + CIS<br/>Benchmarks"]
 
     A --> B --> C --> D
     D -. continuous improvement .-> A
 
-    classDef sim fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#78350f
-    classDef det fill:#dbeafe,stroke:#3b82f6,stroke-width:2px,color:#1e3a8a
-    classDef resp fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#7f1d1d
-    classDef mes fill:#d1fae5,stroke:#10b981,stroke-width:2px,color:#064e3b
+    classDef sim fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef det fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
+    classDef resp fill:#fee2e2,stroke:#ef4444,color:#7f1d1d
+    classDef mes fill:#d1fae5,stroke:#10b981,color:#064e3b
     class A sim
     class B det
     class C resp
@@ -220,14 +220,14 @@ gantt
 
 ```mermaid
 flowchart TB
-    ROOT(("🛡️ CyberTwin<br/>SOC v3.2"))
+    ROOT(("CyberTwin SOC v3.2"))
 
-    BE["🐍 <b>Backend</b>"]
-    FE["⚛️ <b>Frontend</b>"]
-    DET["🔍 <b>Detection</b>"]
-    SOC["🚨 <b>SOC</b>"]
-    OPS["⚙️ <b>Ops</b>"]
-    ENT["🏢 <b>Enterprise</b>"]
+    BE["Backend"]
+    FE["Frontend"]
+    DET["Detection"]
+    SOC["SOC"]
+    OPS["Ops"]
+    ENT["Enterprise"]
 
     ROOT --> BE & FE & DET & SOC & OPS & ENT
 
@@ -265,7 +265,7 @@ flowchart TB
 |-------------------------------------|--------:|---------------------------------------------------------------------------|
 | **Backend Python**                  |  18 000+ | 20+ packages — `api`, `detection`, `soc`, `ingestion`, `db`, `auth`, `crypto`, `middleware`, `observability`, … |
 | **Frontend React/JSX**              |  13 000+ | 27 pages (incl. Executive dashboard), Vitest test suite, Recharts         |
-| **Unit & integration tests**        |    816  | Backend: pytest (806) · Frontend: Vitest + RTL (10 across 4 suites) · see [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
+| **Unit & integration tests**        |    846  | Backend: pytest (836) · Frontend: Vitest + RTL (10 across 4 suites) · see [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
 | **REST + WebSocket endpoints**      |     80+ | Rate-limited per tenant:user, RBAC-scoped, `X-API-Version: v1` header    |
 | **MITRE ATT&CK techniques**         |     622 | Full Enterprise matrix · 14 tactics · TAXII 2.1 sync                      |
 | **Built-in detection rules**        |      46 | 14 platforms · severity-tiered · runtime Sigma upload                     |
@@ -363,11 +363,13 @@ flowchart TB
     BUF --> DET
     SOC <--> DB
     DET --> COV
-    Core <--> REDIS
-    API --> PROM & OTEL & LOG
+    SOC <--> REDIS
+    DET <--> REDIS
+    DEPS --> PROM & OTEL & LOG
     SOC <--> SOAR
     COV <--> TAXII
-    Core <--> CONN
+    SOC <--> CONN
+    DET <--> CONN
 
     classDef client fill:#fef3c7,stroke:#f59e0b,color:#78350f
     classDef api fill:#dbeafe,stroke:#3b82f6,color:#1e3a8a
@@ -380,7 +382,7 @@ flowchart TB
     class NX,MW,ROUT,DEPS api
     class SIM,TEL,DET,COR,SCO,AI,ANO,SOC,COV core
     class DB,REDIS,BUF data
-    class PROM,LOG obs
+    class PROM,OTEL,LOG obs
     class SOAR,TAXII,CONN ext
 ```
 
@@ -389,42 +391,42 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     autonumber
-    participant U as 🧑 User
-    participant API as ⚙️ FastAPI
-    participant CACHE as 🔴 Redis<br/>(jti denylist)
-    participant DB as 💾 audit_log
+    participant U as User
+    participant API as FastAPI
+    participant CACHE as "Redis — jti denylist"
+    participant DB as audit_log
 
     rect rgb(220, 252, 231)
     Note over U,DB: LOGIN
     U->>API: POST /api/auth/login {user, pass}
-    API->>API: bcrypt verify · sign access (1h, jti₁) + refresh (7d, jti₂)
+    API->>API: bcrypt verify · sign access (1h, jti_1) + refresh (7d, jti_2)
     API->>DB: log LOGIN
     API-->>U: {access_token, refresh_token, expires_in: 3600}
     end
 
     rect rgb(219, 234, 254)
     Note over U,DB: NORMAL CALL
-    U->>API: GET /api/anything (Bearer jti₁)
-    API->>CACHE: GET revoked_jti:jti₁
+    U->>API: GET /api/anything (Bearer jti_1)
+    API->>CACHE: GET revoked_jti:jti_1
     CACHE-->>API: nil (still valid)
     API-->>U: 200 OK
     end
 
     rect rgb(254, 252, 232)
     Note over U,DB: REFRESH
-    U->>API: POST /api/auth/refresh (refresh_token jti₂)
-    API->>CACHE: SET revoked_jti:jti₂ TTL=remaining
-    API->>API: sign new access (jti₃) + refresh (jti₄)
+    U->>API: POST /api/auth/refresh (refresh_token jti_2)
+    API->>CACHE: SET revoked_jti:jti_2 TTL=remaining
+    API->>API: sign new access (jti_3) + refresh (jti_4)
     API-->>U: {access_token, refresh_token}
     end
 
     rect rgb(254, 226, 226)
     Note over U,DB: LOGOUT
-    U->>API: POST /api/auth/logout (Bearer jti₃)
-    API->>CACHE: SET revoked_jti:jti₃ TTL=remaining
+    U->>API: POST /api/auth/logout (Bearer jti_3)
+    API->>CACHE: SET revoked_jti:jti_3 TTL=remaining
     API->>DB: log LOGOUT
     API-->>U: 200 {status: "logged_out"}
-    Note over CACHE: Subsequent calls<br/>with jti₃ → 401
+    Note over CACHE: Subsequent calls with jti_3 return 401
     end
 ```
 
@@ -600,8 +602,8 @@ stateDiagram-v2
     RULE_EXISTS --> DEPRECATED: replaced
     TESTED_FAILED --> RULE_UNTESTED: re-test
 
-    note right of TESTED_DETECTED: ✅ Validated<br/>(time-to-detect measured)
-    note right of TESTED_FAILED: ⚠️ Regression<br/>(blocks merge)
+    note right of TESTED_DETECTED: Validated (time-to-detect measured)
+    note right of TESTED_FAILED: Regression (blocks merge)
 ```
 
 8 honest states (`NOT_COVERED`, `RULE_EXISTS`, `RULE_UNTESTED`, `TESTED_DETECTED`, `TESTED_FAILED`, `LOG_MISSING`, `MUTED`, `DEPRECATED`) with **time-to-detect**, **severity-weighted confidence**, and **per-tactic risk score** weighted toward Initial Access, Privilege Escalation and Exfiltration.
@@ -631,7 +633,7 @@ flowchart LR
     FP -->|verify| CL
 
     IP -. comment / evidence .-> IP
-    IP -. SLA timer · severity → hours .-> IP
+    IP -. SLA timer by severity hrs .-> IP
     FP -- updates rule confidence --> RULE["📊 Rule confidence"]
     FP -- suggests --> SUP["🤫 Suppression w/ TTL"]
 
@@ -751,6 +753,17 @@ classDiagram
     ITSMConnector <|.. ServiceNowStub
     TIConnector <|.. MISPStub
     TIConnector <|.. OpenCTIStub
+
+    class SplunkStub
+    class SentinelStub
+    class ElasticStub
+    class TheHiveStub
+    class CrowdStrikeStub
+    class DefenderStub
+    class JiraStub
+    class ServiceNowStub
+    class MISPStub
+    class OpenCTIStub
 ```
 
 ---
@@ -1015,7 +1028,11 @@ flowchart TB
         S3["CycloneDX SBOM"]
     end
 
-    L1 --> L2 --> L3 --> L4 --> L5 --> L6
+    N --> A1
+    A4 --> R1
+    R4 --> C1
+    C4 --> I1
+    I3 --> S1
     classDef layer fill:#1e293b,color:#fff,stroke:#0f172a
     classDef ctrl fill:#dbeafe,stroke:#3b82f6
     class L1,L2,L3,L4,L5,L6 layer
@@ -1072,7 +1089,7 @@ flowchart LR
     JOBS --> J5["🔐 Security Scans<br/>pip-audit · npm audit · gitleaks"]
     JOBS --> J6["🐳 Docker Build<br/>compose smoke + healthcheck"]
     JOBS --> J7["⎈ Helm Lint<br/>lint + render artefact"]
-    JOBS --> J8["🏗️ Checkov<br/>Dockerfile · Helm IaC<br/><i>soft-fail</i>"]
+    JOBS --> J8["🏗️ Checkov<br/>Dockerfile · Helm IaC<br/>soft-fail"]
 
     J1 & J2 & J3 & J4 & J5 & J6 & J7 --> QG["🎯 quality-gate<br/>(7 blocking jobs<br/>for branch protection)"]
     J8 -.->|non-blocking| QG
@@ -1239,7 +1256,7 @@ pip-audit -r requirements.txt --strict
 Current `master`:
 
 ```
-============================ 806 passed in 38.4s =============================
+============================ 836 passed in … s =============================
 flake8: 0 errors · pip-audit: 0 CVE · npm audit: 0 high · gitleaks: 0 leaks
 coverage: 69.8 % (gate ≥ 60 %)
 ```
@@ -1316,7 +1333,7 @@ See [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md) — remaining backlog items i
 
 PRs welcome. The bar is:
 
-1. `pytest tests/` is green (806+).
+1. `pytest tests/` is green (836+).
 2. `flake8` is clean with the same flags CI uses.
 3. New endpoints get a unit test **and** a scoped permission (`resource:action`).
 4. New ATT&CK techniques get added to `backend/mitre/attack_data.py`.
