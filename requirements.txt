@@ -20,5 +20,14 @@ prometheus_client==0.21.1
 sqlalchemy==2.0.36
 alembic==1.14.0
 psycopg2-binary==2.9.10          # PostgreSQL driver (optional — only needed with PostgreSQL)
+# OIDC/SSO: JWKS validation + JWT decoding for enterprise SSO
+authlib>=1.3
+# Field-level encryption (AES-256-GCM, HKDF key derivation)
+cryptography>=44.0
 # Background jobs: Arq (Redis-backed, asyncio-native, ~1k LoC, 0 CVE)
 arq==0.26.3
+# OpenTelemetry (optional — enable with OTEL_ENABLED=true)
+opentelemetry-api==1.29.0
+opentelemetry-sdk==1.29.0
+opentelemetry-instrumentation-fastapi==0.50b0
+opentelemetry-exporter-otlp-proto-grpc==1.29.0

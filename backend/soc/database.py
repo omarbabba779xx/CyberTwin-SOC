@@ -1,19 +1,30 @@
-"""SQLite persistence helpers for the SOC module.
+"""SOC module persistence layer.
 
-We extend the existing `data/cybertwin.db` rather than introducing a new
-database file. Every table is created idempotently by `init_soc_tables()`.
+When ``DATABASE_URL`` is set the ORM models in ``backend.db.models``
+are used (PostgreSQL production path with tenant_id support).  Without
+it we fall back to the legacy SQLite tables for local development.
 """
 
 from __future__ import annotations
 
+import logging
+import os
 import sqlite3
 from pathlib import Path
 
+logger = logging.getLogger("cybertwin.soc.database")
+
 DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cybertwin.db"
 
+_USE_ORM = bool(os.getenv("DATABASE_URL", ""))
+
+
+# ---------------------------------------------------------------------------
+# SQLite helpers (legacy fallback)
+# ---------------------------------------------------------------------------
 
 def get_conn() -> sqlite3.Connection:
-    """Open a connection with row_factory and FK enforcement."""
+    """Open a SQLite connection with row_factory and FK enforcement."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
@@ -21,11 +32,9 @@ def get_conn() -> sqlite3.Connection:
     return conn
 
 
-def init_soc_tables() -> None:
-    """Create all SOC tables if they don't exist (idempotent)."""
+def _sqlite_init_tables() -> None:
     conn = get_conn()
 
-    # -- Alert feedback ----------------------------------------------------
     conn.execute("""
         CREATE TABLE IF NOT EXISTS alert_feedback (
             feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,7 +50,6 @@ def init_soc_tables() -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS ix_feedback_rule ON alert_feedback(rule_id)")
     conn.execute("CREATE INDEX IF NOT EXISTS ix_feedback_alert ON alert_feedback(alert_id)")
 
-    # -- Cases -------------------------------------------------------------
     conn.execute("""
         CREATE TABLE IF NOT EXISTS soc_cases (
             case_id        TEXT PRIMARY KEY,
@@ -68,7 +76,6 @@ def init_soc_tables() -> None:
     conn.execute("CREATE INDEX IF NOT EXISTS ix_cases_severity ON soc_cases(severity)")
     conn.execute("CREATE INDEX IF NOT EXISTS ix_cases_assignee ON soc_cases(assignee)")
 
-    # -- Case comments -----------------------------------------------------
     conn.execute("""
         CREATE TABLE IF NOT EXISTS case_comments (
             comment_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +89,6 @@ def init_soc_tables() -> None:
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS ix_comments_case ON case_comments(case_id)")
 
-    # -- Case evidence -----------------------------------------------------
     conn.execute("""
         CREATE TABLE IF NOT EXISTS case_evidence (
             evidence_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -98,7 +104,6 @@ def init_soc_tables() -> None:
     """)
     conn.execute("CREATE INDEX IF NOT EXISTS ix_evidence_case ON case_evidence(case_id)")
 
-    # -- Suppressions ------------------------------------------------------
     conn.execute("""
         CREATE TABLE IF NOT EXISTS suppressions (
             suppression_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -117,3 +122,26 @@ def init_soc_tables() -> None:
 
     conn.commit()
     conn.close()
+
+
+# ---------------------------------------------------------------------------
+# ORM helpers (PostgreSQL production path)
+# ---------------------------------------------------------------------------
+
+def _orm_init_tables() -> None:
+    from backend.db.models import Base
+    from backend.db.session import engine
+    Base.metadata.create_all(bind=engine)
+    logger.info("SOC ORM tables ensured via SQLAlchemy")
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def init_soc_tables() -> None:
+    """Create all SOC tables if they don't exist (idempotent)."""
+    if _USE_ORM:
+        _orm_init_tables()
+    else:
+        _sqlite_init_tables()

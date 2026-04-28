@@ -12,13 +12,21 @@ Business logic lives in backend.api.routes.* — not here.
 
 import logging
 import os
+import traceback
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi.errors import RateLimitExceeded
+
+from backend.api.errors import (
+    CyberTwinError,
+    error_response,
+    INTERNAL_ERROR,
+    RATE_LIMITED,
+)
 
 load_dotenv()
 
@@ -54,6 +62,8 @@ async def lifespan(app: FastAPI):
     from backend.soc import init_soc_tables
     init_soc_tables()
     logger.info("SOC tables ready (feedback, cases, suppressions)")
+    from backend.observability.tracing import init_tracing
+    init_tracing(app)
     yield
     logger.info("CyberTwin SOC API shutting down...")
 
@@ -82,20 +92,79 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
+from starlette.middleware.base import BaseHTTPMiddleware  # noqa: E402
+
 from backend.observability.middleware import RequestIdMiddleware  # noqa: E402
 from backend.observability.metrics import MetricsMiddleware  # noqa: E402
 from backend.observability.security_headers import SecurityHeadersMiddleware  # noqa: E402
+from backend.middleware.tenant import TenantScopeMiddleware  # noqa: E402
 
+
+class APIVersionMiddleware(BaseHTTPMiddleware):
+    """Stamp every response with X-API-Version so clients can detect future v2 migrations."""
+
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-API-Version"] = "v1"
+        return response
+
+
+app.add_middleware(APIVersionMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(MetricsMiddleware)
+app.add_middleware(TenantScopeMiddleware)
 app.add_middleware(RequestIdMiddleware)
 
 app.state.limiter = limiter
 
 
+@app.exception_handler(CyberTwinError)
+async def cybertwin_error_handler(request: Request, exc: CyberTwinError):
+    return error_response(
+        code=exc.code,
+        message=exc.message,
+        status_code=exc.status_code,
+        details=exc.details,
+        request=request,
+    )
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    code_map = {
+        401: "UNAUTHORIZED",
+        403: "FORBIDDEN",
+        404: "NOT_FOUND",
+        422: "VALIDATION_ERROR",
+        429: "RATE_LIMITED",
+    }
+    return error_response(
+        code=code_map.get(exc.status_code, f"HTTP_{exc.status_code}"),
+        message=str(exc.detail),
+        status_code=exc.status_code,
+        request=request,
+    )
+
+
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc):
-    return JSONResponse(status_code=429, content={"detail": "Too many requests. Please slow down."})
+    return error_response(
+        code=RATE_LIMITED,
+        message="Too many requests. Please slow down.",
+        status_code=429,
+        request=request,
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception:\n%s", traceback.format_exc())
+    return error_response(
+        code=INTERNAL_ERROR,
+        message="An unexpected internal error occurred.",
+        status_code=500,
+        request=request,
+    )
 
 
 init_db()

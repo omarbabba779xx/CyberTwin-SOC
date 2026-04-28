@@ -1,23 +1,20 @@
-"""Task registry and lightweight in-process executor.
+"""Task registry with Arq worker enqueue and in-process fallback.
 
-The API process can enqueue work without a worker being alive: tasks fall
-back to immediate in-process execution (synchronous) and the result is
-stored in the same Redis keyspace the future Arq worker will use. This
-keeps endpoints uniformly async-shaped while we migrate workloads.
+The API process can push jobs to a Redis-backed Arq worker when one is
+available. If the worker (or Redis) is unreachable the task runs
+in-process so development and testing never require a running worker.
 
-Status keys live under `cybertwin:task:{task_id}` with these fields:
+Status keys live under ``cybertwin:task:{task_id}`` with these fields:
 - status   -> queued | running | succeeded | failed | cancelled
 - result   -> JSON-encoded payload or null
 - error    -> error string or null
 - progress -> 0..100 integer
 - enqueued_at, started_at, finished_at -> ISO-8601 UTC
-
-This module is intentionally thin: it does NOT depend on Arq for the
-default code path so tests stay hermetic and fast.
 """
 from __future__ import annotations
 
 import json
+import logging
 import secrets
 import traceback
 from datetime import datetime, timezone
@@ -26,8 +23,13 @@ from typing import Any, Awaitable, Callable
 
 from backend.cache import cache
 
+logger = logging.getLogger("cybertwin.jobs")
 
 _TASKS: dict[str, Callable[..., Awaitable[Any]]] = {}
+
+# Lazily initialised Arq connection pool (one per process).
+_arq_pool: Any | None = None
+_arq_pool_failed: bool = False
 
 
 class TaskStatus(str, Enum):
@@ -62,13 +64,106 @@ def register_task(name: str):
     return _wrap
 
 
-async def enqueue(task_name: str, **kwargs: Any) -> str:
-    """Enqueue a task. Returns the task_id immediately.
+# ---------------------------------------------------------------------------
+# Arq worker enqueue
+# ---------------------------------------------------------------------------
 
-    In v3.1.x there is no Arq worker; we execute in-process and persist
-    results in Redis using the same key layout the future worker will use.
-    Endpoints can already poll /api/tasks/{task_id} regardless.
+async def _get_arq_pool() -> Any:
+    """Return (and cache) an ``ArqRedis`` connection pool, or *None*.
+
+    After a connection failure, further attempts are skipped for the
+    lifetime of the process to avoid slow retries (e.g. in tests).
+    Call ``reset_arq_pool()`` to re-enable.
     """
+    global _arq_pool, _arq_pool_failed  # noqa: PLW0603
+    if _arq_pool is not None:
+        return _arq_pool
+    if _arq_pool_failed:
+        return None
+    try:
+        import asyncio
+
+        from arq import create_pool
+        from arq.connections import RedisSettings as ArqRedisSettings
+
+        from backend.jobs.config import queue_settings
+
+        cfg = queue_settings()
+        _arq_pool = await asyncio.wait_for(
+            create_pool(
+                ArqRedisSettings(
+                    host=cfg.host,
+                    port=cfg.port,
+                    database=cfg.database,
+                    password=cfg.password,
+                    conn_timeout=2,
+                ),
+            ),
+            timeout=3,
+        )
+        return _arq_pool
+    except Exception:
+        _arq_pool_failed = True
+        logger.debug("Arq pool unavailable — will use in-process fallback", exc_info=True)
+        return None
+
+
+def reset_arq_pool() -> None:
+    """Reset the cached pool so the next ``enqueue()`` retries the connection."""
+    global _arq_pool, _arq_pool_failed  # noqa: PLW0603
+    _arq_pool = None
+    _arq_pool_failed = False
+
+
+async def enqueue_to_worker(task_name: str, **kwargs: Any) -> str | None:
+    """Push a job to the Arq worker via Redis.
+
+    Returns the ``task_id`` on success or *None* when the worker / Redis
+    is unreachable.
+    """
+    pool = await _get_arq_pool()
+    if pool is None:
+        return None
+
+    from backend.jobs.config import QUEUE_NAME
+
+    task_id = secrets.token_hex(8)
+    _write(
+        task_id,
+        task=task_name,
+        status=TaskStatus.QUEUED.value,
+        progress=0,
+        result=None,
+        error=None,
+        enqueued_at=_now_iso(),
+    )
+
+    try:
+        await pool.enqueue_job(
+            "run_task",
+            task_name,
+            task_id=task_id,
+            _queue_name=QUEUE_NAME,
+            **kwargs,
+        )
+        logger.info("Enqueued task=%s id=%s via Arq worker", task_name, task_id)
+        return task_id
+    except Exception:
+        logger.warning(
+            "Failed to enqueue task=%s via Arq — falling back to in-process",
+            task_name,
+            exc_info=True,
+        )
+        reset_arq_pool()
+        return None
+
+
+# ---------------------------------------------------------------------------
+# In-process fallback executor
+# ---------------------------------------------------------------------------
+
+async def _run_in_process(task_name: str, **kwargs: Any) -> str:
+    """Execute the task synchronously inside the API process."""
     if task_name not in _TASKS:
         raise KeyError(f"Unknown task '{task_name}'. Registered: {list(_TASKS)}")
 
@@ -94,7 +189,7 @@ async def enqueue(task_name: str, **kwargs: Any) -> str:
             result=result,
             finished_at=_now_iso(),
         )
-    except Exception as exc:  # noqa: BLE001 — we deliberately catch all
+    except Exception as exc:  # noqa: BLE001
         _write(
             task_id,
             status=TaskStatus.FAILED.value,
@@ -103,6 +198,27 @@ async def enqueue(task_name: str, **kwargs: Any) -> str:
             finished_at=_now_iso(),
         )
     return task_id
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+async def enqueue(task_name: str, **kwargs: Any) -> str:
+    """Enqueue a task. Returns the task_id immediately.
+
+    Tries the Arq worker first; if unavailable, falls back to running the
+    task in-process so the call always succeeds.
+    """
+    if task_name not in _TASKS:
+        raise KeyError(f"Unknown task '{task_name}'. Registered: {list(_TASKS)}")
+
+    worker_id = await enqueue_to_worker(task_name, **kwargs)
+    if worker_id is not None:
+        return worker_id
+
+    logger.debug("Running task=%s in-process (no Arq worker)", task_name)
+    return await _run_in_process(task_name, **kwargs)
 
 
 def get_status(task_id: str) -> dict[str, Any] | None:

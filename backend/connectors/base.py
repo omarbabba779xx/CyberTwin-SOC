@@ -31,6 +31,11 @@ class BaseConnector(ABC):
 
     def __init__(self, **config: Any) -> None:
         self.config = config
+        self._init_circuit_breaker()
+
+    def _init_circuit_breaker(self) -> None:
+        from .resilience import CircuitBreaker
+        self._circuit_breaker = CircuitBreaker(name=f"{self.kind}/{self.name}")
 
     def describe(self) -> dict[str, Any]:
         return {"name": self.name, "kind": self.kind,
@@ -38,6 +43,10 @@ class BaseConnector(ABC):
 
     @abstractmethod
     def check_connection(self) -> ConnectorResult: ...
+
+    def health(self) -> ConnectorResult:
+        """Run ``check_connection`` through the circuit breaker."""
+        return self._circuit_breaker.call(self.check_connection)
 
 
 # ---------------------------------------------------------------------------

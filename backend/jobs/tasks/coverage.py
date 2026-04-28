@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from .registry import register_task, update_progress
+from backend.jobs.registry import register_task, update_progress
 
 
 @register_task("coverage_recalculate")

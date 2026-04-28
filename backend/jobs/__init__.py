@@ -1,11 +1,10 @@
 """Background job infrastructure (Arq-based).
 
-Today this module exposes a thin scaffold: a Redis broker, a task registry,
-and an in-memory fallback so unit tests never need a worker process. Future
-phases will migrate `simulation:run`, `report:export` and `soar:push` from
-in-request execution to async tasks (see docs/IMPROVEMENTS.md).
+Provides a task registry with automatic Arq worker enqueue and an
+in-process fallback so unit tests and local dev never need a running
+worker process.
 
-Usage from a route:
+Usage from a route::
 
     from backend.jobs import enqueue, get_status
 
@@ -14,16 +13,36 @@ Usage from a route:
 
     # later
     status = get_status(task_id)
+
+To push directly to the Arq worker (skipping fallback)::
+
+    from backend.jobs import enqueue_to_worker
+
+    task_id = await enqueue_to_worker("coverage_recalculate")
+    if task_id is None:
+        ...  # worker unavailable
 """
 from __future__ import annotations
 
-from .registry import enqueue, get_status, register_task, TaskStatus
+from .registry import (
+    enqueue,
+    enqueue_to_worker,
+    get_status,
+    list_registered,
+    register_task,
+    update_progress,
+    TaskStatus,
+)
 from .config import RedisSettings, queue_settings
+from . import tasks as tasks  # noqa: F401 — auto-register all @register_task functions
 
 __all__ = [
     "enqueue",
+    "enqueue_to_worker",
     "get_status",
+    "list_registered",
     "register_task",
+    "update_progress",
     "TaskStatus",
     "RedisSettings",
     "queue_settings",

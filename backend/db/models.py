@@ -254,6 +254,23 @@ class Suppression(Base):
     )
 
 
+class TenantRole(Base):
+    __tablename__ = "tenant_roles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(80), nullable=False)
+    role_name: Mapped[str] = mapped_column(String(80), nullable=False)
+    permissions_json: Mapped[str | None] = mapped_column(_JSONColumn)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=_utcnow, onupdate=_utcnow)
+
+    __table_args__ = (
+        Index("ix_tenant_roles_tenant_role", "tenant_id", "role_name", unique=True),
+    )
+
+
 class AuditLog(Base):
     __tablename__ = "audit_log_v2"
 
@@ -269,6 +286,7 @@ class AuditLog(Base):
     ip_address: Mapped[str | None] = mapped_column(String(45))
     status: Mapped[str] = mapped_column(String(20), default="success")
     details: Mapped[str | None] = mapped_column(_JSONColumn)
+    integrity_hash: Mapped[str | None] = mapped_column(String(64))
 
     __table_args__ = (
         Index("ix_audit_tenant_ts", "tenant_id", "timestamp"),

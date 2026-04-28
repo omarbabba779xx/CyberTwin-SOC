@@ -70,6 +70,30 @@ services:
       start_period: 20s
       retries: 3
 
+  # ── Arq Background Worker ────────────────────────────────────────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: cybertwin-worker
+    restart: unless-stopped
+    command: ["python", "-m", "backend.jobs.executor"]
+    volumes:
+      - backend-data:/app/data
+      - ./scenarios:/app/scenarios:ro
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ENV: ${ENV:-production}
+      PYTHONUNBUFFERED: "1"
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - cybertwin-net
+
   # ── React Frontend (nginx-unprivileged, port 8080) ──────────────────────
   frontend:
     build:

@@ -68,6 +68,7 @@ JWT_SECRET: str = _load_or_create_secret()
 JWT_ALGORITHM: str = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRY_HOURS: int = int(os.getenv("JWT_EXPIRY_HOURS", "1"))
 REFRESH_EXPIRY_DAYS: int = int(os.getenv("REFRESH_EXPIRY_DAYS", "7"))
+MAX_CONCURRENT_SESSIONS: int = int(os.getenv("MAX_CONCURRENT_SESSIONS", "5"))
 
 # ---------------------------------------------------------------------------
 # Role definitions & permissions
@@ -212,28 +213,32 @@ def has_permission(role: str, permission: str) -> bool:
 security = HTTPBearer(auto_error=False)
 
 
-def create_token(username: str, role: str = "analyst") -> str:
+def create_token(username: str, role: str = "analyst", tenant_id: str = "default") -> str:
     """Create a signed access JWT for *username* with the given *role*.
 
     Includes a unique ``jti`` (JWT ID) used for token revocation via the
-    Redis / in-memory denylist.
+    Redis / in-memory denylist.  The jti is also registered with the
+    session-governance layer so concurrent sessions can be capped.
     """
     if role not in ROLES:
         role = "viewer"
+    jti = secrets.token_hex(16)
     now = datetime.now(timezone.utc)
     payload = {
         "sub": username,
         "role": role,
         "permissions": list(ROLES[role]),
+        "tenant_id": tenant_id,
         "iat": now,
         "exp": now + timedelta(hours=JWT_EXPIRY_HOURS),
-        "jti": secrets.token_hex(16),
+        "jti": jti,
         "type": "access",
     }
+    track_session(username, jti)
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
 
-def create_refresh_token(username: str, role: str = "analyst") -> str:
+def create_refresh_token(username: str, role: str = "analyst", tenant_id: str = "default") -> str:
     """Create a long-lived refresh JWT. Rotated on each use."""
     if role not in ROLES:
         role = "viewer"
@@ -241,6 +246,7 @@ def create_refresh_token(username: str, role: str = "analyst") -> str:
     payload = {
         "sub": username,
         "role": role,
+        "tenant_id": tenant_id,
         "iat": now,
         "exp": now + timedelta(days=REFRESH_EXPIRY_DAYS),
         "jti": secrets.token_hex(16),
@@ -269,6 +275,59 @@ def is_token_revoked(jti: str) -> bool:
     return cache.get(f"revoked_jti:{jti}") is not None
 
 
+# ---------------------------------------------------------------------------
+# Session governance — limit concurrent sessions per user
+# ---------------------------------------------------------------------------
+
+def _session_key(username: str) -> str:
+    return f"cybertwin:sessions:{username}"
+
+
+def track_session(username: str, jti: str) -> None:
+    """Record *jti* as an active session for *username*.
+
+    Sessions are stored as a list of ``(jti, issued_at)`` pairs in the
+    cache, keyed by ``cybertwin:sessions:{username}``.  If the number of
+    active sessions exceeds ``MAX_CONCURRENT_SESSIONS``, the oldest jti
+    is revoked automatically.
+    """
+    import time
+    from backend.cache import cache
+
+    key = _session_key(username)
+    sessions: list[list] = cache.get(key) or []
+
+    sessions.append([jti, time.time()])
+
+    if len(sessions) > MAX_CONCURRENT_SESSIONS:
+        sessions.sort(key=lambda s: s[1])
+        while len(sessions) > MAX_CONCURRENT_SESSIONS:
+            old_jti, _ = sessions.pop(0)
+            revoke_token(old_jti, JWT_EXPIRY_HOURS * 3600)
+            logger.info("Session evicted for %s (jti=%s…)", username, old_jti[:8])
+
+    ttl = JWT_EXPIRY_HOURS * 3600 + 60
+    cache.set(key, sessions, ttl=ttl)
+
+
+def revoke_all_sessions(username: str) -> int:
+    """Revoke every active session for *username*.
+
+    Returns the number of sessions revoked.
+    """
+    from backend.cache import cache
+
+    key = _session_key(username)
+    sessions: list[list] = cache.get(key) or []
+    count = 0
+    for jti, _ in sessions:
+        revoke_token(jti, JWT_EXPIRY_HOURS * 3600)
+        count += 1
+    cache.delete(key)
+    logger.info("Revoked all %d sessions for %s", count, username)
+    return count
+
+
 def verify_token(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> dict[str, Any]:
@@ -291,6 +350,7 @@ def verify_token(
     if jti and is_token_revoked(jti):
         raise HTTPException(status_code=401, detail="Token has been revoked — please log in again")
 
+    payload.setdefault("tenant_id", "default")
     return payload
 
 
@@ -355,7 +415,7 @@ def authenticate_user(username: str, password: str) -> Optional[dict[str, str]]:
         return None
     if not verify_password(password, user["hashed_password"]):
         return None
-    return {"username": username, "role": user["role"]}
+    return {"username": username, "role": user["role"], "tenant_id": "default"}
 
 
 # ---------------------------------------------------------------------------
