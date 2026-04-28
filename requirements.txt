@@ -21,7 +21,7 @@ sqlalchemy==2.0.36
 alembic==1.14.0
 psycopg2-binary==2.9.10          # PostgreSQL driver (optional — only needed with PostgreSQL)
 # OIDC/SSO: JWKS validation + JWT decoding for enterprise SSO
-authlib==1.6.11
+authlib==1.7.0
 # Field-level encryption (AES-256-GCM, HKDF key derivation)
 cryptography==46.0.7
 # Background jobs: Arq (Redis-backed, asyncio-native, ~1k LoC, 0 CVE)
