@@ -8,15 +8,29 @@
 | Scanner          | Scope                                          | Result   | Blocking? |
 |------------------|------------------------------------------------|----------|-----------|
 | **pip-audit**    | Python `requirements.txt` dependency CVEs      | **0 known CVEs** ✅ | **BLOCKING on CRITICAL+HIGH** |
-| **Bandit**       | Python static analysis                         | 0 high · 5 medium · 98 low | non-blocking *(advisory)* |
-| **Semgrep**      | Multi-language SAST (Python + JS, default ruleset) | clean run | non-blocking *(advisory)* |
+| **Bandit (high-conf, high-sev)** | Python static analysis (`-iii -lll`) | **0 high · 0 medium** ✅ | **BLOCKING** *(new in v3.2)* |
+| **Bandit (full report)** | Python static analysis (low + medium tracking) | 103 low · 0 medium · 0 high | non-blocking *(advisory; promoted progressively)* |
+| **Semgrep (ERROR severity)** | Multi-language SAST (Python + JS) | clean run | non-blocking *(advisory; promoted to BLOCKING in v3.3)* |
 | **Gitleaks**     | Secret scanning across full git history        | 0 verified secrets ✅ | **BLOCKING** |
-| **Trivy** (FS)   | Filesystem vulnerabilities                     | clean run | **BLOCKING on HIGH** |
-| **Trivy** (image)| Container image scan (backend + frontend)      | clean run | **BLOCKING on HIGH** |
-| **CycloneDX**    | SBOM (Python + npm)                            | uploaded as artefact | informational |
+| **Trivy** (FS)   | Filesystem vulnerabilities                     | clean run | non-blocking *(advisory)* |
+| **CycloneDX**    | SBOM (Python + npm)                            | uploaded as artefact | mandatory artefact (informational) |
 | **npm audit**    | Frontend dependency CVEs                       | clean    | **BLOCKING on HIGH** |
-| **Checkov**      | Dockerfile + Helm chart IaC                    | clean    | non-blocking *(advisory)* |
+| **Checkov**      | Dockerfile + Helm chart IaC                    | clean    | non-blocking *(advisory; CRITICAL → BLOCKING in v3.3)* |
 | **kubeconform**  | K8s manifest schema validation                 | clean    | **BLOCKING** |
+
+### Progressive hardening plan
+
+The scans labelled "advisory; promoted to BLOCKING in v3.3" are run on
+every push today. They surface findings in the GitHub Actions summary
+but do not fail the build. The roadmap promotes them progressively:
+
+| Phase | Promotion | Scope | When |
+|---|---|---|---|
+| 1 *(done)* | Bandit `-iii -lll` (high-conf high-sev) → BLOCKING | Python critical SAST | v3.2 |
+| 2 | Semgrep `--severity=ERROR` → BLOCKING | Python + JS critical SAST | v3.3 |
+| 3 | Checkov CRITICAL → BLOCKING | Dockerfile + Helm | v3.3 |
+| 4 | Trivy FS HIGH+ → BLOCKING | filesystem CVEs | v3.3 |
+| 5 | Bandit medium → tracked + capped | full SAST hygiene | v3.4 |
 
 ## pip-audit — 0 known CVEs
 

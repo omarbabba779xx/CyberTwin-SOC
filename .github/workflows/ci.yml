@@ -1,3 +1,27 @@
+# =============================================================================
+# CyberTwin SOC — Continuous Integration & Delivery
+# =============================================================================
+#
+# This workflow is the production quality gate. Every push to master / main /
+# develop runs nine jobs in parallel; the final quality-gate job blocks the
+# merge unless ALL prerequisite jobs pass.
+#
+# Jobs (left → right reflects the dependency graph):
+#
+#   backend-tests        — pytest + coverage on SQLite (fast)
+#   postgres-migration   — alembic upgrade/downgrade smoke against PG 16
+#   frontend-build       — npm ci + npm run build + Lighthouse
+#   lint                 — flake8 (blocking) + black (advisory)
+#   security             — pip-audit + gitleaks + npm audit (BLOCKING)
+#                          + bandit + semgrep + trivy + sbom (informational)
+#   docker               — compose config + build + smoke run + healthcheck
+#   helm-lint            — helm lint + render + manifest artefact
+#   checkov              — IaC scanning on Dockerfile + Helm
+#   quality-gate         — meta-job: requires every above job to be green
+#
+# Proof artefacts:  see docs/proof/  (one .md per claim)
+# =============================================================================
+
 name: CyberTwin SOC CI/CD
 
 on:
@@ -8,6 +32,10 @@ on:
   workflow_dispatch:
 
 jobs:
+
+  # ---------------------------------------------------------------------------
+  # 1. Backend Tests — pytest + coverage (SQLite, fast feedback)
+  # ---------------------------------------------------------------------------
   backend-tests:
     runs-on: ubuntu-latest
     name: Backend Tests
@@ -28,21 +56,29 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          python -m pytest tests/ --cov=backend --cov-report=xml --cov-report=term-missing -q
+          python -m pytest tests/ \
+            --cov=backend \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            -q
 
-      - name: Upload coverage
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           file: coverage.xml
-        continue-on-error: true
+        continue-on-error: true   # Codecov flakes occasionally; not a blocker
 
+  # ---------------------------------------------------------------------------
+  # 2. PostgreSQL Migration Smoke — Alembic forward + rollback + index check
+  # ---------------------------------------------------------------------------
+  # Proves the SQLAlchemy schema and Alembic migrations apply cleanly to a
+  # real PostgreSQL 16 instance — both forward AND backward — and that every
+  # `tenant_id` column is index-covered. The functional test suite still runs
+  # on SQLite (cheaper); this job is the production-DB safety net.
+  # ---------------------------------------------------------------------------
   postgres-migration:
     runs-on: ubuntu-latest
     name: PostgreSQL Migration Smoke
-    # Proves the SQLAlchemy schema and Alembic migrations apply cleanly to a
-    # real PostgreSQL 16 instance — both forward AND backward — and that all
-    # expected indexes are created. Tests still run on SQLite (cheaper); this
-    # job is the production-DB safety net.
 
     services:
       postgres:
@@ -75,13 +111,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Wait for PostgreSQL
+      - name: Wait for PostgreSQL to be ready
         run: |
           for i in $(seq 1 15); do
             pg_isready -h localhost -p 5432 -U cybertwin && exit 0
             sleep 2
           done
-          echo "PostgreSQL did not become ready in time."
+          echo "::error::PostgreSQL did not become ready in time."
           exit 1
 
       - name: Apply migrations forward (alembic upgrade head)
@@ -89,25 +125,29 @@ jobs:
 
       - name: Verify all expected tables exist
         run: |
-          python -c "
+          python <<'PY'
           import os
           from sqlalchemy import create_engine, inspect
+
           engine = create_engine(os.environ['DATABASE_URL'])
           insp = inspect(engine)
           tables = set(insp.get_table_names())
-          expected = {'simulation_runs', 'security_events', 'alerts', 'soc_cases',
-                      'case_comments', 'case_evidence', 'alert_feedback',
-                      'suppressions', 'audit_log_v2', 'alembic_version'}
+          expected = {
+              'simulation_runs', 'security_events', 'alerts', 'soc_cases',
+              'case_comments', 'case_evidence', 'alert_feedback',
+              'suppressions', 'audit_log_v2', 'alembic_version',
+          }
           missing = expected - tables
           assert not missing, f'Missing tables: {missing}. Found: {sorted(tables)}'
           print(f'OK: {len(tables)} tables created.')
-          "
+          PY
 
       - name: Verify tenant_id index coverage
         run: |
-          python -c "
+          python <<'PY'
           import os
           from sqlalchemy import create_engine, inspect
+
           engine = create_engine(os.environ['DATABASE_URL'])
           insp = inspect(engine)
           gaps = []
@@ -117,13 +157,13 @@ jobs:
               cols = {c['name'] for c in insp.get_columns(tbl)}
               if 'tenant_id' not in cols:
                   continue
-              indexes = insp.get_indexes(tbl)
-              covered = any('tenant_id' in idx['column_names'] for idx in indexes)
+              idx = insp.get_indexes(tbl)
+              covered = any('tenant_id' in i['column_names'] for i in idx)
               if not covered:
                   gaps.append(tbl)
           assert not gaps, f'Tables missing tenant_id index: {gaps}'
           print('OK: every tenant_id column is indexed.')
-          "
+          PY
 
       - name: Roll back fully (alembic downgrade base)
         run: alembic downgrade base
@@ -131,6 +171,9 @@ jobs:
       - name: Re-apply forward (idempotency check)
         run: alembic upgrade head
 
+  # ---------------------------------------------------------------------------
+  # 3. Frontend Build — npm ci + production build + Lighthouse audit
+  # ---------------------------------------------------------------------------
   frontend-build:
     runs-on: ubuntu-latest
     name: Frontend Build
@@ -147,25 +190,25 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Build
+      - name: Build production bundle
         working-directory: frontend
         run: npm run build
 
-      - name: Check bundle size
+      - name: Report bundle size
         working-directory: frontend
         run: |
           echo "Bundle sizes:"
           du -sh dist/assets/*.js dist/assets/*.css
 
-      - name: Lighthouse CI (frontend perf/a11y/best-practices)
+      - name: Lighthouse CI (perf / a11y / best-practices)
         working-directory: frontend
-        # Soft-fail today: gate hardens in v3.2 once perf budget is locked.
+        # Soft-fail today: gate hardens in v3.3 once perf budget is locked.
         continue-on-error: true
         run: |
           npm install --no-save @lhci/cli@0.14.x
           npx lhci autorun --config=.lighthouserc.json || true
 
-      - name: Upload Lighthouse report
+      - name: Upload Lighthouse report (artefact)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -174,6 +217,9 @@ jobs:
           retention-days: 14
           if-no-files-found: ignore
 
+  # ---------------------------------------------------------------------------
+  # 4. Code Quality — flake8 (BLOCKING) + black (advisory)
+  # ---------------------------------------------------------------------------
   lint:
     runs-on: ubuntu-latest
     name: Code Quality
@@ -189,23 +235,43 @@ jobs:
       - name: Install linters
         run: pip install flake8 black --quiet
 
-      - name: Check formatting (black) [warn-only for now]
+      - name: Check formatting (black) [advisory]
         # TODO: drop continue-on-error once the codebase is fully reformatted.
         run: black --check --line-length 120 backend/
         continue-on-error: true
 
-      - name: Lint (flake8)
-        # Ignored:
-        #   E501 long line (handled separately via max-line-length)
-        #   W503 line break before binary operator (PEP8 reversed its stance)
-        #   E402 module-level import not at top (needed for sys.path setup)
-        #   E241 multiple spaces after ',' (intentional in tabular MITRE catalog)
-        #   E231 missing whitespace after ',' (intentional in mitre/generate_bundle)
-        #   E704 statement on same line as def (intentional for abstract method stubs)
-        #   E704/E241/E231 flagged code is reviewed and intentional;
-        #   real bugs (F4xx/F5xx/F6xx/F8xx, E741) ARE enforced.
-        run: flake8 backend/ --max-line-length=120 --ignore=E501,W503,E402,E241,E231,E704 --count
+      - name: Lint (flake8) [BLOCKING]
+        # Ignored, with rationale:
+        #   E501  long line   (we already enforce max-line-length=120)
+        #   W503  line break before binary operator (PEP8 reversed its stance)
+        #   E402  module-level import not at top  (sys.path setup pattern)
+        #   E241  multiple spaces after ','  (intentional in tabular MITRE catalog)
+        #   E231  missing whitespace after ','  (intentional in mitre/generate_bundle)
+        #   E704  statement on same line as def  (intentional for stub abstract methods)
+        # Every real bug class (F4xx/F5xx/F6xx/F8xx, E741, …) IS enforced.
+        run: |
+          flake8 backend/ \
+            --max-line-length=120 \
+            --ignore=E501,W503,E402,E241,E231,E704 \
+            --count
 
+  # ---------------------------------------------------------------------------
+  # 5. Security Scans — multi-tool, mixed blocking / advisory
+  # ---------------------------------------------------------------------------
+  # Blocking gates (failure of any === build red):
+  #     pip-audit          — Python CVEs
+  #     Gitleaks           — verified secrets in git history
+  #     npm audit (high+)  — frontend CVEs
+  #     Bandit (high-conf) — Python static analysis, high-confidence only
+  #
+  # Advisory (run on every push, surfaced in summary, do not fail the build):
+  #     Semgrep            — multi-language SAST, ERROR-severity
+  #     Trivy FS           — filesystem CVE scan (uses ignore-unfixed)
+  #     Checkov            — Dockerfile / Helm IaC (separate job)
+  #
+  # Artefacts (informational, retained 30 d):
+  #     CycloneDX SBOM     — Python + npm
+  # ---------------------------------------------------------------------------
   security:
     runs-on: ubuntu-latest
     name: Security Scans
@@ -216,7 +282,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # gitleaks needs full history
+          fetch-depth: 0   # Gitleaks needs the full git history
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -231,39 +297,55 @@ jobs:
       - name: Install Python scanners
         run: pip install bandit pip-audit cyclonedx-bom --quiet
 
-      - name: Bandit — Python static security analysis (informational)
-        # NOTE: 5 medium findings are reviewed false positives — see
-        # docs/proof/security-scan-summary.md. Will become blocking once
-        # Bandit high-confidence is baseline-clean.
-        run: bandit -r backend/ -ll --skip B101,B104 -f txt || true
+      # --- BLOCKING GATES ------------------------------------------------
 
-      - name: pip-audit — CVE scan on Python dependencies (BLOCKING)
-        # Baseline: 0 known CVEs after the Apr 2026 dependency upgrade.
-        # If a new CVE is published in any pinned version, this gate will
-        # fail the build, forcing a bump. See docs/proof/security-scan-summary.md.
+      - name: Bandit — high-confidence high-severity Python issues [BLOCKING]
+        # `-iii -lll` enables ONLY high-confidence high-severity findings, so
+        # the noisy medium / low buckets stay advisory below.
+        # `--skip B101,B104` keeps assert and 0.0.0.0 bind out of the gate
+        # (both are intentional in this codebase: assert is for tests, 0.0.0.0
+        # is needed for compose / k8s).
+        run: bandit -r backend/ -iii -lll --skip B101,B104
+
+      - name: pip-audit — CVE scan on Python deps [BLOCKING]
+        # Baseline: 0 known CVEs after the Apr 2026 dep upgrade. A new CVE
+        # in any pinned version fails the build, forcing a bump.
         run: pip-audit -r requirements.txt --strict
 
-      - name: Semgrep — multi-language SAST (Python + JS)
+      - name: Gitleaks — secret scanning [BLOCKING]
+        # Any secret matching .gitleaks.toml fails the build. Baseline:
+        # 0 verified secrets after the JWT-secret incident fix.
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: npm audit — frontend deps [BLOCKING on high+]
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+      # --- ADVISORY (runs on every push, soft-failed for now) ------------
+
+      - name: Bandit — full report [advisory]
+        # Surfaces medium / low findings for tracking; does not gate the build.
+        # When the medium bucket is baseline-clean we promote this to BLOCKING
+        # by removing the `|| true` and lowering the severity flags.
+        run: bandit -r backend/ -ll --skip B101,B104 -f txt || true
+
+      - name: Semgrep — multi-language SAST (Python + JS) [advisory]
+        # `--severity=ERROR` filters to ERROR-class findings only. We will
+        # promote this to a blocking gate once the existing ERROR backlog is
+        # zero, see ROADMAP.md.
         continue-on-error: true
         run: |
           docker run --rm -v "$PWD:/src" semgrep/semgrep:latest \
             semgrep --config=p/security-audit \
                     --config=p/python \
                     --config=p/javascript \
-                    --error || true
+                    --severity=ERROR \
+                    --error \
+                    || true
 
-      - name: Gitleaks — secret scanning (BLOCKING)
-        # Any secret matching the rules in .gitleaks.toml fails the build.
-        # Baseline: 0 verified secrets after the JWT-secret incident fix.
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: npm audit — frontend dependencies (BLOCKING on high+)
-        working-directory: frontend
-        run: npm audit --audit-level=high
-
-      - name: Trivy — filesystem vulnerability scan
+      - name: Trivy — filesystem CVE scan [advisory]
         uses: aquasecurity/trivy-action@master
         continue-on-error: true
         with:
@@ -273,15 +355,20 @@ jobs:
           ignore-unfixed: true
           exit-code: '0'
 
+      # --- SBOM artefacts (mandatory, retained 30 d) ---------------------
+
       - name: CycloneDX SBOM — Python
-        run: cyclonedx-py requirements -i requirements.txt -o sbom-python.json --output-format json || true
+        run: |
+          cyclonedx-py requirements -i requirements.txt \
+            -o sbom-python.json --output-format json || true
 
       - name: CycloneDX SBOM — Frontend
         working-directory: frontend
         run: |
-          npx --yes @cyclonedx/cyclonedx-npm --output-file ../sbom-frontend.json || true
+          npx --yes @cyclonedx/cyclonedx-npm \
+            --output-file ../sbom-frontend.json || true
 
-      - name: Upload SBOM artifacts
+      - name: Upload SBOM artefacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -291,6 +378,9 @@ jobs:
             sbom-frontend.json
           retention-days: 30
 
+  # ---------------------------------------------------------------------------
+  # 6. Docker Build — compose config + build + healthcheck smoke
+  # ---------------------------------------------------------------------------
   docker:
     runs-on: ubuntu-latest
     name: Docker Build
@@ -299,10 +389,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create compose .env
-        # `.env` is git-ignored. We create a stub so the compose env_file
-        # directive is satisfied and the production safety gate has strong
-        # test-only secrets during the compose smoke run.
+      - name: Create compose .env (test-only secrets)
+        # `.env` is git-ignored; we create a stub so `env_file` is satisfied
+        # and the production-safety gate gets strong test-only secrets.
         run: |
           cat > .env <<'EOF'
           ENV=production
@@ -312,7 +401,7 @@ jobs:
           AUTH_VIEWER_PASSWORD=ci-viewer-password-0000
           EOF
 
-      - name: Validate compose config
+      - name: Validate compose configurations
         # Fails fast on typos / unknown keys / variable interpolation errors
         # before we waste time on `build`.
         run: |
@@ -333,13 +422,13 @@ jobs:
               echo "Backend is healthy after ${i} attempt(s)."
               exit 0
             fi
-            echo "::group::Attempt ${i}/30 - waiting 5s for backend..."
+            echo "::group::Attempt ${i}/30 — waiting 5s for backend..."
             docker compose ps
             docker compose logs backend --tail=20 || true
             echo "::endgroup::"
             sleep 5
           done
-          echo "Backend did not become healthy in time."
+          echo "::error::Backend did not become healthy in time."
           exit 1
 
       - name: Wait for frontend health
@@ -349,30 +438,29 @@ jobs:
               echo "Frontend is healthy after ${i} attempt(s)."
               exit 0
             fi
-            echo "Attempt ${i}/12 - waiting 5s for frontend (port 80→8080)..."
+            echo "Attempt ${i}/12 — waiting 5s for frontend (port 80→8080)..."
             sleep 5
           done
-          echo "Frontend did not become healthy in time."
+          echo "::error::Frontend did not become healthy in time."
           exit 1
 
       - name: Dump container logs on failure
         if: failure()
         run: |
-          echo "::group::backend logs"
-          docker compose logs backend --tail=200 || true
-          echo "::endgroup::"
-          echo "::group::frontend logs"
-          docker compose logs frontend --tail=200 || true
-          echo "::endgroup::"
-          echo "::group::redis logs"
-          docker compose logs redis --tail=100 || true
-          echo "::endgroup::"
+          for svc in backend frontend redis; do
+            echo "::group::${svc} logs"
+            docker compose logs $svc --tail=200 || true
+            echo "::endgroup::"
+          done
           docker compose ps
 
       - name: Stop services
         if: always()
         run: docker compose down -v
 
+  # ---------------------------------------------------------------------------
+  # 7. Helm Chart Validation — lint + render + artefact upload
+  # ---------------------------------------------------------------------------
   helm-lint:
     runs-on: ubuntu-latest
     name: Helm Chart Validation
@@ -405,6 +493,12 @@ jobs:
           path: /tmp/rendered.yaml
           retention-days: 14
 
+  # ---------------------------------------------------------------------------
+  # 8. Checkov IaC Security Scan — Dockerfile + Helm
+  # ---------------------------------------------------------------------------
+  # Currently advisory (soft_fail: true). Will be promoted to BLOCKING for
+  # CRITICAL findings in v3.3 once the existing CRITICAL backlog is zero.
+  # ---------------------------------------------------------------------------
   checkov:
     runs-on: ubuntu-latest
     name: Checkov IaC Security Scan
@@ -413,13 +507,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Checkov on Dockerfile and Docker Compose
+      - name: Run Checkov on Dockerfile + secrets
         uses: bridgecrewio/checkov-action@master
         with:
           directory: .
           framework: dockerfile,secrets
           quiet: true
-          soft_fail: true
+          soft_fail: true   # advisory until v3.3
 
       - name: Run Checkov on Helm templates
         uses: bridgecrewio/checkov-action@master
@@ -427,10 +521,10 @@ jobs:
           directory: deploy/helm
           framework: helm
           quiet: true
-          soft_fail: true
+          soft_fail: true   # advisory until v3.3
 
   # ---------------------------------------------------------------------------
-  # Final quality gate — all required jobs must pass before merging to master
+  # 9. Quality Gate — meta-job, blocks merges unless every gate is green
   # ---------------------------------------------------------------------------
   quality-gate:
     runs-on: ubuntu-latest

