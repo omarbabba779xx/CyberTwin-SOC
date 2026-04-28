@@ -1,7 +1,7 @@
 # All pins reflect fixes for CVEs found by `pip-audit` (Apr 2026 audit).
 fastapi==0.136.1                 # latest, pulls starlette >= 0.49 (CVE-2025-62727 patched)
 uvicorn[standard]==0.32.1
-pydantic==2.10.3
+pydantic==2.13.3
 python-multipart==0.0.26         # CVE-2024-53981 / CVE-2026-24486 / CVE-2026-40347
 PyJWT==2.12.0                    # CVE-2026-32597
 python-dotenv==1.2.2             # CVE-2026-28684
