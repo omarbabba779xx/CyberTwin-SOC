@@ -31,12 +31,30 @@ command.
 | File | What it proves | How to regenerate |
 |---|---|---|
 | `ci-status.md` | CI pipeline state on `master` | `gh run list --workflow ci.yml` |
-| `coverage-report.md` | Backend test results & code coverage | `pytest tests/ --cov=backend` |
+| `test-report-v3.2.md` | **Backend (806) + frontend (10) + coverage (69.8 %)** | `pytest tests/ --cov=backend` + `cd frontend && npx vitest --run` |
+| `coverage-report.md` | Per-module test breakdown | `pytest tests/ --cov=backend --cov-report=term-missing` |
 | `frontend-tests-report.md` | Vitest results for the React UI | `cd frontend && npm test` |
+| `frontend-lighthouse-report.md` | Frontend perf / a11y / best-practices / SEO | CI artefact `lighthouse-${SHA}` |
 | `postgres-migration-report.md` | Alembic forward + rollback + index coverage | `alembic upgrade head && alembic downgrade base && alembic upgrade head` |
 | `database-indexing-report.md` | Tenant_id-covering indexes on every multi-tenant table | (validated by the `postgres-migration` CI job) |
 | `mitre-coverage-snapshot.md` | Rule → ATT&CK technique mapping today | `python -m benchmarks.mitre_snapshot` |
-| `benchmark-results.md` | Pipeline performance, EPS, latency, k6 / Locust / Docker | see commands inside the file |
+| `mitre-rule-validation.md` | **Rule-mapped vs validated split + roadmap** | `pytest tests/test_rule_validation.py -v` |
+
+## Performance proofs
+
+| File | Tool | Reproduce |
+|---|---|---|
+| `benchmark-results.md` | In-process pipeline (deterministic) | `python -m benchmarks.bench_pipeline` |
+| `benchmark-http-k6.md` | k6 — HTTP API p95 | `k6 run benchmarks/k6_api.js …` |
+| `benchmark-ingestion-locust.md` | Locust — sustained EPS | `locust -f benchmarks/locust_ingestion.py …` |
+| `benchmark-websocket.md` | asyncio + `websockets` lib | `python benchmarks/ws_load.py …` |
+| `benchmark-postgres.md` | SQLAlchemy + Postgres 16 | `python benchmarks/postgres_query_latency.py …` |
+| `benchmark-docker-startup.md` | docker compose timing harness | `python benchmarks/docker_startup.py …` |
+
+## Security proofs
+
+| File | What it proves | How to regenerate |
+|---|---|---|
 | `security-scan-summary.md` | pip-audit / Bandit / Semgrep / Gitleaks / Trivy / Checkov / kubeconform | see commands inside the file |
 | `docker-validation.md` | `docker compose config` + smoke run + CI gate description | see commands inside the file |
 
