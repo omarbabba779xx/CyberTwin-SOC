@@ -84,7 +84,7 @@ This document maps CyberTwin SOC's current security controls against the SOC 2 T
 | Control | Requirement | Status | Evidence |
 |---------|------------|--------|----------|
 | CC8.1 | Change authorization | Partial | GitHub PR reviews; no formal CAB |
-| CC8.2 | Change testing | Implemented | 253 tests + CI quality gate (100% pass required) |
+| CC8.2 | Change testing | Implemented | 819 tests + CI quality gate (100% pass required) |
 | CC8.3 | Change approval | Partial | Branch protection assumed; needs formal evidence |
 
 ### CC9 — Risk Mitigation (Vendors)

@@ -134,7 +134,7 @@ the dual blocking + advisory contract and a written promotion roadmap.
 |---|---|
 | Backend image — non-root user | ✅ `USER cybertwin` (uid 1000) |
 | Frontend image — non-root user | ✅ `nginxinc/nginx-unprivileged:1.27-alpine` (uid 101, port 8080) |
-| `--limit-max-body-size 16777216` on uvicorn | ✅ |
+| 16 MiB request body cap (`MaxBodySizeMiddleware` + reverse-proxy) | ✅ tested by `tests/test_request_body_limit.py` |
 | Image pinning | ✅ `python:3.12-slim`, `nginx-unprivileged:1.27-alpine`, `node:20-alpine` |
 | Healthchecks | ✅ Backend + Frontend + Redis + Worker |
 | `securityContext.runAsNonRoot=true` | ✅ Helm |

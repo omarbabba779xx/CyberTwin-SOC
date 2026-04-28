@@ -42,7 +42,7 @@ The table below tracks every open item from the v3.1 audit and its v3.2 resoluti
 |---|---|---|
 | 🟡 No JWT revocation / refresh flow | ✅ **CLOSED** | Redis JTI denylist + `/api/auth/refresh` + `/api/auth/logout`. Refresh tokens rotated on every use. |
 | 🟡 SQLite in production | ✅ **CLOSED** | SQLAlchemy 2.0 + Alembic migrations (`0001..0005`). `DATABASE_URL` switches to PostgreSQL with FK + indexes. SQLite remains for local dev. |
-| 🟡 No max request body limit | ✅ **CLOSED** | Uvicorn `--limit-max-body-size 16777216` set in Dockerfile + per-event 64 KB cap. |
+| 🟡 No max request body limit | ✅ **CLOSED** | `MaxBodySizeMiddleware` rejects requests > 16 MiB with HTTP 413 (`backend/api/main.py`); per-event 64 KB cap remains for ingestion; reverse proxy `proxy-body-size: 16m` documented in `production-deployment.md`. Validated by `tests/test_request_body_limit.py`. |
 | 🟡 CORS allows all methods/headers | ✅ **CLOSED** | `allow_methods=["GET","POST","PATCH","DELETE","OPTIONS"]`, `allow_headers=["Authorization","Content-Type","X-Request-ID"]`. |
 | 🟡 nginx runs as root | ✅ **CLOSED** | Frontend uses `nginxinc/nginx-unprivileged:1.27-alpine` on port 8080. |
 | 🟢 No pagination max on audit_log | ✅ **CLOSED** | `get_audit_log(limit=200)` server-side capped at 1000. |

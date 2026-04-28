@@ -232,7 +232,7 @@ flowchart TB
     ROOT --> BE & FE & DET & SOC & OPS & ENT
 
     BE --- BE1["Python 3.12<br/>18+ packages · Arq worker"]
-    BE --- BE2["80+ endpoints · 806 tests ✅"]
+    BE --- BE2["80+ endpoints · 819 tests ✅"]
 
     FE --- FE1["React 18 + Vite<br/>27 pages · Vitest"]
     FE --- FE2["Recharts + ReactFlow"]
@@ -284,7 +284,7 @@ flowchart TB
 
 | Area                      | Status                                                | Evidence |
 |---------------------------|-------------------------------------------------------|----------|
-| **Backend tests**         | ✅ 806 passing                                          | [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
+| **Backend tests**         | ✅ 819 passing                                          | [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
 | **Frontend tests**        | ✅ 10 passing (Vitest + RTL)                           | [`docs/proof/frontend-tests-report.md`](docs/proof/frontend-tests-report.md) |
 | **Code coverage**         | ✅ 69.8 % (gate: ≥ 60 %)                               | `pytest --cov=backend` |
 | **Frontend build**        | ✅ Passing                                             | GitHub Actions `Frontend Build` job |
@@ -1158,7 +1158,7 @@ flowchart TB
     ROOT["📁 CyberTwin-SOC"]
     ROOT --> BE["🐍 backend/<br/>16 357 LoC · Python 3.12"]
     ROOT --> FE["⚛️ frontend/<br/>12 396 LoC · React 18 + Vite"]
-    ROOT --> TS["🧪 tests/<br/>806 tests · 100 % passing"]
+    ROOT --> TS["🧪 tests/<br/>819 tests · 100 % passing"]
     ROOT --> AL["🗄️ alembic/<br/>migration infra"]
     ROOT --> BM["📊 benchmarks/<br/>k6 · locust · pipeline · MITRE snapshot"]
     ROOT --> DEP["⎈ deploy/helm/<br/>chart + ServiceMonitor"]

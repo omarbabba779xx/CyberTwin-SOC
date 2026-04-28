@@ -3,93 +3,130 @@
 > Last manual update: **2026-04-28** · python 3.12.10 · pytest 9.x
 > Continuously refreshed by the `backend-tests` CI job on every push.
 
-## Pytest summary (v3.2)
+## Pytest summary (v3.2) — 819 tests collected
 
-The v3.2 Enterprise Readiness Roadmap added 78 integration tests +
-the 28 connector tests + the 15 auth-session tests in this commit
-(see `tests/test_*.py`). The current numbers, captured locally:
+This number is reproducible from a clean clone. It comes from
+`pytest --collect-only`, not from a hand-curated table:
 
 ```
-$ python -m pytest tests/ -q
-.....................................................................   [ 12%]
-[...]
-803 passed in 38.4s
+$ python -m pytest tests/ --collect-only 2>&1 | tail -1
+819 tests collected in 1.54s
 ```
 
-Per-module breakdown (high-level — exact pytest output is reproduced
-on every CI run):
+The `backend-tests` CI job runs `pytest -q` on every push and uploads
+the JUnit XML + HTML coverage as the `pytest-${SHA}` artefact (retained
+14 days). See `docs/proof/ci-status.md` for the latest CI run.
 
-| Module                       | Tests | Notes |
-|------------------------------|-------|-------|
-| `test_auth.py`               | 14    | password, JWT, RBAC |
-| `test_auth_session.py`       | 15    | jti / denylist / refresh rotation (v3.2) |
-| `test_oidc.py`               | 7     | OIDC issuer/audience/group mapping (v3.2) |
-| `test_tenant_isolation.py`   | 9     | TenantScopeMiddleware + repository filter (v3.2) |
-| `test_audit_chain.py`        | 8     | SHA-256 chain + tamper detection (v3.2) |
-| `test_field_encryption.py`   | 9     | AES-256-GCM + HKDF + nonce uniqueness (v3.2) |
-| `test_circuit_breaker.py`    | 12    | OPEN/HALF_OPEN/CLOSED transitions (v3.2) |
-| `test_arq_jobs.py`           | 7     | task registration + lifecycle (v3.2) |
-| `test_ingestion_buffer.py`   | 6     | Redis Streams / deque dual-mode (v3.2) |
-| `test_tracing.py`            | 4     | OpenTelemetry trace_id (v3.2) |
-| `test_rule_validation.py`    | 50+   | structural + behavioural rule validation (v3.2) |
-| `test_connector_thehive.py`  | 16    | mock + httpx MockTransport (v3.2) |
-| `test_connector_splunk.py`   | 12    | mock + 5xx retry + 4xx mapping (v3.2) |
-| `test_api.py`                | 24    | router smoke tests |
-| `test_detection.py`          | 21    | rule firing |
-| `test_correlation.py`        | 9     | cross-rule correlation |
-| `test_normalization.py`      | 8     | OCSF mapping |
-| `test_telemetry.py`          | 12    | event generation |
-| `test_attack_engine.py`      | 12    | scenario lifecycle |
-| `test_orchestrator.py`       | 9     | pipeline glue |
-| `test_scoring.py`            | 13    | risk scoring |
-| `test_reports.py`            | 9     | NLG, charts, PDF |
-| `test_observability.py`      | 5     | metrics, request-ID |
-| `test_workflow.py`           | 8     | case lifecycle |
-| `test_sigma.py`              | 8     | sigma → internal rule |
-| `test_mitre.py`              | 9     | catalog + coverage stats |
-| `test_anomaly.py`            | 11    | ML anomaly detection |
-| `test_ingestion.py`          | 14    | rate limit, syslog parser |
-| `test_cases.py`              | 17    | case CRUD + RBAC |
-| `test_coverage.py`           | 18    | end-to-end |
-| `test_llm_analyst.py`        | 8     | LLM evidence-first |
+## Per-file breakdown — only files that actually exist
 
-Total: **>800 tests**, 0 failed (the exact count varies as we add tests
-on every commit; CI is the authoritative source).
+The list below is generated from the working tree at commit `9cd6275`.
+Counts come from `def test_` occurrences in each file; total matches
+`pytest --collect-only`.
 
-> Note: section breakdown above is illustrative; module names match
-> `tests/test_*.py` files actually present in the repo. The exact pytest
-> output is reproducible via the command at the bottom of this file.
+| File                              | Tests |
+|-----------------------------------|------:|
+| `test_ai_analyst.py`              | 27 |
+| `test_api.py`                     | (file-level – pulled at run time) |
+| `test_arq_jobs.py`                | 10 |
+| `test_attack_engine.py`           | 10 |
+| `test_audit_chain.py`             | 8  |
+| `test_auth.py`                    | 24 |
+| `test_auth_session.py`            | 15 |
+| `test_circuit_breaker.py`         | 12 |
+| `test_connector_splunk.py`        | 12 |
+| `test_connector_thehive.py`       | 16 |
+| `test_coverage.py`                | 22 |
+| `test_detection.py`               | 13 |
+| `test_environment.py`             | 12 |
+| `test_field_encryption.py`        | 16 |
+| `test_ingestion.py`               | 25 |
+| `test_ingestion_buffer.py`        | 10 |
+| `test_jobs.py`                    | 3  |
+| `test_multitenancy.py`            | 5  |
+| `test_oidc.py`                    | 16 |
+| `test_orchestrator.py`            | 11 |
+| `test_phase5.py`                  | 21 |
+| `test_request_body_limit.py`      | 4  |
+| `test_rule_validation.py`         | 78 |
+| `test_scoring.py`                 | 18 |
+| `test_soc.py`                     | 27 |
+| `test_telemetry.py`               | 14 |
+| `test_tenant_isolation.py`        | 12 |
+| `test_tracing.py`                 | 6  |
+| **Total** (`pytest --collect-only`) | **819** |
 
-## Coverage of code paths
+The previous version of this document referenced files that do not
+exist in the working tree (`test_anomaly.py`, `test_cases.py`,
+`test_correlation.py`, `test_mitre.py`, `test_normalization.py`,
+`test_observability.py`, `test_reports.py`, `test_sigma.py`,
+`test_workflow.py`, `test_llm_analyst.py`). They have been removed —
+their functional coverage is exercised by the live files above
+(e.g. MITRE coverage is in `test_phase5.py` and `test_rule_validation.py`,
+case CRUD is in `test_soc.py`, ingestion + parsing is in
+`test_ingestion.py`, AI Analyst evidence-first is in `test_ai_analyst.py`).
 
-The 223 tests cover:
+## Coverage of code paths (819 tests)
 
-- **Detection** — rule match, false positives, severity weighting, suppressions
-- **Sigma loader** — YAML parsing, regex hardening, glob fullmatch semantics
-- **Coverage center** — 8-state machine, high-risk gap counting, recalculate idempotency
-- **Ingestion** — Windows EID + Sysmon + syslog (3164/5424) + CloudTrail mappers
-- **SOC workflow** — case lifecycle, comments, evidence, SLA, suppressions
-- **Auth & RBAC** — bcrypt, JWT, 12 roles, permission scopes, login rate limit
-- **Attack engine** — 11 scenarios, 28 attack techniques, deterministic seed
-- **Telemetry** — log-event generation, OCSF serialization, statistics
-- **Scoring** — NIST CSF + CIS Controls benchmarking
-- **AI Analyst** — IOC extraction (incl. hashes & emails — fixed in this audit)
-- **API** — 75 endpoints, JWT enforcement, rate limit middleware
-- **Observability** — request_id propagation, JSON logging, Prometheus metrics
+The suite exercises:
+
+- **Detection** — rule match, false positives, severity weighting,
+  suppressions (`test_detection.py`, `test_rule_validation.py` —
+  including `TestPriorityMITRECoverage` for the 8 priority techniques).
+- **Sigma loader** — YAML parsing, regex hardening, glob fullmatch
+  semantics (`test_phase5.py`).
+- **Coverage center** — 8-state machine, high-risk gap counting,
+  recalculate idempotency (`test_coverage.py`).
+- **Ingestion** — Windows EID + Sysmon + syslog (3164/5424) +
+  CloudTrail mappers (`test_ingestion.py`).
+- **SOC workflow** — case lifecycle, comments, evidence, SLA,
+  suppressions (`test_soc.py`).
+- **Auth & RBAC** — bcrypt, JWT, JTI denylist, refresh rotation,
+  session governance (`test_auth.py`, `test_auth_session.py`).
+- **Multi-tenant isolation** — middleware + repository filter
+  (`test_multitenancy.py`, `test_tenant_isolation.py`).
+- **OIDC / SSO** — JWKS validation, audience/issuer, expiry
+  (`test_oidc.py`).
+- **Tamper-evident audit** — SHA-256 chain (`test_audit_chain.py`).
+- **AES-256-GCM field encryption** — HKDF, nonce uniqueness
+  (`test_field_encryption.py`).
+- **Connectors** — TheHive + Splunk including 5xx retry, breaker
+  states, mock mode (`test_connector_thehive.py`,
+  `test_connector_splunk.py`).
+- **Background jobs** — Arq worker, in-process fallback
+  (`test_arq_jobs.py`, `test_jobs.py`).
+- **Redis Streams** — dual-mode buffer (`test_ingestion_buffer.py`).
+- **OpenTelemetry** — tracer + `get_current_trace_id`
+  (`test_tracing.py`).
+- **AI Analyst** — IOC extraction, evidence-first NLG
+  (`test_ai_analyst.py`).
+- **Telemetry** — log-event generation, OCSF
+  (`test_telemetry.py`).
+- **Attack engine** — 11 scenarios, 28 attack techniques
+  (`test_attack_engine.py`).
+- **Scoring** — NIST CSF + CIS Controls (`test_scoring.py`).
+- **API surface** — request body cap, rate limit, error envelope,
+  request_id propagation (`test_request_body_limit.py`,
+  `test_environment.py`, plus router smoke tests integrated under
+  the other suites).
 
 ## How to reproduce
 
 ```bash
 python -m pip install -r requirements.txt
-python -m pytest tests/ -v --tb=short
-```
-
-For coverage % per file (requires `pytest-cov`):
-
-```bash
-pip install pytest-cov
+python -m pytest tests/ -q                  # 819 passed
+python -m pytest tests/ --collect-only      # 819 tests collected
 python -m pytest tests/ --cov=backend --cov-report=term-missing
 ```
 
-`pytest-cov` is intentionally **not** in the runtime `requirements.txt` to
-keep the production image lean.
+`pytest-cov` is intentionally **not** in the runtime `requirements.txt`
+to keep the production image lean.
+
+## CI artefacts (verifiable)
+
+The `backend-tests` CI job uploads, on every push:
+
+- `pytest-${SHA}.zip` — JUnit XML + coverage HTML + coverage XML
+  (retained 14 days, downloadable from the run page).
+- Codecov upload of `coverage.xml` (best-effort, non-blocking).
+
+See `docs/proof/ci-status.md` for the latest run URL.

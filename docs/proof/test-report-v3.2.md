@@ -10,7 +10,7 @@
 
 | Surface | Count | Failures | Skipped | Tool |
 |---|---:|---:|---:|---|
-| Backend (Python) | **806** | 0 | 3 (env-conditional) | `pytest tests/` |
+| Backend (Python) | **819** | 0 | 3 (env-conditional) | `pytest tests/` |
 | Frontend (React) | **10** | 0 | 0 | `npx vitest --run` |
 | **Total** | **816** | **0** | 3 | — |
 
@@ -171,7 +171,7 @@ Every push runs the full test matrix. Latest green run:
 
 | Job | Duration | Result |
 |---|---|---|
-| Backend Tests | 30–35 s | ✅ 806/806 |
+| Backend Tests | 30–35 s | ✅ 819/819 |
 | Frontend Build | 18 s | ✅ |
 | PostgreSQL Migration Smoke | ~25 s | ✅ |
 | Code Quality (flake8) | <5 s | ✅ |

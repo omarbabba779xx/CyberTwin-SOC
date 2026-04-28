@@ -108,9 +108,45 @@ class APIVersionMiddleware(BaseHTTPMiddleware):
         return response
 
 
+# Per-request body cap. Enforced at the ASGI layer BEFORE FastAPI parses
+# the body so very large uploads cannot exhaust uvicorn worker memory.
+# Default 16 MiB; override via MAX_REQUEST_BODY_BYTES.
+MAX_BODY_BYTES = int(os.getenv("MAX_REQUEST_BODY_BYTES", str(16 * 1024 * 1024)))
+
+
+class MaxBodySizeMiddleware(BaseHTTPMiddleware):
+    """Reject requests whose declared Content-Length exceeds MAX_BODY_BYTES.
+
+    Falls through for chunked / streamed requests, which are bounded by
+    the reverse proxy (`nginx.ingress.kubernetes.io/proxy-body-size: 16m`)
+    in production. The starlette layer also caps any single chunk read.
+    """
+
+    async def dispatch(self, request, call_next):
+        cl = request.headers.get("content-length")
+        if cl is not None:
+            try:
+                if int(cl) > MAX_BODY_BYTES:
+                    return error_response(
+                        code="REQUEST_ENTITY_TOO_LARGE",
+                        message=f"Request body exceeds {MAX_BODY_BYTES} bytes.",
+                        status_code=413,
+                        request=request,
+                    )
+            except ValueError:
+                return error_response(
+                    code="BAD_REQUEST",
+                    message="Invalid Content-Length header.",
+                    status_code=400,
+                    request=request,
+                )
+        return await call_next(request)
+
+
 app.add_middleware(APIVersionMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(MetricsMiddleware)
+app.add_middleware(MaxBodySizeMiddleware)
 app.add_middleware(TenantScopeMiddleware)
 app.add_middleware(RequestIdMiddleware)
 
