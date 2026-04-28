@@ -7,7 +7,7 @@ PyJWT==2.12.0                    # CVE-2026-32597
 python-dotenv==1.2.2             # CVE-2026-28684
 slowapi==0.1.9
 bcrypt==4.2.1
-redis==5.2.1
+redis==7.4.0
 httpx==0.28.1
 pyyaml==6.0.2
 scikit-learn==1.5.2              # PYSEC-2024-110
