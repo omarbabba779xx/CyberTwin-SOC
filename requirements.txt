@@ -29,5 +29,5 @@ arq==0.26.3
 # OpenTelemetry (optional — enable with OTEL_ENABLED=true)
 opentelemetry-api==1.29.0
 opentelemetry-sdk==1.29.0
-opentelemetry-instrumentation-fastapi==0.50b0
+opentelemetry-instrumentation-fastapi==0.62b1
 opentelemetry-exporter-otlp-proto-grpc==1.29.0
