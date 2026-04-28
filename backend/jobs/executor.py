@@ -26,7 +26,6 @@ from backend.jobs.registry import (
     TaskStatus,
     _now_iso,
     _write,
-    update_progress,
 )
 
 import backend.jobs.tasks  # noqa: F401 — force registration of @register_task functions

@@ -87,7 +87,7 @@ class CircuitBreaker:
 
         try:
             result = fn(*args, **kwargs)
-        except Exception as exc:
+        except Exception:
             self._record_failure()
             raise
         else:

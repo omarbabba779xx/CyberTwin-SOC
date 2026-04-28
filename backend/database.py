@@ -16,7 +16,7 @@ import secrets
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 logger = logging.getLogger("cybertwin.database")
 

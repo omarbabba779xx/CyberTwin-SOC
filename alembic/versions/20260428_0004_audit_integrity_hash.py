@@ -5,7 +5,7 @@ hash chained to its predecessor, enabling forensic verification that no
 record has been inserted, deleted, or modified after the fact.
 
 Revision ID: 0004
-Revises: 0002
+Revises: 0003
 Create Date: 2026-04-28
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ from alembic import op
 
 
 revision = "0004"
-down_revision = "0002"
+down_revision = "0003"
 branch_labels = None
 depends_on = None
 

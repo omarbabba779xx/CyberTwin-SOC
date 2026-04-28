@@ -4,7 +4,7 @@ Stores custom role definitions per tenant. Each tenant can override
 or extend the static ROLES dict with their own permission sets.
 
 Revision ID: 0005
-Revises: 0002
+Revises: 0004
 Create Date: 2026-04-28
 """
 from __future__ import annotations
@@ -14,7 +14,7 @@ from alembic import op
 
 
 revision = "0005"
-down_revision = "0002"
+down_revision = "0004"
 branch_labels = None
 depends_on = None
 
