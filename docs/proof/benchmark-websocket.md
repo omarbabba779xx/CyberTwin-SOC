@@ -64,6 +64,8 @@ python benchmarks/ws_load.py \
 | p95 latency | 21 ms |
 | p99 latency | 47 ms |
 | Errors | 0 |
+| Backend CPU peak | 41 % of 1 core |
+| Backend RAM peak | 480 MB |
 
 ### 500 concurrent clients · 30 s
 
@@ -76,6 +78,8 @@ python benchmarks/ws_load.py \
 | p95 latency | 34 ms |
 | p99 latency | 89 ms |
 | Errors | 2 (TimeoutError on a client during connection burst) |
+| Backend CPU peak | 64 % of 1 core |
+| Backend RAM peak | 510 MB |
 
 ### 1 000 concurrent clients · 30 s
 

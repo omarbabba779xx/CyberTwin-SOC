@@ -67,6 +67,10 @@ report.
 | p50 latency (batch) | 38 ms |
 | p95 latency (batch) | 142 ms |
 | p99 latency (batch) | 401 ms |
+| Backend CPU peak (uvicorn) | 71 % of 1 core (saturated) |
+| Backend RAM peak (uvicorn RSS) | 620 MB |
+| Redis CPU peak | 12 % of 1 core |
+| Redis RAM peak | 95 MB |
 
 > The local single-worker number caps at ~688 req/s purely on uvicorn
 > async event-loop saturation. Adding `--workers 4` to uvicorn lifts

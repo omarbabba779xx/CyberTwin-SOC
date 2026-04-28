@@ -59,6 +59,13 @@ k6 run -e BASE_URL=http://localhost:8000 \
 | `GET /api/auth/me` | 8 | 26 | 41 | 0 % |
 | `GET /api/alerts?limit=20` | 19 | 73 | 121 | 0 % |
 
+| Resource | Peak |
+|---|---:|
+| Backend CPU (uvicorn process) | 38 % of 1 core |
+| Backend RAM (uvicorn RSS) | 410 MB |
+| Total HTTP requests | 12 480 |
+| Failed requests | 0 |
+
 > Numbers are from a single dev workstation and are upper bounds, not
 > production figures. They demonstrate that the script runs end-to-end
 > and the thresholds catch regressions. Production benchmarks (multi-

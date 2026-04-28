@@ -73,6 +73,13 @@ The script emits a JSON file like:
 | `audit_recent_100` | 200 | 1.04 | 0.84 | 1.74 | 3.42 | 5.21 |
 | `cases_count` | 200 | 0.27 | 0.21 | 0.39 | 0.80 | 1.18 |
 
+| Resource | Peak |
+|---|---:|
+| Postgres CPU (in-container) | 18 % of 1 core |
+| Postgres RAM (RSS) | 220 MB |
+| Postgres shared_buffers | default 128 MB |
+| Connection count | 1 (no pool, worst case) |
+
 ## Index usage proof
 
 The `audit_recent_100` query hits `audit_log_v2 (timestamp, id)`:

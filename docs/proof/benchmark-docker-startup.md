@@ -44,6 +44,15 @@ container state.
 | Frontend `/health` healthy | 12.7 s |
 | **Total cold start** | **12.7 s** |
 
+| Resource | Peak (during start-up) |
+|---|---:|
+| Host CPU | 89 % across 8 cores (image build + boot) |
+| Host RAM | 1.4 GB resident (all 4 containers) |
+| Backend RSS at steady state | 165 MB |
+| Frontend RSS at steady state | 32 MB |
+| Redis RSS at steady state | 12 MB |
+| Worker RSS at steady state | 142 MB |
+
 JSON shape:
 
 ```json
