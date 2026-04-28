@@ -1,7 +1,31 @@
-# Benchmark Results — End-to-End Pipeline
+# Benchmark Results — End-to-End Pipeline (v3.2)
 
-> Last manual update: **2026-04-27**.
+> Last manual update: **2026-04-28** (commit `224b757`).
 > Live JSON: [`benchmarks/results/latest-pipeline.json`](../../benchmarks/results/latest-pipeline.json)
+> Reproducer scripts: [`benchmarks/`](../../benchmarks/)
+
+## Benchmark suite (v3.2)
+
+The v3.2 work expanded the benchmark surface beyond the in-process pipeline:
+
+| Benchmark                     | Reproducer                                  | Output |
+|-------------------------------|---------------------------------------------|--------|
+| In-process pipeline           | `python -m benchmarks.bench_pipeline`       | section "End-to-End Pipeline" below |
+| HTTP API load (k6)            | `k6 run benchmarks/k6_api.js` (see header)  | k6 summary JSON |
+| Ingestion sustained load      | `locust -f benchmarks/locust_ingestion.py`  | Locust HTML |
+| WebSocket fan-out             | `python benchmarks/ws_load.py …`            | console p50/p95/p99 |
+| Docker compose startup        | `python benchmarks/docker_startup.py`       | `benchmarks/results/docker-startup.json` |
+| PostgreSQL query latency      | `python benchmarks/postgres_query_latency.py` | `benchmarks/results/postgres-query-latency.json` |
+| Frontend Lighthouse           | `npx lhci autorun` (CI artefact)            | `lighthouse-${SHA}` artefact |
+
+Each script is **self-documenting**: running with `--help` prints the
+exact CLI used and the expected runtime. The CI-published artefacts
+(Lighthouse, SBOM, helm rendered manifest) are retained for 14–30 days
+and are downloadable from the GitHub Actions run page.
+
+---
+
+## End-to-End Pipeline (in-process, deterministic)
 
 ## Environment
 

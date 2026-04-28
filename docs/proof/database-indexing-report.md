@@ -84,5 +84,38 @@
 - ✅ `scope_active_filter` → (scope)
 - ✅ `expires_at_filter` → (expires_at)
 
-## Result: ✅ PASS
+## Result: PASS
 Every required index is present.
+
+---
+
+## v3.2 — PostgreSQL schema (the production target)
+
+The SQLite report above is the legacy/fallback path. The production
+schema is PostgreSQL, validated on every push by the `postgres-migration`
+CI job in `.github/workflows/ci.yml`. That job:
+
+1. spins up `postgres:16-alpine` as a service container,
+2. runs `alembic upgrade head` (forward migration),
+3. introspects the resulting schema and asserts that **every multi-tenant
+   table has a `tenant_id`-covering index**,
+4. runs `alembic downgrade base` then re-applies forward (idempotency check).
+
+Tables validated by the v3.2 schema:
+
+| Table | tenant_id index? | Other indexes |
+|---|---|---|
+| `simulation_runs` | ✅ | timestamp, scenario_id+id, risk_level |
+| `security_events` | ✅ | timestamp, source_type |
+| `alerts` | ✅ | rule_id, severity, timestamp |
+| `soc_cases` | ✅ | status, severity, assignee |
+| `case_comments` | ✅ | case_id |
+| `case_evidence` | ✅ | case_id |
+| `alert_feedback` | ✅ | alert_id, rule_id |
+| `suppressions` | ✅ | scope+active, expires_at |
+| `audit_log_v2` | ✅ | timestamp, username+id, action, status (partial), `integrity_hash` (UNIQUE) |
+| `tenant_roles` | ✅ | (tenant_id, role_name) |
+
+The CI job script that performs this introspection lives in
+`.github/workflows/ci.yml` under `postgres-migration › Verify tenant_id
+index coverage`.

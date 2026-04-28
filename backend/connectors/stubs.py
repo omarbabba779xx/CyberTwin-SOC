@@ -11,7 +11,7 @@ from typing import Any
 
 from .base import (
     ConnectorResult, EDRConnector, ITSMConnector, SIEMConnector,
-    SOARConnector, TIConnector,
+    TIConnector,
 )
 from .registry import register
 
@@ -25,21 +25,8 @@ def _todo(name: str):
 
 
 # ---- SIEM stubs ------------------------------------------------------------
-
-@register
-class SplunkSIEM(SIEMConnector):
-    name = "splunk"
-    _is_stub = True
-
-    def check_connection(self) -> ConnectorResult:
-        _todo(self.name)
-
-    def search(self, query: str, *, limit: int = 100) -> ConnectorResult:
-        _todo(self.name)
-
-    def push_alert(self, alert: dict[str, Any]) -> ConnectorResult:
-        _todo(self.name)
-
+# Note: Splunk is now implemented in backend/connectors/splunk.py.
+# Stubs below remain as scaffolding for the pending integrations.
 
 @register
 class SentinelSIEM(SIEMConnector):
@@ -72,24 +59,7 @@ class ElasticSIEM(SIEMConnector):
 
 
 # ---- SOAR stubs ------------------------------------------------------------
-
-@register
-class TheHiveSOAR(SOARConnector):
-    """Thin shim that routes to backend.soar.thehive when used in production.
-
-    Today registered as a stub so the registry is uniform; the existing
-    backend.soar.TheHiveClient remains the canonical implementation.
-    """
-    name = "thehive"
-    _is_stub = True
-
-    def check_connection(self) -> ConnectorResult:
-        _todo(self.name)
-
-    def create_case(self, **kw): _todo(self.name)
-    def add_observable(self, *a, **kw): _todo(self.name)
-    def add_task(self, *a, **kw): _todo(self.name)
-
+# Note: TheHive is now implemented in backend/connectors/thehive.py.
 
 # ---- EDR / ITSM / TI stubs ------------------------------------------------
 
