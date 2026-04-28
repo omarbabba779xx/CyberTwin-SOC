@@ -84,7 +84,7 @@ For a full Docker setup, see the *Docker Deployment* section of `README.md`.
 
 ## Tests
 
-The project ships with **253 backend tests**. New features must include tests.
+The project ships with **836** backend pytest cases and **10** frontend Vitest smoke tests (**846** automated total). See [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) for the authoritative breakdown.
 
 ```bash
 # Full suite
@@ -100,6 +100,8 @@ python -m pytest tests/ --cov=backend --cov-report=term-missing
 When adding a detection rule, also add a fixture in
 `tests/test_detection.py` proving the rule fires on a known-bad event
 and stays silent on a benign one.
+
+**Headless UI journeys**: Playwright (or Cypress) covering login → simulate → ingest → SOC case lifecycle is **not** wired yet — tracked as Tier B item **13** in [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md).
 
 ## Commit Conventions
 

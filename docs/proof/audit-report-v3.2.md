@@ -25,7 +25,7 @@ circuit breaker · Arq worker · Redis Streams · OpenTelemetry · rule validati
 | **Observability** | 5/10 | **9.0/10** | ↑ OpenTelemetry traces + Prometheus + JSON logs |
 | **Multi-tenancy** | 0/10 | **8.5/10** | ↑ Middleware + JWT claim + repository scoping |
 | **Compliance Readiness** | 4/10 | **8.0/10** | ↑ SOC 2 / ISO 27001 / GDPR docs + audit chain |
-| **Enterprise Readiness** | 7/10 | **9.0/10** | ↑ Production-grade for typical SOC deployments |
+| **Enterprise Readiness** | 7/10 | **9.0/10** | ↑ Strong fit for **pilot / advanced-POC** SOC deployments *(not full turnkey product maturity)* |
 
 **Risk level**: LOW — no show-stopper for enterprise pilot deployments. All
 HIGH-priority items from v3.1 have been resolved; remaining items are
@@ -81,20 +81,21 @@ proof artifact in `docs/proof/`.
 
 ## Test Suite Footprint (v3.2)
 
-| Suite | Tests Before (v3.1) | Tests After (v3.2) | Δ |
+| Suite | Baseline (v3.1) | **Current `master` (Apr 2026)** | Δ |
 |---|---|---|---|
-| Backend pytest | 253 | **760** | +507 |
-| Frontend Vitest | 0 | **5** files | +5 |
-| Total Python rules-with-individual-tests | 0 | **46** parametrised | +46 |
+| Backend pytest | 253 | **836** passed | **+583** vs v3.1 baseline |
+| Frontend Vitest | 0 tests | **10** tests (`frontend/src/__tests__/`), RTL smoke breadth | **+10** |
+| Detection rules individually validated | 0 | **46** rule IDs parametrised | +46 |
+
+Authoritative totals: **[`test-report-v3.2.md`](test-report-v3.2.md)** (maintain in sync with README).
 
 ```bash
 $ pytest tests/ --tb=no
-760 passed, 3 skipped, 6 warnings in 47.68s
+836 passed, 3 skipped, …warnings in …s
 ```
 
-The 3 skipped tests are conditional OpenTelemetry assertions that run
-only when `opentelemetry-sdk` is installed in the environment (CI
-installs it from `requirements.txt`, so they pass on the runner).
+Three pytest skips remain environment-conditional (`test-report-v3.2.md`
+lists them). CI installs OTel/`authlib` so most developers match green runs.
 
 ---
 

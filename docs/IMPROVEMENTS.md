@@ -75,38 +75,43 @@ Analysts often work in air-gapped environments. Cache the dashboards for read-on
 
 ## Tier B — Nice quality bumps
 
-### 13. Replace SQLite-backed audit log with append-only WORM
+### 13. Playwright E2E journeys + README walkthrough GIF (~90 s)
+**Value: 5/5 · Effort: 2 weeks**
+
+Vitest + RTL only mounts components. Ship headless journeys (login → launch simulation → triage alerts → open/close case → optional PDF) and anchor a recruiter-friendly GIF/Loom beside the Architecture section once stable in CI (`npx playwright test` gated like backend).
+
+### 14. Replace SQLite-backed audit log with append-only WORM
 **Value: 3/5 · Effort: 1 week**
 For compliance — audit log mustn't be mutable. Move it to a write-only S3 bucket with object-lock, or to a hash-chain table where each row references the previous row's hash.
 
-### 14. Rate-limit by *user*, not just by IP
+### 15. Rate-limit by *user*, not just by IP
 **Value: 3/5 · Effort: 2 days**
 slowapi today is keyed by `request.client.host`. Behind a corporate proxy this maps everyone to the same IP. Add a custom key function `f"{user.id}@{request.client.host}"`.
 
-### 15. Field-level encryption for sensitive case fields
+### 16. Field-level encryption for sensitive case fields
 **Value: 3/5 · Effort: 1 week**
 `description`, `evidence` and `comment` may contain PII. Encrypt at rest with a KMS-managed key.
 
-### 16. Better Coverage Center charts
+### 17. Better Coverage Center charts
 **Value: 3/5 · Effort: 4 days**
 Today we have a heat-map. Add:
 - Sankey diagram from "log sources available" → "techniques covered"
 - Time-series of coverage % per tactic over the last 12 months
 - Click-through that opens the rule + scenario that validated a technique
 
-### 17. Pre-commit framework
+### 18. Pre-commit framework
 **Value: 2/5 · Effort: 2 days**
 `pre-commit` config with black + isort + flake8 + bandit + gitleaks. Stops broken commits from ever leaving the dev's machine.
 
-### 18. Dependabot + auto-merge for patch CVEs
+### 19. Dependabot + auto-merge for patch CVEs
 **Value: 3/5 · Effort: 1 day**
 We just spent a session bumping 5 packages. Automate it.
 
-### 19. Recharts → echarts/visx for big datasets
+### 20. Recharts → echarts/visx for big datasets
 **Value: 2/5 · Effort: 1 week**
 The 622-technique heat-map is sluggish in Recharts. Migrate to ECharts with WebGL or visx with virtualisation.
 
-### 20. WebAuthn / passkeys for analyst login
+### 21. WebAuthn / passkeys for analyst login
 **Value: 4/5 · Effort: 1 week**
 Add a `/api/auth/webauthn/*` flow alongside JWT. Phishing-resistant SSO is table-stakes for SOC tooling now.
 
@@ -114,34 +119,34 @@ Add a `/api/auth/webauthn/*` flow alongside JWT. Phishing-resistant SSO is table
 
 ## Tier C — Long-tail polish
 
-### 21. Generate playable PDF reports
+### 22. Generate playable PDF reports
 PDFs from the existing markdown reports + Playwright headless render.
 
-### 22. Slack / MS Teams notifier
+### 23. Slack / MS Teams notifier
 Drop-in integration that posts SLA breaches and high-severity cases to a channel.
 
-### 23. CLI client (`cybertwin-cli`)
+### 24. CLI client (`cybertwin-cli`)
 For ops who don't want to click — `cybertwin coverage --tactic Initial-Access --json`.
 
-### 24. SDK in TypeScript + Python
+### 25. SDK in TypeScript + Python
 Auto-generated from OpenAPI. Makes 3rd-party integrations a one-liner.
 
-### 25. Demo data seeder
+### 26. Demo data seeder
 `make seed-demo` populates 200 cases, 5 000 alerts, 10 simulations so the UI is never empty when investors land on it.
 
-### 26. Browser-based attack replay
+### 27. Browser-based attack replay
 Pick a past incident, click "replay" — frontend re-streams the alerts at 5× speed for training.
 
-### 27. Anomaly model A/B
+### 28. Anomaly model A/B
 Today we have one IsolationForest. Add a 2nd model (e.g. autoencoder) and vote, with confidence calibration via Platt scaling.
 
-### 28. Honeypot integration (T-Pot, Cowrie)
+### 29. Honeypot integration (T-Pot, Cowrie)
 Auto-ingest the SSH/Telnet sessions to enrich threat intel.
 
-### 29. Containerise benchmarks
+### 30. Containerise benchmarks
 `docker run cybertwin-bench` runs the full k6 + locust suite against a target URL — turns the project into a pen-tester's stress-test tool.
 
-### 30. Offline air-gapped install bundle
+### 31. Offline air-gapped install bundle
 `make airgap-bundle` produces a single `.tar.gz` with all images, npm cache, and pip wheels — for classified networks.
 
 ---

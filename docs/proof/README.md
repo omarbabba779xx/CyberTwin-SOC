@@ -31,7 +31,7 @@ command.
 | File | What it proves | How to regenerate |
 |---|---|---|
 | `ci-status.md` | CI pipeline state on `master` | `gh run list --workflow ci.yml` |
-| `test-report-v3.2.md` | **Backend (~836) + frontend (10) + coverage (69.8 %)** | `pytest tests/ --cov=backend` + `cd frontend && npx vitest --run` |
+| `test-report-v3.2.md` | **846 automated (836 pytest +10 Vitest) · backend coverage (69.8 %)** | `pytest tests/ --cov=backend` + `cd frontend && npx vitest --run` |
 | `coverage-report.md` | Per-module test breakdown | `pytest tests/ --cov=backend --cov-report=term-missing` |
 | `frontend-tests-report.md` | Vitest results for the React UI | `cd frontend && npm test` |
 | `frontend-lighthouse-report.md` | Frontend perf / a11y / best-practices / SEO | CI artefact `lighthouse-${SHA}` |

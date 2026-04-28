@@ -12,7 +12,7 @@
 |---|---:|---:|---:|---|
 | Backend (Python) | **836** | 0 | 3 (env-conditional) | `pytest tests/` |
 | Frontend (React) | **10** | 0 | 0 | `npx vitest --run` |
-| **Total** | **816** | **0** | 3 | — |
+| **Total (backend + frontend)** | **846** | **0** | 3 skips (backend pytest only) | — |
 
 ## Reproduce
 

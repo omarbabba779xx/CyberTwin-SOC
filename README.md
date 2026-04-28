@@ -2,9 +2,9 @@
 
 # 🛡️ CyberTwin SOC
 
-### Enterprise-grade Security Operations Center — open source, audited, multi-tenant, production-ready
+### Enterprise-oriented Security Operations Center — open source, audited, multi-tenant
 
-*A digital twin of a modern SOC. Emulates real adversary tradecraft, ingests OCSF telemetry, runs 46 detection rules + Sigma against the full MITRE ATT&CK matrix, drives a complete case-management workflow, and ships with AI analyst, ML anomaly detection, SOAR integration, OIDC/SSO, AES-256-GCM encryption, OpenTelemetry, dynamic RBAC, and Helm/Kubernetes deployment. SOC 2 & ISO 27001 readiness-assessed.*
+*A digital twin of a modern SOC.* **Architecture and CI are production-oriented** (Compose, Helm, OIDC/SSO, audit chain, multi-tenant isolation, observability gates) — **feature maturity stays advanced POC / pilot‑grade**, not turnkey enterprise product: see **[Scope & honesty](#scope-honesty--limits)**. Emulates adversary tradecraft, ingests OCSF telemetry, runs 46 rules + Sigma, case workflow, AI analyst / ML anomaly, SOAR adapters, AES‑256‑GCM, Helm/K8s. SOC 2 & ISO 27001 **readiness** docs — not audited certification statements.
 
 <table>
 <tr><td align="center" width="100%">
@@ -17,7 +17,8 @@
 </table>
 
 [![CI](https://github.com/omarbabba779xx/CyberTwin-SOC/actions/workflows/ci.yml/badge.svg)](https://github.com/omarbabba779xx/CyberTwin-SOC/actions)
-[![Tests](https://img.shields.io/badge/tests-836%20passing-brightgreen)](#-quality--testing)
+[![Backend tests](https://img.shields.io/badge/backend%20pytest-836-passing-brightgreen)](#-quality--testing)
+[![Automated tests](https://img.shields.io/badge/automated%20total-846-success)](#-quality--testing)
 [![Coverage](https://img.shields.io/badge/coverage-69.8%25-success)](#-quality--testing)
 [![Python](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)](https://python.org)
 [![React](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
@@ -232,7 +233,7 @@ flowchart TB
     ROOT --> BE & FE & DET & SOC & OPS & ENT
 
     BE --- BE1["Python 3.12<br/>18+ packages · Arq worker"]
-    BE --- BE2["80+ endpoints · 836 tests ✅"]
+    BE --- BE2["80+ endpoints · 836 pytest · 846 total QA ✅"]
 
     FE --- FE1["React 18 + Vite<br/>27 pages · Vitest"]
     FE --- FE2["Recharts + ReactFlow"]
@@ -278,6 +279,21 @@ flowchart TB
 
 ---
 
+## ⚖ Scope, honesty & limits
+
+CyberTwin SOC is built for teams that want a **credible SOC twin** backed by reproducible artefacts — **not** a turnkey commercial SIEM substitute. Useful framing:
+
+| Topic | Straight answer |
+|------|-----------------|
+| **Test counts** | **836** `pytest` + **10** Vitest (**846** total). Backend badge = pytest only — see [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md). |
+| **MITRE rule-mapped** | **40 / 622 (6.43 %)** ([`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)). Honest for a POC benchmark; far from exhaustive enterprise detection coverage. |
+| **Frontend quality** | **Vitest RTL smoke suites** (`frontend-tests-report`). **Playwright/E2E** on login → simulation → case lifecycle is backlog ([`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)). |
+| **Connectors** | **15** surface areas; **2** fully implemented & tested integrations (Splunk, TheHive) — **13** hardened stubs exposing the same breaker/retry/error surface ([Connector framework diagram](#connector-framework)). |
+| **Demo visuals** | **No** official walk-through GIF/video yet — high-value recruiter asset; tracked with E2E work. |
+| **Source layout** | Key entry points (**e.g.** [`backend/api/main.py`](backend/api/main.py), [`backend/detection/engine.py`](backend/detection/engine.py)) are normal PEP 8 modules. If GitHub “raw” or diff looks like one mega-line, reopen the formatted view or clone locally — the repo itself is maintainability-oriented. |
+
+---
+
 ## ✅ Validation status
 
 > **Honesty rule** — every claim in this README has a corresponding artefact in [`docs/proof/`](docs/proof/). When a number changes, both the README and the proof file are updated in the same commit.
@@ -285,7 +301,8 @@ flowchart TB
 | Area                      | Status                                                | Evidence |
 |---------------------------|-------------------------------------------------------|----------|
 | **Backend tests**         | ✅ 836 passing                                          | [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
-| **Frontend tests**        | ✅ 10 passing (Vitest + RTL)                           | [`docs/proof/frontend-tests-report.md`](docs/proof/frontend-tests-report.md) |
+| **Frontend tests**        | ✅ 10 passing (Vitest + RTL smoke)                     | [`docs/proof/frontend-tests-report.md`](docs/proof/frontend-tests-report.md) |
+| **Combined automated QA** | ✅ **846** (836 + 10)                                  | Same as [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) summary row |
 | **Code coverage**         | ✅ 69.8 % (gate: ≥ 60 %)                               | `pytest --cov=backend` |
 | **Frontend build**        | ✅ Passing                                             | GitHub Actions `Frontend Build` job |
 | **Docker build**          | ✅ Retry-loop healthcheck on `/api/health` & `/health` | [`docs/proof/docker-validation.md`](docs/proof/docker-validation.md) |
@@ -1175,7 +1192,7 @@ flowchart TB
     ROOT["📁 CyberTwin-SOC"]
     ROOT --> BE["🐍 backend/<br/>16 357 LoC · Python 3.12"]
     ROOT --> FE["⚛️ frontend/<br/>12 396 LoC · React 18 + Vite"]
-    ROOT --> TS["🧪 tests/<br/>836 tests · 100 % passing"]
+    ROOT --> TS["🧪 tests/<br/>846 automated (836 py +10 UI)<br/>100 % passing"]
     ROOT --> AL["🗄️ alembic/<br/>migration infra"]
     ROOT --> BM["📊 benchmarks/<br/>k6 · locust · pipeline · MITRE snapshot"]
     ROOT --> DEP["⎈ deploy/helm/<br/>chart + ServiceMonitor"]
@@ -1222,9 +1239,9 @@ flowchart TB
 
 ```mermaid
 flowchart TB
-    E2E["🌐 End-to-end<br/>(compose smoke · CI Docker + PostgreSQL jobs)<br/>~5 scenarios"]
-    API["🔌 API integration<br/>(test_api · test_soc · test_ingestion · test_jobs)<br/>~85 tests"]
-    UNIT["⚙️ Unit tests<br/>(test_auth · test_detection · test_ai_analyst · test_multitenancy<br/>test_attack_engine · test_coverage · test_scoring · …)<br/>~163 tests"]
+    E2E["🌐 End-to-end<br/>compose smoke · CI Postgres job<br/>breadth-first scenarios"]
+    API["🔌 API · integration routers<br/>test_api · test_soc · test_ingestion · test_jobs<br/>router + workflow coverage"]
+    UNIT["⚙️ Domain-heavy pytest (~bulk of 836)<br/>auth · tenancy · detection · rules · SOC · crypto · orch…"]
 
     UNIT --> API --> E2E
 
@@ -1278,7 +1295,7 @@ coverage: 69.8 % (gate ≥ 60 %)
 | [`docs/compliance/soc2-readiness.md`](docs/compliance/soc2-readiness.md)                   | SOC 2 Type II readiness — CC1–CC9 mapping + gap analysis |
 | [`docs/compliance/iso27001-readiness.md`](docs/compliance/iso27001-readiness.md)           | ISO 27001:2022 Annex A control mapping + remediation |
 | [`docs/compliance/gdpr-data-processing.md`](docs/compliance/gdpr-data-processing.md)       | GDPR data categories, retention, subject rights |
-| [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)                                             | 30-item backlog (next sprints) |
+| [`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)                                             | Tiered backlog (Playwright GIF, connectors, polish) |
 | [`CHANGELOG.md`](CHANGELOG.md)                                                             | Versioned change log |
 | [`SECURITY.md`](SECURITY.md)                                                               | Vulnerability disclosure policy |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md)                                                       | How to contribute |

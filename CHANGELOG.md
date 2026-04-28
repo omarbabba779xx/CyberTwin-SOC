@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **README rewrite** — synced to current numbers (836 tests, 14 routers, 80 endpoints, 9-job CI), new sections: pkg A/B/C delivery table, `/api/tasks` sequence diagram + status payload spec.
 - **`docs/proof/ci-status.md`** — refreshed to current SHA and job topology.
 - **GitHub repo metadata** — description rewritten, topics expanded to 20 (added `python`, `detection-engineering`, `ocsf`, `sigma-rules`, `threat-hunting`, `threat-intelligence`, `blue-team`, `siem`, `kubernetes`, `helm-chart`).
+- **Docs honesty pass** — README now separates “production-oriented architecture / CI” vs **POC / pilot feature maturity**, documents **836 + 10 = 846** automated tests consistently across `docs/proof/test-report-v3.2.md`, `CONTRIBUTING.md`, and `audit-report-v3.2.md`; adds backlog item **Tier B #13** (Playwright + GIF demo).
 
 ## [3.1.0] — 2026-04-27
 
