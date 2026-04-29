@@ -288,7 +288,7 @@ CyberTwin SOC is built for teams that want a **credible SOC twin** backed by rep
 | **Test counts** | **867** automated runs (**855** `pytest` + **10** Vitest + **2** Playwright). Authoritative proof: [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md). |
 | **MITRE rule-mapped** | **40 / 622 (6.43 %)** ([`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)). Honest for a POC benchmark; far from exhaustive enterprise detection coverage. |
 | **Frontend quality** | Vitest RTL (`frontend-tests-report`) + Playwright **`frontend/e2e/`** smoke in CI — extended login→case journeys still backlog ([`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)). |
-| **Connectors** | **15** surface areas; **2** fully implemented & tested integrations (Splunk, TheHive) — **13** hardened stubs exposing the same breaker/retry/error surface ([Connector framework diagram](#connector-framework)). |
+| **Connectors** | **15** surface areas; **five** production-style integrations (Splunk, Sentinel, TheHive, Jira, MISP) + **10** stubs with the same hardened surface ([Connector framework diagram](#connector-framework)). |
 | **Demo visuals** | **No** binary GIF in-repo yet — storyboard lives in [`docs/demo/README.md`](docs/demo/README.md). |
 | **Source layout** | Key entry points (**e.g.** [`backend/api/main.py`](backend/api/main.py), [`backend/detection/engine.py`](backend/detection/engine.py)) are normal PEP 8 modules. If GitHub “raw” or diff looks like one mega-line, reopen the formatted view or clone locally — the repo itself is maintainability-oriented. |
 
