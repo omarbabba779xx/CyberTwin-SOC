@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from .constants import _SCENARIO_KEYWORDS
 from .helpers import _is_private_ip
