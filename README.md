@@ -2,14 +2,14 @@
 
 # 🛡️ CyberTwin SOC
 
-### Enterprise-oriented Security Operations Center — open source, audited, multi-tenant
+### Open-source SOC digital twin — multi-tenant, MITRE-mapped, OCSF-aware
 
-*A digital twin of a modern SOC.* **Architecture and CI are production-oriented** (Compose, Helm, OIDC/SSO, audit chain, multi-tenant isolation, observability gates) — **feature maturity stays advanced POC / pilot‑grade**, not turnkey enterprise product: see **[Scope & honesty](#scope-honesty--limits)**. Emulates adversary tradecraft, ingests OCSF telemetry, runs 46 rules + Sigma, case workflow, AI analyst / ML anomaly, SOAR adapters, AES‑256‑GCM, Helm/K8s. SOC 2 & ISO 27001 **readiness** docs — not audited certification statements.
+*An open-source digital twin of a modern SOC.* **Architecture and CI take cues from production systems** (Compose, Helm, OIDC/SSO, tamper-evident audit chain, multi-tenant isolation, observability gates), but **feature maturity is advanced POC / pilot-grade** — not a turnkey enterprise product. See **[Scope & honesty](#-scope-honesty--limits)** for the straight answer on what is and isn't validated. The platform emulates adversary tradecraft, ingests OCSF telemetry, runs 46 rules + Sigma, drives a case workflow, exposes a deterministic AI analyst + ML anomaly module, ships SOAR adapters, AES-256-GCM field encryption, and Helm/K8s charts. SOC 2 and ISO 27001 docs are **internal readiness mappings** — not third-party audited certification statements.
 
 <table>
 <tr><td align="center" width="100%">
 
-🆕 **v3.2.0 — Enterprise Readiness**
+🆕 **v3.2.0 — Multi-tenancy, audit chain & OIDC hardening**
 
 🏢 **Real multi-tenancy** (JWT tenant_id · TenantScopeMiddleware · TenantRepository) · 🔄 **Arq worker** (Redis broker, separate container) · 📡 **Redis Streams** ingestion buffer · 🔐 **OIDC/SSO** (Entra ID, Okta, Keycloak) · 🔒 **AES-256-GCM** field encryption · 🧩 **Session governance** · 📋 **Tamper-evident audit** (SHA-256 chain) · 📊 **OpenTelemetry** traces · 🎯 **Dynamic RBAC** per tenant · ⚡ **Circuit breaker** on connectors · 📈 **Executive dashboard** · 📝 **SOC 2 / ISO 27001** readiness docs
 
@@ -120,7 +120,7 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 <th width="25%">🏢 Multi-tenancy & Auth</th>
 <th width="25%">🔐 Security & Compliance</th>
 <th width="25%">📊 Observability & Ops</th>
-<th width="25%">⚡ Enterprise Features</th>
+<th width="25%">⚡ Hardening features</th>
 </tr>
 <tr valign="top">
 <td>
@@ -179,7 +179,7 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 
 </details>
 
-### 📦 v3.2.0 — Enterprise Readiness (5 phases, 22 deliverables)
+### 📦 v3.2.0 — Hardening track (5 phases, 22 deliverables)
 
 | Phase | Title | Key Deliverables |
 |------:|-------|-----------------|
@@ -187,7 +187,7 @@ It answers, in concrete numbers — not bullet points — questions every CISO a
 | **2** | Multi-tenancy E2E | `tenant_id` in **JWT** · `TenantScopeMiddleware` · `TenantRepository` pattern · ORM-first database (SQLite fallback for dev) · Rate-limit by **tenant:user** |
 | **3** | Security & Compliance | **Tamper-evident audit** (SHA-256 chain + PostgreSQL) · **OIDC/SSO** (Entra ID, Okta, Keycloak) · **Session governance** (concurrent limit + force-logout) · FK constraints with CASCADE · **Data retention** + GDPR docs |
 | **4** | Observability & Ops | **OpenTelemetry** traces (OTLP + FastAPI/SQLAlchemy/Redis instrumentation) · `X-API-Version: v1` header · **Backup/DR** script + runbook · **Frontend test suite** (Vitest + RTL) |
-| **5** | Enterprise Differentiators | **Dynamic RBAC** per tenant in DB · **Circuit breaker** on connectors · **AES-256-GCM** field encryption (per-tenant HKDF) · **Executive dashboard** (MTTD/MTTR/SLA KPIs) · **SOC 2 / ISO 27001** readiness docs |
+| **5** | Tenant-aware controls & exec view | **Dynamic RBAC** per tenant in DB · **Circuit breaker** on connectors · **AES-256-GCM** field encryption (per-tenant HKDF) · **Executive dashboard** (MTTD/MTTR/SLA KPIs) · **SOC 2 / ISO 27001** readiness docs |
 
 ```mermaid
 gantt
@@ -207,7 +207,7 @@ gantt
         SQLAlchemy + Alembic + tenant_id    :done, b4, 2026-04-27, 1d
         quality-gate CI · Checkov · 64-char :done, b5, 2026-04-27, 1d
 
-    section v3.2.0 · enterprise readiness
+    section v3.2.0 · multi-tenancy & hardening
         Phase 1 — Arq worker + Redis Streams   :done, d1, 2026-04-28, 1d
         Phase 2 — Multi-tenancy runtime         :done, d2, 2026-04-28, 1d
         Phase 3 — OIDC + audit chain + sessions :done, d3, 2026-04-28, 1d
@@ -275,7 +275,7 @@ flowchart TB
 | **Connectors (extensible)**         |  15 (**5** production-grade) | Splunk, Sentinel (Log Analytics), TheHive, **Jira**, **MISP** — REST + retry + breaker + `mock_mode` tests; 10 remaining stubs share the same hardened surface |
 | **Known CVEs in dependencies**      |       0 | Verified by `pip-audit --strict` and `npm audit`                          |
 | **Database**                        |  11+ tables | Alembic migrations `0001`–`0005` · FK constraints · ORM-first (SQLite dev fallback) |
-| **Enterprise features**             |   22   | Multi-tenancy · OIDC/SSO · AES-256-GCM encryption · OTel · session governance · audit chain · backup/DR |
+| **v3.2.0 hardening features**       |   22   | Multi-tenancy · OIDC/SSO · AES-256-GCM encryption · OTel · session governance · audit chain · backup/DR |
 
 ---
 
@@ -285,8 +285,8 @@ CyberTwin SOC is built for teams that want a **credible SOC twin** backed by rep
 
 | Topic | Straight answer |
 |------|-----------------|
-| **Test counts** | **867** automated runs (**855** `pytest` + **10** Vitest + **2** Playwright). Authoritative proof: [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md). |
-| **MITRE rule-mapped** | **40 / 622 (6.43 %)** ([`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)). Honest for a POC benchmark; far from exhaustive enterprise detection coverage. |
+| **Test counts** | **867** automated runs (**855** `pytest` + **10** Vitest + **2** Playwright). Authoritative proof: [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md). Reproducible locally — `python -m pytest -q` reports `855 passed`. |
+| **MITRE rule-mapped** | **40 / 622 (6.43 %)** ([`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)). The 622 number is the count of entries (194 top-level + 428 sub-techniques) in [`backend/mitre/techniques_bundle.json`](backend/mitre/techniques_bundle.json). Honest for a POC benchmark; far from exhaustive production detection coverage. |
 | **Frontend quality** | Vitest RTL (`frontend-tests-report`) + Playwright **`frontend/e2e/`** smoke in CI — extended login→case journeys still backlog ([`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)). |
 | **Connectors** | **15** surface areas; **five** production-style integrations (Splunk, Sentinel, TheHive, Jira, MISP) + **10** stubs with the same hardened surface ([Connector framework diagram](#connector-framework)). |
 | **Demo visuals** | **No** binary GIF in-repo yet — storyboard lives in [`docs/demo/README.md`](docs/demo/README.md). |
@@ -1341,7 +1341,7 @@ gantt
     Audit Apr 2026                :done, p18, 2026-04-20, 7d
     v3.1.0 hardening release      :done, p19, 2026-04-27, 1d
     section Enterprise
-    v3.2.0 enterprise readiness   :done, p20, 2026-04-28, 1d
+    v3.2.0 hardening track        :done, p20, 2026-04-28, 1d
 ```
 
 ### Next ideas (not yet on `master`)
