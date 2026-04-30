@@ -2,16 +2,16 @@
 
 # 🛡️ CyberTwin SOC
 
-### Open-source SOC digital twin — multi-tenant, MITRE-mapped, OCSF-aware
+### Open-source SOC digital twin — POC for detection engineering, MITRE-aware, OCSF-aware
 
-*An open-source digital twin of a modern SOC.* **Architecture and CI take cues from production systems** (Compose, Helm, OIDC/SSO, tamper-evident audit chain, multi-tenant isolation, observability gates), but **feature maturity is advanced POC / pilot-grade** — not a turnkey enterprise product. See **[Scope & honesty](#-scope-honesty--limits)** for the straight answer on what is and isn't validated. The platform emulates adversary tradecraft, ingests OCSF telemetry, runs 46 rules + Sigma, drives a case workflow, exposes a deterministic AI analyst + ML anomaly module, ships SOAR adapters, AES-256-GCM field encryption, and Helm/K8s charts. SOC 2 and ISO 27001 docs are **internal readiness mappings** — not third-party audited certification statements.
+*A learning / POC digital twin of a SOC.* The repository ships Compose + Helm manifests, OIDC/SSO wiring, a tamper-evident audit chain, multi-tenant isolation and observability hooks — but the **whole thing is advanced POC / pilot-grade**, not a production-validated platform. Nothing here has been tested under real attack load, audited by a third party, or run on someone else's infrastructure. See **[Scope, honesty & limits](#-scope-honesty--limits)** before drawing any conclusions about coverage. The platform emulates adversary tradecraft, ingests OCSF telemetry, runs 46 rule-functions + a Sigma loader, drives a case workflow, exposes a **rule-based** analyst report (not an LLM) plus a basic ML anomaly module, ships SOAR adapters, AES-256-GCM field encryption, and Helm/K8s charts. The SOC 2 and ISO 27001 documents in `docs/compliance/` are **internal self-assessments** — not certifications and not assessor opinions.
 
 <table>
 <tr><td align="center" width="100%">
 
 🆕 **v3.2.0 — Multi-tenancy, audit chain & OIDC hardening**
 
-🏢 **Real multi-tenancy** (JWT tenant_id · TenantScopeMiddleware · TenantRepository) · 🔄 **Arq worker** (Redis broker, separate container) · 📡 **Redis Streams** ingestion buffer · 🔐 **OIDC/SSO** (Entra ID, Okta, Keycloak) · 🔒 **AES-256-GCM** field encryption · 🧩 **Session governance** · 📋 **Tamper-evident audit** (SHA-256 chain) · 📊 **OpenTelemetry** traces · 🎯 **Dynamic RBAC** per tenant · ⚡ **Circuit breaker** on connectors · 📈 **Executive dashboard** · 📝 **SOC 2 / ISO 27001** readiness docs
+🏢 **Multi-tenancy** (JWT tenant_id · TenantScopeMiddleware · TenantRepository) · 🔄 **Arq worker** (Redis broker, separate container) · 📡 **Redis Streams** ingestion buffer · 🔐 **OIDC/SSO** wiring (Entra ID, Okta, Keycloak — none of them validated end-to-end) · 🔒 **AES-256-GCM** field encryption · 🧩 **Session governance** · 📋 **Tamper-evident audit** (SHA-256 chain) · 📊 **OpenTelemetry** traces · 🎯 **Dynamic RBAC** per tenant · ⚡ **Circuit breaker** on connectors · 📈 **Executive dashboard** · 📝 **SOC 2 / ISO 27001** self-assessment docs
 
 </td></tr>
 </table>
@@ -24,7 +24,7 @@
 [![React](https://img.shields.io/badge/react-18-61DAFB?logo=react&logoColor=white)](https://react.dev)
 [![CVE](https://img.shields.io/badge/known%20CVEs-0-brightgreen)](#-security-posture)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![MITRE](https://img.shields.io/badge/MITRE%20ATT%26CK-622%20techniques-red)](https://attack.mitre.org/)
+[![MITRE](https://img.shields.io/badge/MITRE%20rule--mapped-40%20of%20622%20(6.4%25)-orange)](docs/proof/mitre-coverage-snapshot.md)
 [![OCSF](https://img.shields.io/badge/OCSF-1.0-blueviolet)](https://schema.ocsf.io/)
 [![Helm](https://img.shields.io/badge/Helm-chart%20linted-0F1689?logo=helm&logoColor=white)](deploy/helm)
 [![SBOM](https://img.shields.io/badge/SBOM-CycloneDX-2596be)](https://cyclonedx.org/)
@@ -268,11 +268,11 @@ flowchart TB
 | **Frontend React/JSX**              |  13 000+ | 27 pages (incl. Executive dashboard), Vitest test suite, Recharts         |
 | **Unit & integration tests**        |    867  | Backend: pytest (855) · Vitest RTL (10) · Playwright smoke (2) · see [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md) |
 | **REST + WebSocket endpoints**      |     80+ | Rate-limited per tenant:user, RBAC-scoped, `X-API-Version: v1` header    |
-| **MITRE ATT&CK techniques**         |     622 | Full Enterprise matrix · 14 tactics · TAXII 2.1 sync                      |
+| **MITRE ATT&CK technique catalogue** |     622 | Full ATT&CK Enterprise matrix loaded · **40 (6.4 %) currently rule-mapped** · 14 tactics · TAXII 2.1 sync |
 | **Built-in detection rules**        |      46 | 14 platforms · severity-tiered · runtime Sigma upload                     |
 | **Attack scenarios**                |      11 | Solorigate, ProxyShell, Log4Shell, Insider, Ransomware, …                 |
 | **RBAC roles / scoped permissions** | 12 / 30+ | 3 legacy + 9 enterprise + **dynamic per-tenant roles in DB**              |
-| **Connectors (extensible)**         |  15 (**5** production-grade) | Splunk, Sentinel (Log Analytics), TheHive, **Jira**, **MISP** — REST + retry + breaker + `mock_mode` tests; 10 remaining stubs share the same hardened surface |
+| **Connectors (extensible)**         |  15 (**5** production-style) | Splunk, Sentinel (Log Analytics), TheHive, **Jira**, **MISP** — REST + retry + breaker + `mock_mode` tests; **only mock_mode is exercised in CI** — none of these connectors has been validated against a live tenant. 10 remaining stubs share the same surface. |
 | **Known CVEs in dependencies**      |       0 | Verified by `pip-audit --strict` and `npm audit`                          |
 | **Database**                        |  11+ tables | Alembic migrations `0001`–`0005` · FK constraints · ORM-first (SQLite dev fallback) |
 | **v3.2.0 hardening features**       |   22   | Multi-tenancy · OIDC/SSO · AES-256-GCM encryption · OTel · session governance · audit chain · backup/DR |
@@ -281,14 +281,14 @@ flowchart TB
 
 ## ⚖ Scope, honesty & limits
 
-CyberTwin SOC is built for teams that want a **credible SOC twin** backed by reproducible artefacts — **not** a turnkey commercial SIEM substitute. Useful framing:
+CyberTwin SOC is **a learning / POC project**, useful as an open-source SOC simulation lab and detection-engineering playground. It is **not** a turnkey commercial SIEM, and nothing here has been validated under real attack traffic, audited by an external security firm, or operated at any scale beyond local development. Use the table below to calibrate expectations:
 
 | Topic | Straight answer |
 |------|-----------------|
 | **Test counts** | **867** automated runs (**855** `pytest` + **10** Vitest + **2** Playwright). Authoritative proof: [`docs/proof/test-report-v3.2.md`](docs/proof/test-report-v3.2.md). Reproducible locally — `python -m pytest -q` reports `855 passed`. |
 | **MITRE rule-mapped** | **40 / 622 (6.43 %)** ([`docs/proof/mitre-coverage-snapshot.md`](docs/proof/mitre-coverage-snapshot.md)). The 622 number is the count of entries (194 top-level + 428 sub-techniques) in [`backend/mitre/techniques_bundle.json`](backend/mitre/techniques_bundle.json). Honest for a POC benchmark; far from exhaustive production detection coverage. |
 | **Frontend quality** | Vitest RTL (`frontend-tests-report`) + Playwright **`frontend/e2e/`** smoke in CI — extended login→case journeys still backlog ([`docs/IMPROVEMENTS.md`](docs/IMPROVEMENTS.md)). |
-| **Connectors** | **15** surface areas; **five** production-style integrations (Splunk, Sentinel, TheHive, Jira, MISP) + **10** stubs with the same hardened surface ([Connector framework diagram](#connector-framework)). |
+| **Connectors** | **15** surface areas; **five** production-style integrations (Splunk, Sentinel, TheHive, Jira, MISP) + **10** stubs with the same surface. **Only `mock_mode` is exercised in CI** — no connector has been validated against a real tenant. ([Connector framework diagram](#connector-framework)). |
 | **Demo visuals** | **No** binary GIF in-repo yet — storyboard lives in [`docs/demo/README.md`](docs/demo/README.md). |
 | **Source layout** | Key entry points (**e.g.** [`backend/api/main.py`](backend/api/main.py), [`backend/detection/engine.py`](backend/detection/engine.py)) are normal PEP 8 modules. If GitHub “raw” or diff looks like one mega-line, reopen the formatted view or clone locally — the repo itself is maintainability-oriented. |
 
