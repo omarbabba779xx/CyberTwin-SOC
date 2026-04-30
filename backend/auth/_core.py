@@ -206,6 +206,42 @@ def has_permission(role: str, permission: str) -> bool:
     return permission in ROLES.get(role, set())
 
 
+def _lookup_tenant_permissions(role: str, tenant_id: str) -> Optional[set[str]]:
+    """Return tenant-specific permissions when the dynamic RBAC store is configured."""
+    if not os.getenv("DATABASE_URL", ""):
+        return None
+    session = None
+    try:
+        from backend.auth.rbac_store import get_permissions
+        from backend.db.session import SessionLocal
+
+        session = SessionLocal()
+        return get_permissions(session, tenant_id, role)
+    except Exception as exc:
+        logger.warning(
+            "Dynamic RBAC lookup failed for tenant=%s role=%s; falling back to static roles: %s",
+            tenant_id,
+            role,
+            exc,
+        )
+        return None
+    finally:
+        if session is not None:
+            session.close()
+
+
+def permissions_for_role(role: str, tenant_id: str = "default") -> set[str]:
+    """Return the effective permission set for a role inside a tenant."""
+    dynamic = _lookup_tenant_permissions(role, tenant_id)
+    if dynamic is not None:
+        return dynamic
+    return set(ROLES.get(role, set()))
+
+
+def has_permission_for_tenant(role: str, permission: str, tenant_id: str = "default") -> bool:
+    return permission in permissions_for_role(role, tenant_id)
+
+
 # ---------------------------------------------------------------------------
 # Token creation / verification
 # ---------------------------------------------------------------------------
@@ -376,7 +412,8 @@ def require_permission(permission: str):
     """FastAPI dependency factory — raises 403 if the user lacks *permission*."""
     def _check(user: dict = Depends(verify_token)) -> dict:
         role = user.get("role", "viewer")
-        if not has_permission(role, permission):
+        tenant_id = user.get("tenant_id") or "default"
+        if not has_permission_for_tenant(role, permission, tenant_id):
             raise HTTPException(
                 status_code=403,
                 detail=f"Permission '{permission}' required (your role: {role})",

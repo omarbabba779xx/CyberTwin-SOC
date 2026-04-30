@@ -21,6 +21,17 @@ _INGEST_MAX_SYSLOG_LINES = 5000
 _INGEST_MAX_SYSLOG_LINE_LEN = 8 * 1024
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
+def _request_tenant(user: dict, requested_tenant: Optional[str] = None) -> str:
+    tenant = _tenant_id(user)
+    if requested_tenant and requested_tenant != tenant:
+        raise HTTPException(403, "tenant_id in payload does not match authenticated tenant")
+    return tenant
+
+
 def _approx_size(obj: Any) -> int:
     try:
         return len(json.dumps(obj, default=str))
@@ -77,10 +88,11 @@ class IngestSyslogRequest(BaseModel):
 def ingest_event(payload: IngestEventRequest, request: Request,
                  user=Depends(require_permission("ingestion:write"))):
     from backend.ingestion import get_pipeline
+    tenant = _request_tenant(user, payload.tenant_id)
     try:
         ocsf = get_pipeline().ingest_one(
             payload.event, source_type=payload.source_type,
-            tenant_id=payload.tenant_id,
+            tenant_id=tenant,
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc))
@@ -92,9 +104,10 @@ def ingest_event(payload: IngestEventRequest, request: Request,
 def ingest_batch(payload: IngestBatchRequest, request: Request,
                  user=Depends(require_permission("ingestion:write"))):
     from backend.ingestion import get_pipeline
+    tenant = _request_tenant(user, payload.tenant_id)
     return get_pipeline().ingest_batch(
         payload.events, source_type=payload.source_type,
-        tenant_id=payload.tenant_id,
+        tenant_id=tenant,
     )
 
 
@@ -103,7 +116,8 @@ def ingest_batch(payload: IngestBatchRequest, request: Request,
 def ingest_syslog(payload: IngestSyslogRequest, request: Request,
                   user=Depends(require_permission("ingestion:write"))):
     from backend.ingestion import get_pipeline
-    return get_pipeline().ingest_syslog_lines(payload.lines, tenant_id=payload.tenant_id)
+    tenant = _request_tenant(user, payload.tenant_id)
+    return get_pipeline().ingest_syslog_lines(payload.lines, tenant_id=tenant)
 
 
 @router.post("/api/ingest/upload")
@@ -116,6 +130,7 @@ async def ingest_upload(request: Request, user=Depends(require_permission("inges
         raise HTTPException(413, "File too large (max 25 MB)")
     from backend.ingestion import get_pipeline
     pipeline = get_pipeline()
+    tenant = _tenant_id(user)
     accepted = rejected = 0
     for line in body.decode("utf-8", errors="replace").splitlines():
         line = line.strip()
@@ -123,7 +138,7 @@ async def ingest_upload(request: Request, user=Depends(require_permission("inges
             continue
         try:
             evt = json.loads(line)
-            pipeline.ingest_one(evt)
+            pipeline.ingest_one(evt, tenant_id=tenant)
             accepted += 1
         except Exception:
             rejected += 1
@@ -138,7 +153,7 @@ async def ingest_upload(request: Request, user=Depends(require_permission("inges
 def ingest_stats(request: Request, user=Depends(require_permission("ingestion:read"))):
     from backend.ingestion import get_pipeline
     pipe = get_pipeline()
-    return {**pipe.stats.to_dict(), "buffer_size": pipe.buffer_size()}
+    return {**pipe.stats.to_dict(), "buffer_size": pipe.buffer_size(tenant_id=_tenant_id(user))}
 
 
 @router.get("/api/ingest/sources")
@@ -167,14 +182,14 @@ def ingest_health(request: Request):
 def ingest_detect(request: Request, user=Depends(require_permission("ingestion:read"))):
     """Run the detection engine over the current buffer."""
     from backend.ingestion import get_pipeline
-    return get_pipeline().detect()
+    return get_pipeline().detect(tenant_id=_tenant_id(user))
 
 
 @router.delete("/api/ingest/buffer")
 @limiter.limit("10/minute")
 def ingest_clear(request: Request, user=Depends(require_permission("configure_system"))):
     from backend.ingestion import get_pipeline
-    get_pipeline().clear()
+    get_pipeline().clear(tenant_id=_tenant_id(user))
     log_action("INGEST_CLEAR", username=user["sub"], role=user.get("role"),
                ip_address=_client_ip(request))
     return {"status": "cleared"}

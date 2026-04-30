@@ -1,6 +1,7 @@
-# CyberTwin SOC — Production Docker Compose
+# CyberTwin SOC - Local/Demo Docker Compose
 # Usage:
 #   docker-compose up -d                                # default stack (Redis + backend + frontend)
+#   ENV=production DATABASE_URL=... docker-compose up -d # production-like app config with external DB
 #   docker-compose --profile soar up -d                 # + TheHive 5 + Cortex 3 + Elasticsearch
 #   docker-compose logs -f backend                      # stream backend logs
 #   docker-compose down -v                              # stop & remove volumes
@@ -53,8 +54,9 @@ services:
       - path: .env
         required: false
     environment:
-      ENV: ${ENV:-production}
+      ENV: ${ENV:-development}
       PYTHONUNBUFFERED: "1"
+      DATABASE_URL: ${DATABASE_URL:-}
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: "http://localhost,http://localhost:80,http://frontend"
     depends_on:
@@ -85,8 +87,9 @@ services:
       - path: .env
         required: false
     environment:
-      ENV: ${ENV:-production}
+      ENV: ${ENV:-development}
       PYTHONUNBUFFERED: "1"
+      DATABASE_URL: ${DATABASE_URL:-}
       REDIS_URL: redis://redis:6379
     depends_on:
       redis:

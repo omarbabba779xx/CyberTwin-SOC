@@ -17,6 +17,7 @@ def _now() -> str:
 def record_feedback(
     *, alert_id: str, rule_id: str, verdict: str,
     analyst: str, role: str, reason: str = "",
+    tenant_id: str = "default",
 ) -> AlertFeedback:
     """Persist analyst feedback on an alert.
 
@@ -30,15 +31,15 @@ def record_feedback(
     conn = get_conn()
     cur = conn.execute("""
         INSERT INTO alert_feedback
-            (alert_id, rule_id, verdict, reason, analyst, role, timestamp)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (alert_id, rule_id, verdict, reason, analyst, role, ts))
+            (tenant_id, alert_id, rule_id, verdict, reason, analyst, role, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (tenant_id, alert_id, rule_id, verdict, reason, analyst, role, ts))
     feedback_id = cur.lastrowid
     conn.commit()
     conn.close()
 
     return AlertFeedback(
-        feedback_id=feedback_id, alert_id=alert_id, rule_id=rule_id,
+        feedback_id=feedback_id, tenant_id=tenant_id, alert_id=alert_id, rule_id=rule_id,
         verdict=verdict, reason=reason, analyst=analyst, role=role,
         timestamp=ts,
     )
@@ -48,10 +49,11 @@ def list_feedback(
     *, alert_id: Optional[str] = None,
     rule_id: Optional[str] = None,
     limit: int = 100,
+    tenant_id: str = "default",
 ) -> list[AlertFeedback]:
     """Return recent feedback rows, most-recent first."""
-    sql = ["SELECT * FROM alert_feedback WHERE 1=1"]
-    params: list = []
+    sql = ["SELECT * FROM alert_feedback WHERE tenant_id = ?"]
+    params: list = [tenant_id]
     if alert_id:
         sql.append("AND alert_id = ?")
         params.append(alert_id)
@@ -67,14 +69,15 @@ def list_feedback(
     return [AlertFeedback(**dict(r)) for r in rows]
 
 
-def feedback_summary() -> dict[str, Any]:
+def feedback_summary(*, tenant_id: str = "default") -> dict[str, Any]:
     """Aggregate feedback by verdict for the dashboard."""
     conn = get_conn()
     rows = conn.execute("""
         SELECT verdict, COUNT(*) AS n
         FROM alert_feedback
+        WHERE tenant_id = ?
         GROUP BY verdict
-    """).fetchall()
+    """, (tenant_id,)).fetchall()
     conn.close()
     by_verdict = {r["verdict"]: r["n"] for r in rows}
     total = sum(by_verdict.values())
@@ -90,7 +93,7 @@ def feedback_summary() -> dict[str, Any]:
 
 
 def list_noisy_rules(*, min_total: int = 3, fp_threshold: float = 0.5,
-                     limit: int = 25) -> list[dict[str, Any]]:
+                     limit: int = 25, tenant_id: str = "default") -> list[dict[str, Any]]:
     """Identify rules whose feedback skews towards false positives.
 
     A rule is "noisy" if it has at least `min_total` feedback rows AND its
@@ -100,8 +103,9 @@ def list_noisy_rules(*, min_total: int = 3, fp_threshold: float = 0.5,
     rows = conn.execute("""
         SELECT rule_id, verdict, COUNT(*) AS n
         FROM alert_feedback
+        WHERE tenant_id = ?
         GROUP BY rule_id, verdict
-    """).fetchall()
+    """, (tenant_id,)).fetchall()
     conn.close()
 
     by_rule: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))

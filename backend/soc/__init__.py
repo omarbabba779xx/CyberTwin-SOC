@@ -7,8 +7,8 @@ Provides the workflow primitives a real SOC needs on top of detection:
   - Case management  (Alert -> Incident -> Case + Evidence + Comments + Tasks)
   - Suppressions     (rule/user/host scoped, MUST have an expiration)
 
-All persistence is SQLite under data/cybertwin.db so it composes with the
-existing simulation history. Tables are created lazily by `init_soc_tables()`.
+Local/demo persistence is SQLite under data/cybertwin.db, with every workflow
+row tenant-scoped. Tables are created lazily by `init_soc_tables()`.
 """
 
 from .database import init_soc_tables

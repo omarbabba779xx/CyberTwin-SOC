@@ -19,6 +19,8 @@ from backend.auth._core import (  # noqa: F401
     PERMISSIONS_LEGACY,
     ROLES,
     has_permission,
+    permissions_for_role,
+    has_permission_for_tenant,
     # Token lifecycle
     security,
     create_token,
@@ -43,6 +45,7 @@ __all__ = [
     "hash_password", "verify_password",
     "JWT_SECRET", "JWT_ALGORITHM", "JWT_EXPIRY_HOURS", "REFRESH_EXPIRY_DAYS",
     "PERMISSIONS_SCOPED", "PERMISSIONS_LEGACY", "ROLES", "has_permission",
+    "permissions_for_role", "has_permission_for_tenant",
     "security", "create_token", "create_refresh_token",
     "revoke_token", "revoke_all_sessions", "is_token_revoked",
     "verify_token", "verify_token_optional", "require_permission",

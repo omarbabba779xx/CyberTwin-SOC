@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSo
 from pydantic import BaseModel, Field, field_validator
 
 from backend.audit import log_action
-from backend.auth import JWT_SECRET, JWT_ALGORITHM, has_permission, require_permission
+from backend.auth import JWT_SECRET, JWT_ALGORITHM, has_permission_for_tenant, require_permission
 from backend.cache import cache
 from backend.database import save_run
 from backend.orchestrator import SimulationOrchestrator
@@ -21,6 +21,10 @@ from ..deps import _client_ip, limiter, orchestrator as _orchestrator
 logger = logging.getLogger("cybertwin.simulation")
 
 router = APIRouter(tags=["simulation"])
+
+
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
 
 
 class SimulationRequest(BaseModel):
@@ -77,7 +81,7 @@ async def run_simulation(
     cache.set(f"result:{req.scenario_id}", result, ttl=7200)
 
     try:
-        save_run(req.scenario_id, scenario.get("name", ""), result)
+        save_run(req.scenario_id, scenario.get("name", ""), result, tenant_id=_tenant_id(user))
     except Exception as exc:
         logger.error("DB save failed: %s", exc)
 
@@ -128,7 +132,12 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
         await websocket.close(code=4001, reason="Token has been revoked")
         return
 
-    if not has_permission(ws_user.get("role", "viewer"), "simulation:run"):
+    ws_user.setdefault("tenant_id", "default")
+    if not has_permission_for_tenant(
+        ws_user.get("role", "viewer"),
+        "simulation:run",
+        tenant_id=_tenant_id(ws_user),
+    ):
         await websocket.close(code=4003, reason="Permission 'simulation:run' required")
         return
 
@@ -153,7 +162,7 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
                    role=ws_user.get("role", "?"), resource=scenario_id)
 
         try:
-            save_run(scenario_id, scenario.get("name", ""), result)
+            save_run(scenario_id, scenario.get("name", ""), result, tenant_id=_tenant_id(ws_user))
         except Exception as exc:
             logger.warning("DB save failed for WS run %s: %s", scenario_id, exc)
 

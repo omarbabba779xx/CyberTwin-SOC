@@ -36,7 +36,13 @@ def _orm_init_db() -> None:
     logger.info("ORM tables ensured (engine=%s)", engine.url)
 
 
-def _orm_save_run(scenario_id: str, scenario_name: str, result: dict) -> int:
+def _orm_save_run(
+    scenario_id: str,
+    scenario_name: str,
+    result: dict,
+    *,
+    tenant_id: str = "default",
+) -> int:
     from backend.db.session import SessionLocal
     from backend.db.models import SimulationRun
 
@@ -46,7 +52,7 @@ def _orm_save_run(scenario_id: str, scenario_name: str, result: dict) -> int:
         run_id=run_id_str,
         scenario_id=scenario_id,
         scenario_name=scenario_name,
-        tenant_id="default",
+        tenant_id=tenant_id,
         total_events=result.get("total_events", 0),
         total_alerts=len(result.get("alerts", [])),
         total_incidents=len(result.get("incidents", [])),
@@ -64,7 +70,7 @@ def _orm_save_run(scenario_id: str, scenario_name: str, result: dict) -> int:
         session.close()
 
 
-def _orm_get_runs(limit: int = 50) -> list[dict]:
+def _orm_get_runs(limit: int = 50, *, tenant_id: str = "default") -> list[dict]:
     from backend.db.session import SessionLocal
     from backend.db.models import SimulationRun
 
@@ -72,6 +78,7 @@ def _orm_get_runs(limit: int = 50) -> list[dict]:
     try:
         rows = (
             session.query(SimulationRun)
+            .filter(SimulationRun.tenant_id == tenant_id)
             .order_by(SimulationRun.id.desc())
             .limit(limit)
             .all()
@@ -79,6 +86,7 @@ def _orm_get_runs(limit: int = 50) -> list[dict]:
         return [
             {
                 "id": r.id,
+                "tenant_id": r.tenant_id,
                 "scenario_id": r.scenario_id,
                 "scenario_name": r.scenario_name,
                 "timestamp": r.started_at.isoformat() if r.started_at else "",
@@ -94,17 +102,22 @@ def _orm_get_runs(limit: int = 50) -> list[dict]:
         session.close()
 
 
-def _orm_get_run(run_id: int) -> Optional[dict]:
+def _orm_get_run(run_id: int, *, tenant_id: str = "default") -> Optional[dict]:
     from backend.db.session import SessionLocal
     from backend.db.models import SimulationRun
 
     session = SessionLocal()
     try:
-        r = session.query(SimulationRun).filter(SimulationRun.id == run_id).first()
+        r = (
+            session.query(SimulationRun)
+            .filter(SimulationRun.id == run_id, SimulationRun.tenant_id == tenant_id)
+            .first()
+        )
         if r is None:
             return None
         return {
             "id": r.id,
+            "tenant_id": r.tenant_id,
             "scenario_id": r.scenario_id,
             "scenario_name": r.scenario_name,
             "timestamp": r.started_at.isoformat() if r.started_at else "",
@@ -119,7 +132,7 @@ def _orm_get_run(run_id: int) -> Optional[dict]:
         session.close()
 
 
-def _orm_get_runs_by_scenario(scenario_id: str) -> list[dict]:
+def _orm_get_runs_by_scenario(scenario_id: str, *, tenant_id: str = "default") -> list[dict]:
     from backend.db.session import SessionLocal
     from backend.db.models import SimulationRun
 
@@ -127,13 +140,14 @@ def _orm_get_runs_by_scenario(scenario_id: str) -> list[dict]:
     try:
         rows = (
             session.query(SimulationRun)
-            .filter(SimulationRun.scenario_id == scenario_id)
+            .filter(SimulationRun.scenario_id == scenario_id, SimulationRun.tenant_id == tenant_id)
             .order_by(SimulationRun.id.desc())
             .all()
         )
         return [
             {
                 "id": r.id,
+                "tenant_id": r.tenant_id,
                 "scenario_id": r.scenario_id,
                 "scenario_name": r.scenario_name,
                 "timestamp": r.started_at.isoformat() if r.started_at else "",
@@ -146,19 +160,23 @@ def _orm_get_runs_by_scenario(scenario_id: str) -> list[dict]:
         session.close()
 
 
-def _orm_delete_run(run_id: int) -> None:
+def _orm_delete_run(run_id: int, *, tenant_id: str = "default") -> None:
     from backend.db.session import SessionLocal
     from backend.db.models import SimulationRun
 
     session = SessionLocal()
     try:
-        session.query(SimulationRun).filter(SimulationRun.id == run_id).delete()
+        (
+            session.query(SimulationRun)
+            .filter(SimulationRun.id == run_id, SimulationRun.tenant_id == tenant_id)
+            .delete()
+        )
         session.commit()
     finally:
         session.close()
 
 
-def _orm_get_stats() -> dict:
+def _orm_get_stats(*, tenant_id: str = "default") -> dict:
     from sqlalchemy import func as sa_func
     from backend.db.session import SessionLocal
     from backend.db.models import SimulationRun
@@ -170,7 +188,7 @@ def _orm_get_stats() -> dict:
             sa_func.avg(SimulationRun.overall_score).label("avg_score"),
             sa_func.max(SimulationRun.overall_score).label("best_score"),
             sa_func.min(SimulationRun.overall_score).label("worst_score"),
-        ).first()
+        ).filter(SimulationRun.tenant_id == tenant_id).first()
         if row is None:
             return {}
         return {
@@ -199,6 +217,7 @@ def _sqlite_init_db() -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS simulation_runs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id TEXT NOT NULL DEFAULT 'default',
             scenario_id TEXT NOT NULL,
             scenario_name TEXT,
             timestamp TEXT NOT NULL,
@@ -215,9 +234,16 @@ def _sqlite_init_db() -> None:
             full_result TEXT
         )
     """)
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(simulation_runs)").fetchall()}
+    if "tenant_id" not in columns:
+        conn.execute("ALTER TABLE simulation_runs ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'")
     conn.execute(
         "CREATE INDEX IF NOT EXISTS ix_runs_scenario_id_id "
         "ON simulation_runs (scenario_id, id DESC)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_runs_tenant_id_id "
+        "ON simulation_runs (tenant_id, id DESC)"
     )
     conn.execute(
         "CREATE INDEX IF NOT EXISTS ix_runs_timestamp "
@@ -231,17 +257,23 @@ def _sqlite_init_db() -> None:
     conn.close()
 
 
-def _sqlite_save_run(scenario_id: str, scenario_name: str, result: dict) -> int:
+def _sqlite_save_run(
+    scenario_id: str,
+    scenario_name: str,
+    result: dict,
+    *,
+    tenant_id: str = "default",
+) -> int:
     scores = result.get("scores", {})
     conn = _sqlite_conn()
     cur = conn.execute("""
         INSERT INTO simulation_runs
-        (scenario_id, scenario_name, timestamp, total_events, total_alerts, total_incidents,
+        (tenant_id, scenario_id, scenario_name, timestamp, total_events, total_alerts, total_incidents,
          overall_score, detection_score, coverage_score, response_score, visibility_score,
          risk_level, maturity_level, full_result)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        scenario_id, scenario_name,
+        tenant_id, scenario_id, scenario_name,
         datetime.now(timezone.utc).isoformat(),
         result.get("total_events", 0),
         len(result.get("alerts", [])),
@@ -261,21 +293,24 @@ def _sqlite_save_run(scenario_id: str, scenario_name: str, result: dict) -> int:
     return run_id
 
 
-def _sqlite_get_runs(limit: int = 50) -> list[dict]:
+def _sqlite_get_runs(limit: int = 50, *, tenant_id: str = "default") -> list[dict]:
     conn = _sqlite_conn()
     rows = conn.execute("""
-        SELECT id, scenario_id, scenario_name, timestamp, total_events, total_alerts,
+        SELECT id, tenant_id, scenario_id, scenario_name, timestamp, total_events, total_alerts,
                total_incidents, overall_score, detection_score, coverage_score,
                response_score, visibility_score, risk_level, maturity_level
-        FROM simulation_runs ORDER BY id DESC LIMIT ?
-    """, (limit,)).fetchall()
+        FROM simulation_runs WHERE tenant_id = ? ORDER BY id DESC LIMIT ?
+    """, (tenant_id, limit)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def _sqlite_get_run(run_id: int) -> Optional[dict]:
+def _sqlite_get_run(run_id: int, *, tenant_id: str = "default") -> Optional[dict]:
     conn = _sqlite_conn()
-    row = conn.execute("SELECT * FROM simulation_runs WHERE id = ?", (run_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM simulation_runs WHERE id = ? AND tenant_id = ?",
+        (run_id, tenant_id),
+    ).fetchone()
     conn.close()
     if row is None:
         return None
@@ -285,25 +320,25 @@ def _sqlite_get_run(run_id: int) -> Optional[dict]:
     return d
 
 
-def _sqlite_get_runs_by_scenario(scenario_id: str) -> list[dict]:
+def _sqlite_get_runs_by_scenario(scenario_id: str, *, tenant_id: str = "default") -> list[dict]:
     conn = _sqlite_conn()
     rows = conn.execute("""
-        SELECT id, scenario_id, scenario_name, timestamp, overall_score, detection_score,
+        SELECT id, tenant_id, scenario_id, scenario_name, timestamp, overall_score, detection_score,
                coverage_score, response_score, visibility_score, risk_level
-        FROM simulation_runs WHERE scenario_id = ? ORDER BY id DESC
-    """, (scenario_id,)).fetchall()
+        FROM simulation_runs WHERE scenario_id = ? AND tenant_id = ? ORDER BY id DESC
+    """, (scenario_id, tenant_id)).fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
 
-def _sqlite_delete_run(run_id: int) -> None:
+def _sqlite_delete_run(run_id: int, *, tenant_id: str = "default") -> None:
     conn = _sqlite_conn()
-    conn.execute("DELETE FROM simulation_runs WHERE id = ?", (run_id,))
+    conn.execute("DELETE FROM simulation_runs WHERE id = ? AND tenant_id = ?", (run_id, tenant_id))
     conn.commit()
     conn.close()
 
 
-def _sqlite_get_stats() -> dict:
+def _sqlite_get_stats(*, tenant_id: str = "default") -> dict:
     conn = _sqlite_conn()
     row = conn.execute("""
         SELECT COUNT(*) as total_runs,
@@ -311,7 +346,8 @@ def _sqlite_get_stats() -> dict:
                MAX(overall_score) as best_score,
                MIN(overall_score) as worst_score
         FROM simulation_runs
-    """).fetchone()
+        WHERE tenant_id = ?
+    """, (tenant_id,)).fetchone()
     conn.close()
     return dict(row) if row else {}
 
@@ -327,38 +363,44 @@ def init_db() -> None:
         _sqlite_init_db()
 
 
-def save_run(scenario_id: str, scenario_name: str, result: dict) -> int:
+def save_run(
+    scenario_id: str,
+    scenario_name: str,
+    result: dict,
+    *,
+    tenant_id: str = "default",
+) -> int:
     if _USE_ORM:
-        return _orm_save_run(scenario_id, scenario_name, result)
-    return _sqlite_save_run(scenario_id, scenario_name, result)
+        return _orm_save_run(scenario_id, scenario_name, result, tenant_id=tenant_id)
+    return _sqlite_save_run(scenario_id, scenario_name, result, tenant_id=tenant_id)
 
 
-def get_runs(limit: int = 50) -> list[dict]:
+def get_runs(limit: int = 50, *, tenant_id: str = "default") -> list[dict]:
     if _USE_ORM:
-        return _orm_get_runs(limit)
-    return _sqlite_get_runs(limit)
+        return _orm_get_runs(limit, tenant_id=tenant_id)
+    return _sqlite_get_runs(limit, tenant_id=tenant_id)
 
 
-def get_run(run_id: int) -> Optional[dict]:
+def get_run(run_id: int, *, tenant_id: str = "default") -> Optional[dict]:
     if _USE_ORM:
-        return _orm_get_run(run_id)
-    return _sqlite_get_run(run_id)
+        return _orm_get_run(run_id, tenant_id=tenant_id)
+    return _sqlite_get_run(run_id, tenant_id=tenant_id)
 
 
-def get_runs_by_scenario(scenario_id: str) -> list[dict]:
+def get_runs_by_scenario(scenario_id: str, *, tenant_id: str = "default") -> list[dict]:
     if _USE_ORM:
-        return _orm_get_runs_by_scenario(scenario_id)
-    return _sqlite_get_runs_by_scenario(scenario_id)
+        return _orm_get_runs_by_scenario(scenario_id, tenant_id=tenant_id)
+    return _sqlite_get_runs_by_scenario(scenario_id, tenant_id=tenant_id)
 
 
-def delete_run(run_id: int) -> None:
+def delete_run(run_id: int, *, tenant_id: str = "default") -> None:
     if _USE_ORM:
-        _orm_delete_run(run_id)
+        _orm_delete_run(run_id, tenant_id=tenant_id)
     else:
-        _sqlite_delete_run(run_id)
+        _sqlite_delete_run(run_id, tenant_id=tenant_id)
 
 
-def get_stats() -> dict:
+def get_stats(*, tenant_id: str = "default") -> dict:
     if _USE_ORM:
-        return _orm_get_stats()
-    return _sqlite_get_stats()
+        return _orm_get_stats(tenant_id=tenant_id)
+    return _sqlite_get_stats(tenant_id=tenant_id)

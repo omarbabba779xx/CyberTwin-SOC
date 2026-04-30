@@ -19,23 +19,27 @@ from ..deps import _client_ip, limiter
 router = APIRouter(tags=["history"])
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
 @router.get("/api/history")
 @limiter.limit("60/minute")
 def list_history(
     request: Request,
     limit: int = Query(default=50, ge=1, le=500),
-    _user=Depends(require_permission("view_results")),
+    user=Depends(require_permission("view_results")),
 ):
-    return get_runs(limit)
+    return get_runs(limit, tenant_id=_tenant_id(user))
 
 
 @router.get("/api/history/stats")
 @limiter.limit("60/minute")
 def history_stats(
     request: Request,
-    _user=Depends(require_permission("view_results")),
+    user=Depends(require_permission("view_results")),
 ):
-    return get_stats()
+    return get_stats(tenant_id=_tenant_id(user))
 
 
 @router.get("/api/history/scenario/{scenario_id}")
@@ -43,9 +47,9 @@ def history_stats(
 def history_by_scenario(
     request: Request,
     scenario_id: str,
-    _user=Depends(require_permission("view_results")),
+    user=Depends(require_permission("view_results")),
 ):
-    return get_runs_by_scenario(scenario_id)
+    return get_runs_by_scenario(scenario_id, tenant_id=_tenant_id(user))
 
 
 @router.get("/api/history/{run_id}")
@@ -53,9 +57,9 @@ def history_by_scenario(
 def history_detail(
     request: Request,
     run_id: int,
-    _user=Depends(require_permission("view_results")),
+    user=Depends(require_permission("view_results")),
 ):
-    run = get_run(run_id)
+    run = get_run(run_id, tenant_id=_tenant_id(user))
     if run is None:
         raise HTTPException(404, "Run not found")
     return run
@@ -68,7 +72,7 @@ def history_delete(
     run_id: int,
     user=Depends(require_permission("delete_history")),
 ):
-    delete_run(run_id)
+    delete_run(run_id, tenant_id=_tenant_id(user))
     log_action(
         "DELETE_HISTORY",
         username=user["sub"],

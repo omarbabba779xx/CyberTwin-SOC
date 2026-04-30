@@ -23,6 +23,10 @@ def _approx_size(obj: Any) -> int:
         return 65 * 1024
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
 # ---------------------------------------------------------------------------
 # Request models
 # ---------------------------------------------------------------------------
@@ -175,6 +179,7 @@ def post_alert_feedback(
             alert_id=alert_id, rule_id=payload.rule_id,
             verdict=payload.verdict, reason=payload.reason,
             analyst=user["sub"], role=user.get("role", "viewer"),
+            tenant_id=_tenant_id(user),
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc))
@@ -188,7 +193,7 @@ def post_alert_feedback(
 @limiter.limit("60/minute")
 def get_feedback_summary(request: Request, user=Depends(require_permission("view_results"))):
     from backend.soc import feedback_summary
-    return feedback_summary()
+    return feedback_summary(tenant_id=_tenant_id(user))
 
 
 @router.get("/api/alerts/feedback/noisy-rules")
@@ -198,7 +203,13 @@ def get_noisy_rules(
     user=Depends(require_permission("view_results")),
 ):
     from backend.soc import list_noisy_rules
-    return {"rules": list_noisy_rules(min_total=min_total, fp_threshold=threshold)}
+    return {
+        "rules": list_noisy_rules(
+            min_total=min_total,
+            fp_threshold=threshold,
+            tenant_id=_tenant_id(user),
+        )
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -219,6 +230,7 @@ def post_case(payload: CaseCreateRequest, request: Request,
             affected_users=payload.affected_users,
             mitre_techniques=payload.mitre_techniques,
             tags=payload.tags, assignee=payload.assignee,
+            tenant_id=_tenant_id(user),
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc))
@@ -237,7 +249,13 @@ def list_cases_endpoint(
     user=Depends(require_permission("case:read")),
 ):
     from backend.soc import list_cases
-    cases = list_cases(status=status, severity=severity, assignee=assignee, limit=limit)
+    cases = list_cases(
+        status=status,
+        severity=severity,
+        assignee=assignee,
+        limit=limit,
+        tenant_id=_tenant_id(user),
+    )
     return {"total": len(cases), "cases": [c.to_dict() for c in cases]}
 
 
@@ -246,7 +264,7 @@ def list_cases_endpoint(
 def get_case_endpoint(case_id: str, request: Request,
                       user=Depends(require_permission("case:read"))):
     from backend.soc import get_case
-    case = get_case(case_id)
+    case = get_case(case_id, tenant_id=_tenant_id(user))
     if case is None:
         raise HTTPException(404, f"Case '{case_id}' not found")
     return case.to_dict()
@@ -258,7 +276,7 @@ def patch_case(case_id: str, payload: CasePatchRequest, request: Request,
                user=Depends(require_permission("case:write"))):
     from backend.soc import update_case
     fields = {k: v for k, v in payload.model_dump().items() if v is not None}
-    case = update_case(case_id, **fields)
+    case = update_case(case_id, tenant_id=_tenant_id(user), **fields)
     if case is None:
         raise HTTPException(404, f"Case '{case_id}' not found")
     log_action("CASE_UPDATE", username=user["sub"], role=user.get("role"),
@@ -274,7 +292,8 @@ def post_case_comment(case_id: str, payload: CommentRequest, request: Request,
     from backend.soc import add_comment
     try:
         cmt = add_comment(case_id, author=user["sub"],
-                          role=user.get("role", "viewer"), body=payload.body)
+                          role=user.get("role", "viewer"), body=payload.body,
+                          tenant_id=_tenant_id(user))
     except ValueError as exc:
         raise HTTPException(404 if "not found" in str(exc) else 400, str(exc))
     return cmt.to_dict()
@@ -288,7 +307,8 @@ def post_case_evidence(case_id: str, payload: EvidenceRequest, request: Request,
     try:
         ev = add_evidence(case_id, type=payload.type, reference=payload.reference,
                           description=payload.description,
-                          added_by=user["sub"], payload=payload.payload)
+                          added_by=user["sub"], payload=payload.payload,
+                          tenant_id=_tenant_id(user))
     except ValueError as exc:
         raise HTTPException(404 if "not found" in str(exc) else 400, str(exc))
     return ev.to_dict()
@@ -299,7 +319,7 @@ def post_case_evidence(case_id: str, payload: EvidenceRequest, request: Request,
 def post_case_assign(case_id: str, payload: AssignRequest, request: Request,
                      user=Depends(require_permission("case:assign"))):
     from backend.soc import assign_case
-    case = assign_case(case_id, assignee=payload.assignee)
+    case = assign_case(case_id, assignee=payload.assignee, tenant_id=_tenant_id(user))
     if case is None:
         raise HTTPException(404, f"Case '{case_id}' not found")
     log_action("CASE_ASSIGN", username=user["sub"], role=user.get("role"),
@@ -315,7 +335,8 @@ def post_case_close(case_id: str, payload: CaseCloseRequest, request: Request,
     from backend.soc import close_case
     try:
         case = close_case(case_id, closure_reason=payload.closure_reason,
-                          final_status=payload.final_status)
+                          final_status=payload.final_status,
+                          tenant_id=_tenant_id(user))
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     if case is None:
@@ -341,6 +362,7 @@ def post_suppression(payload: SuppressionRequest, request: Request,
             reason=payload.reason, duration_hours=payload.duration_hours,
             expires_at=payload.expires_at, created_by=user["sub"],
             approved_by=payload.approved_by,
+            tenant_id=_tenant_id(user),
         )
     except ValueError as exc:
         raise HTTPException(400, str(exc))
@@ -355,7 +377,7 @@ def post_suppression(payload: SuppressionRequest, request: Request,
 def get_suppressions(request: Request, only_active: bool = True,
                      user=Depends(require_permission("view_results"))):
     from backend.soc import list_suppressions
-    items = list_suppressions(only_active=only_active)
+    items = list_suppressions(only_active=only_active, tenant_id=_tenant_id(user))
     return {"total": len(items), "suppressions": [s.to_dict() for s in items]}
 
 
@@ -364,7 +386,11 @@ def get_suppressions(request: Request, only_active: bool = True,
 def delete_suppression_endpoint(suppression_id: int, request: Request,
                                 user=Depends(require_permission("suppression:delete"))):
     from backend.soc import delete_suppression
-    if not delete_suppression(suppression_id, deleted_by=user["sub"]):
+    if not delete_suppression(
+        suppression_id,
+        deleted_by=user["sub"],
+        tenant_id=_tenant_id(user),
+    ):
         raise HTTPException(404, f"Suppression #{suppression_id} not found")
     log_action("SUPPRESSION_DELETE", username=user["sub"], role=user.get("role"),
                resource=str(suppression_id), ip_address=_client_ip(request))

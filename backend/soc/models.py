@@ -54,6 +54,7 @@ class SuppressionScope(str, Enum):
 @dataclass
 class AlertFeedback:
     feedback_id: int = 0
+    tenant_id: str = "default"
     alert_id: str = ""
     rule_id: str = ""
     verdict: str = AlertVerdict.TRUE_POSITIVE.value
@@ -70,6 +71,7 @@ class AlertFeedback:
 class CaseComment:
     comment_id: int = 0
     case_id: str = ""
+    tenant_id: str = "default"
     author: str = ""
     role: str = ""
     body: str = ""
@@ -83,6 +85,7 @@ class CaseComment:
 class CaseEvidence:
     evidence_id: int = 0
     case_id: str = ""
+    tenant_id: str = "default"
     type: str = "alert"           # alert | event | ioc | file | url | note
     reference: str = ""           # alert_id, event_id, IOC value, ...
     description: str = ""
@@ -97,6 +100,7 @@ class CaseEvidence:
 @dataclass
 class Case:
     case_id: str = ""
+    tenant_id: str = "default"
     title: str = ""
     description: str = ""
     severity: str = CaseSeverity.MEDIUM.value
@@ -135,6 +139,7 @@ class Case:
 @dataclass
 class Suppression:
     suppression_id: int = 0
+    tenant_id: str = "default"
     scope: str = SuppressionScope.RULE.value
     target: str = ""             # rule_id / username / host / ip / process_name
     reason: str = ""

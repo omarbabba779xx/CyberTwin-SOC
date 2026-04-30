@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from backend.audit import log_action
 from backend.auth import require_permission
@@ -89,6 +89,44 @@ def get_mitre_tactics(request: Request):
 def get_mitre_techniques(request: Request):
     from backend.mitre.attack_data import MITRE_TECHNIQUES
     return MITRE_TECHNIQUES
+
+
+@router.get("/api/mitre/atomic-red-team")
+@limiter.limit("30/minute")
+def get_atomic_red_team_catalogue(
+    request: Request,
+    limit: int = Query(default=500, ge=1, le=2000),
+    user=Depends(require_permission("view_results")),
+):
+    """Return safe metadata about a local Atomic Red Team checkout."""
+    from backend.mitre.atomic_red_team import atomic_catalog_status, list_atomic_techniques
+
+    status = atomic_catalog_status()
+    if not status.get("available"):
+        return status
+    return {**status, "techniques": list_atomic_techniques(limit=limit)}
+
+
+@router.get("/api/mitre/atomic-red-team/{technique_id}")
+@limiter.limit("30/minute")
+def get_atomic_red_team_technique(
+    request: Request,
+    technique_id: str,
+    user=Depends(require_permission("view_results")),
+):
+    """Return sanitized Atomic Red Team metadata for one ATT&CK technique."""
+    from backend.mitre.atomic_red_team import atomic_catalog_status, load_atomic_technique
+
+    status = atomic_catalog_status()
+    if not status.get("available"):
+        raise HTTPException(404, status.get("reason", "Atomic Red Team catalogue is not configured"))
+    try:
+        technique = load_atomic_technique(technique_id)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    if technique is None:
+        raise HTTPException(404, f"Atomic Red Team technique '{technique_id}' not found")
+    return technique
 
 
 @router.get("/api/mitre/gap-analysis/{scenario_id}")

@@ -15,10 +15,10 @@ from backend.auth import (
     JWT_SECRET,
     JWT_ALGORITHM,
     REFRESH_EXPIRY_DAYS,
-    ROLES,
     authenticate_user,
     create_token,
     create_refresh_token,
+    permissions_for_role,
     require_permission,
     revoke_all_sessions,
     revoke_token,
@@ -55,8 +55,9 @@ async def login(request: Request, data: LoginRequest):
     if user is None:
         log_action("LOGIN", username=data.username, ip_address=ip, status="failure")
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    access_token = create_token(user["username"], user["role"])
-    refresh_token = create_refresh_token(user["username"], user["role"])
+    tenant_id = user.get("tenant_id", "default")
+    access_token = create_token(user["username"], user["role"], tenant_id=tenant_id)
+    refresh_token = create_refresh_token(user["username"], user["role"], tenant_id=tenant_id)
     log_action("LOGIN", username=user["username"], role=user["role"], ip_address=ip)
     return {
         "token": access_token,
@@ -65,7 +66,7 @@ async def login(request: Request, data: LoginRequest):
         "token_type": "bearer",
         "username": user["username"],
         "role": user["role"],
-        "permissions": sorted(ROLES.get(user["role"], set())),
+        "permissions": sorted(permissions_for_role(user["role"], tenant_id)),
         "expires_in": int(os.getenv("JWT_EXPIRY_HOURS", "1")) * 3600,
     }
 
@@ -73,10 +74,13 @@ async def login(request: Request, data: LoginRequest):
 @router.get("/api/auth/me")
 @limiter.limit("30/minute")
 def get_me(request: Request, user=Depends(verify_token)):
+    role = user.get("role", "viewer")
+    tenant_id = user.get("tenant_id", "default")
     return {
         "username": user["sub"],
-        "role": user.get("role", "viewer"),
-        "permissions": user.get("permissions", []),
+        "role": role,
+        "tenant_id": tenant_id,
+        "permissions": sorted(permissions_for_role(role, tenant_id)),
     }
 
 
@@ -138,8 +142,9 @@ def refresh_access_token(request: Request, data: RefreshRequest):
 
     username = payload["sub"]
     role = payload.get("role", "viewer")
-    access_token = create_token(username, role)
-    new_refresh_token = create_refresh_token(username, role)
+    tenant_id = payload.get("tenant_id", "default")
+    access_token = create_token(username, role, tenant_id=tenant_id)
+    new_refresh_token = create_refresh_token(username, role, tenant_id=tenant_id)
 
     log_action("TOKEN_REFRESH", username=username, role=role,
                ip_address=_client_ip(request))
@@ -244,7 +249,7 @@ async def oidc_callback(request: Request, code: str = "", state: str = ""):
         "token_type": "bearer",
         "username": user["username"],
         "role": user["role"],
-        "permissions": sorted(ROLES.get(user["role"], set())),
+        "permissions": sorted(permissions_for_role(user["role"], user.get("tenant_id", "default"))),
         "expires_in": int(os.getenv("JWT_EXPIRY_HOURS", "1")) * 3600,
         "provider": "oidc",
     }

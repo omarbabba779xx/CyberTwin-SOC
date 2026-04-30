@@ -22,6 +22,7 @@ def create_suppression(
     created_by: str, expires_at: Optional[str] = None,
     duration_hours: Optional[int] = None,
     approved_by: Optional[str] = None,
+    tenant_id: str = "default",
 ) -> Suppression:
     """Create a suppression. Either `expires_at` (ISO) or `duration_hours` is required.
 
@@ -57,30 +58,31 @@ def create_suppression(
     conn = get_conn()
     cur = conn.execute("""
         INSERT INTO suppressions
-            (scope, target, reason, created_by, created_at, expires_at,
+            (tenant_id, scope, target, reason, created_by, created_at, expires_at,
              active, approved_by)
-        VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-    """, (scope, target, reason, created_by, created_at, expires_at,
+        VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+    """, (tenant_id, scope, target, reason, created_by, created_at, expires_at,
           approved_by))
     sid = cur.lastrowid
     conn.commit()
     conn.close()
 
     return Suppression(
-        suppression_id=sid, scope=scope, target=target, reason=reason,
+        suppression_id=sid, tenant_id=tenant_id, scope=scope, target=target, reason=reason,
         created_by=created_by, created_at=created_at, expires_at=expires_at,
         active=True, approved_by=approved_by,
     )
 
 
-def list_suppressions(*, only_active: bool = True) -> list[Suppression]:
+def list_suppressions(*, only_active: bool = True, tenant_id: str = "default") -> list[Suppression]:
     """Return all suppressions; if only_active, hide expired/disabled ones."""
-    sql = "SELECT * FROM suppressions"
+    sql = "SELECT * FROM suppressions WHERE tenant_id = ?"
+    params: tuple[Any, ...]
     if only_active:
-        sql += " WHERE active = 1 AND expires_at > ?"
-        params = (_now().isoformat(),)
+        sql += " AND active = 1 AND expires_at > ?"
+        params = (tenant_id, _now().isoformat())
     else:
-        params = ()
+        params = (tenant_id,)
     sql += " ORDER BY suppression_id DESC"
 
     conn = get_conn()
@@ -95,12 +97,17 @@ def list_suppressions(*, only_active: bool = True) -> list[Suppression]:
     return out
 
 
-def delete_suppression(suppression_id: int, *, deleted_by: str) -> bool:
+def delete_suppression(
+    suppression_id: int,
+    *,
+    deleted_by: str,
+    tenant_id: str = "default",
+) -> bool:
     """Mark a suppression inactive (soft delete preserves audit trail)."""
     conn = get_conn()
     cur = conn.execute(
-        "UPDATE suppressions SET active = 0 WHERE suppression_id = ?",
-        (suppression_id,),
+        "UPDATE suppressions SET active = 0 WHERE suppression_id = ? AND tenant_id = ?",
+        (suppression_id, tenant_id),
     )
     conn.commit()
     affected = cur.rowcount
@@ -112,14 +119,21 @@ def delete_suppression(suppression_id: int, *, deleted_by: str) -> bool:
 # Engine integration
 # ---------------------------------------------------------------------------
 
-def is_alert_suppressed(alert: dict[str, Any]) -> tuple[bool, Optional[Suppression]]:
+def is_alert_suppressed(
+    alert: dict[str, Any],
+    *,
+    tenant_id: str = "default",
+) -> tuple[bool, Optional[Suppression]]:
     """Check whether an alert matches any active, non-expired suppression.
 
     Used by the detection pipeline to drop noise without losing the audit
     trail. Returns the matching Suppression if any, so the engine can
     annotate the alert as `suppressed_by=<id>`.
     """
-    suppressions = list_suppressions(only_active=True)
+    suppressions = list_suppressions(
+        only_active=True,
+        tenant_id=alert.get("tenant_id") or tenant_id,
+    )
     if not suppressions:
         return False, None
 

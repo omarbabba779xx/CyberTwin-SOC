@@ -40,7 +40,8 @@ def _serialise_lists(case: Case) -> tuple:
 
 def _row_to_case(row: dict) -> Case:
     return Case(
-        case_id=row["case_id"], title=row["title"],
+        case_id=row["case_id"], tenant_id=row.get("tenant_id", "default"),
+        title=row["title"],
         description=row["description"] or "",
         severity=row["severity"], status=row["status"],
         assignee=row["assignee"], created_by=row["created_by"],
@@ -71,6 +72,7 @@ def create_case(
     mitre_techniques: Optional[list[str]] = None,
     tags: Optional[list[str]] = None,
     assignee: Optional[str] = None,
+    tenant_id: str = "default",
 ) -> Case:
     """Open a new case. SLA due-date is computed from severity."""
     if severity not in {s.value for s in CaseSeverity}:
@@ -84,7 +86,7 @@ def create_case(
     now_iso = now_dt.isoformat()
 
     case = Case(
-        case_id=_new_case_id(), title=title.strip(),
+        case_id=_new_case_id(), tenant_id=tenant_id, title=title.strip(),
         description=description, severity=severity,
         status=CaseStatus.NEW.value, assignee=assignee,
         created_by=created_by, created_at=now_iso, updated_at=now_iso,
@@ -97,13 +99,13 @@ def create_case(
     conn = get_conn()
     conn.execute("""
         INSERT INTO soc_cases
-            (case_id, title, description, severity, status, assignee,
+            (case_id, tenant_id, title, description, severity, status, assignee,
              created_by, created_at, updated_at, sla_due_at,
              alert_ids, incident_ids, affected_hosts, affected_users,
              mitre_techniques, tags)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        case.case_id, case.title, case.description, case.severity,
+        case.case_id, case.tenant_id, case.title, case.description, case.severity,
         case.status, case.assignee, case.created_by,
         case.created_at, case.updated_at, case.sla_due_at,
         *_serialise_lists(case),
@@ -113,10 +115,17 @@ def create_case(
     return case
 
 
-def get_case(case_id: str, *, with_relations: bool = True) -> Optional[Case]:
+def get_case(
+    case_id: str,
+    *,
+    with_relations: bool = True,
+    tenant_id: str = "default",
+) -> Optional[Case]:
     conn = get_conn()
-    row = conn.execute("SELECT * FROM soc_cases WHERE case_id = ?",
-                       (case_id,)).fetchone()
+    row = conn.execute(
+        "SELECT * FROM soc_cases WHERE case_id = ? AND tenant_id = ?",
+        (case_id, tenant_id),
+    ).fetchone()
     if row is None:
         conn.close()
         return None
@@ -124,14 +133,14 @@ def get_case(case_id: str, *, with_relations: bool = True) -> Optional[Case]:
 
     if with_relations:
         cmt_rows = conn.execute(
-            "SELECT * FROM case_comments WHERE case_id = ? ORDER BY comment_id ASC",
-            (case_id,),
+            "SELECT * FROM case_comments WHERE case_id = ? AND tenant_id = ? ORDER BY comment_id ASC",
+            (case_id, tenant_id),
         ).fetchall()
         case.comments = [CaseComment(**dict(r)) for r in cmt_rows]
 
         ev_rows = conn.execute(
-            "SELECT * FROM case_evidence WHERE case_id = ? ORDER BY evidence_id ASC",
-            (case_id,),
+            "SELECT * FROM case_evidence WHERE case_id = ? AND tenant_id = ? ORDER BY evidence_id ASC",
+            (case_id, tenant_id),
         ).fetchall()
         case.evidence = []
         for r in ev_rows:
@@ -150,9 +159,10 @@ def get_case(case_id: str, *, with_relations: bool = True) -> Optional[Case]:
 def list_cases(
     *, status: Optional[str] = None, severity: Optional[str] = None,
     assignee: Optional[str] = None, limit: int = 50,
+    tenant_id: str = "default",
 ) -> list[Case]:
-    sql = ["SELECT * FROM soc_cases WHERE 1=1"]
-    params: list = []
+    sql = ["SELECT * FROM soc_cases WHERE tenant_id = ?"]
+    params: list = [tenant_id]
     if status:
         sql.append("AND status = ?")
         params.append(status)
@@ -180,14 +190,14 @@ _UPDATABLE_COLUMNS: frozenset[str] = frozenset({
 _SQL_IDENT_RE = re.compile(r"^[a-z_][a-z0-9_]*$")
 
 
-def update_case(case_id: str, **fields: Any) -> Optional[Case]:
+def update_case(case_id: str, *, tenant_id: str = "default", **fields: Any) -> Optional[Case]:
     """Patch arbitrary scalar fields (status, severity, assignee, ...).
 
     Column names are filtered through ``_UPDATABLE_COLUMNS`` *and* a regex
     identifier pattern, so the f-string SQL composition is safe.
     """
     if not fields:
-        return get_case(case_id)
+        return get_case(case_id, tenant_id=tenant_id)
     # Defence-in-depth: drop any unknown column AND verify it matches an
     # identifier pattern - never trust a single layer.
     fields = {
@@ -195,31 +205,38 @@ def update_case(case_id: str, **fields: Any) -> Optional[Case]:
         if k in _UPDATABLE_COLUMNS and _SQL_IDENT_RE.match(k)
     }
     if not fields:
-        return get_case(case_id)
+        return get_case(case_id, tenant_id=tenant_id)
     if "tags" in fields:
         fields["tags"] = json.dumps(fields["tags"])
     fields["updated_at"] = _now()
     set_clause = ", ".join(f"{k} = ?" for k in fields)
-    params = list(fields.values()) + [case_id]
+    params = list(fields.values()) + [case_id, tenant_id]
     conn = get_conn()
     cur = conn.execute(
-        f"UPDATE soc_cases SET {set_clause} WHERE case_id = ?",  # nosec B608 - column names come from _UPDATABLE_COLUMNS allowlist + regex
+        # Column names come from _UPDATABLE_COLUMNS allowlist + regex.
+        f"UPDATE soc_cases SET {set_clause} WHERE case_id = ? AND tenant_id = ?",  # nosec B608
         params,
     )
     conn.commit()
     conn.close()
     if cur.rowcount == 0:
         return None
-    return get_case(case_id)
+    return get_case(case_id, tenant_id=tenant_id)
 
 
-def assign_case(case_id: str, *, assignee: str) -> Optional[Case]:
-    return update_case(case_id, assignee=assignee, status=CaseStatus.IN_PROGRESS.value)
+def assign_case(case_id: str, *, assignee: str, tenant_id: str = "default") -> Optional[Case]:
+    return update_case(
+        case_id,
+        tenant_id=tenant_id,
+        assignee=assignee,
+        status=CaseStatus.IN_PROGRESS.value,
+    )
 
 
 def close_case(
     case_id: str, *, closure_reason: str,
     final_status: str = CaseStatus.CLOSED.value,
+    tenant_id: str = "default",
 ) -> Optional[Case]:
     if final_status not in {CaseStatus.CLOSED.value,
                             CaseStatus.RESOLVED.value,
@@ -233,33 +250,42 @@ def close_case(
     cur = conn.execute("""
         UPDATE soc_cases
         SET status = ?, closed_at = ?, closure_reason = ?, updated_at = ?
-        WHERE case_id = ?
-    """, (final_status, now_iso, closure_reason, now_iso, case_id))
+        WHERE case_id = ? AND tenant_id = ?
+    """, (final_status, now_iso, closure_reason, now_iso, case_id, tenant_id))
     conn.commit()
     conn.close()
     if cur.rowcount == 0:
         return None
-    return get_case(case_id)
+    return get_case(case_id, tenant_id=tenant_id)
 
 
-def add_comment(case_id: str, *, author: str, role: str, body: str) -> CaseComment:
+def add_comment(
+    case_id: str,
+    *,
+    author: str,
+    role: str,
+    body: str,
+    tenant_id: str = "default",
+) -> CaseComment:
     if not body or not body.strip():
         raise ValueError("Comment body is required.")
-    if get_case(case_id, with_relations=False) is None:
+    if get_case(case_id, with_relations=False, tenant_id=tenant_id) is None:
         raise ValueError(f"Case '{case_id}' not found.")
 
     ts = _now()
     conn = get_conn()
     cur = conn.execute("""
-        INSERT INTO case_comments (case_id, author, role, body, timestamp)
-        VALUES (?, ?, ?, ?, ?)
-    """, (case_id, author, role, body.strip(), ts))
+        INSERT INTO case_comments (case_id, tenant_id, author, role, body, timestamp)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (case_id, tenant_id, author, role, body.strip(), ts))
     cid = cur.lastrowid
-    conn.execute("UPDATE soc_cases SET updated_at = ? WHERE case_id = ?",
-                 (ts, case_id))
+    conn.execute(
+        "UPDATE soc_cases SET updated_at = ? WHERE case_id = ? AND tenant_id = ?",
+        (ts, case_id, tenant_id),
+    )
     conn.commit()
     conn.close()
-    return CaseComment(comment_id=cid, case_id=case_id, author=author,
+    return CaseComment(comment_id=cid, case_id=case_id, tenant_id=tenant_id, author=author,
                        role=role, body=body.strip(), timestamp=ts)
 
 
@@ -267,8 +293,9 @@ def add_evidence(
     case_id: str, *, type: str, reference: str,
     description: str = "", added_by: str,
     payload: Optional[dict[str, Any]] = None,
+    tenant_id: str = "default",
 ) -> CaseEvidence:
-    if get_case(case_id, with_relations=False) is None:
+    if get_case(case_id, with_relations=False, tenant_id=tenant_id) is None:
         raise ValueError(f"Case '{case_id}' not found.")
     if not reference:
         raise ValueError("Evidence reference is required.")
@@ -278,14 +305,16 @@ def add_evidence(
     conn = get_conn()
     cur = conn.execute("""
         INSERT INTO case_evidence (case_id, type, reference, description,
-                                   added_by, timestamp, payload)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (case_id, type, reference, description, added_by, ts, payload_json))
+                                   added_by, timestamp, payload, tenant_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (case_id, type, reference, description, added_by, ts, payload_json, tenant_id))
     eid = cur.lastrowid
-    conn.execute("UPDATE soc_cases SET updated_at = ? WHERE case_id = ?",
-                 (ts, case_id))
+    conn.execute(
+        "UPDATE soc_cases SET updated_at = ? WHERE case_id = ? AND tenant_id = ?",
+        (ts, case_id, tenant_id),
+    )
     conn.commit()
     conn.close()
-    return CaseEvidence(evidence_id=eid, case_id=case_id, type=type,
+    return CaseEvidence(evidence_id=eid, case_id=case_id, tenant_id=tenant_id, type=type,
                         reference=reference, description=description,
                         added_by=added_by, timestamp=ts, payload=payload)

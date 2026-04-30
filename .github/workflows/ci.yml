@@ -208,6 +208,10 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Run React unit tests
+        working-directory: frontend
+        run: npm test
+
       - name: Report bundle size
         working-directory: frontend
         run: |

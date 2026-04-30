@@ -65,6 +65,10 @@ class IngestionPipeline:
         self._maxlen = buffer_size
         self._tenant_id = tenant_id
         self._stream_key = _stream_key(tenant_id)
+        self._buffers: dict[str, deque[dict]] = {
+            tenant_id: deque(maxlen=buffer_size),
+        }
+        self._buffer = self._buffers[tenant_id]
         self.stats = IngestionStats()
 
         self._redis = _get_redis_client()
@@ -80,16 +84,23 @@ class IngestionPipeline:
                 "Ingestion buffer: in-memory deque (maxlen=%d)", self._maxlen,
             )
 
-        self._buffer: deque[dict] = deque(maxlen=buffer_size)
         self._lock = Lock()
 
     # ------------------------------------------------------------------
     # Internal helpers — Redis Streams
     # ------------------------------------------------------------------
 
-    def _redis_add(self, engine_evt: dict) -> None:
+    def _tenant(self, tenant_id: Optional[str] = None) -> str:
+        return tenant_id or self._tenant_id
+
+    def _buffer_for_tenant(self, tenant_id: str) -> deque[dict]:
+        if tenant_id not in self._buffers:
+            self._buffers[tenant_id] = deque(maxlen=self._maxlen)
+        return self._buffers[tenant_id]
+
+    def _redis_add(self, engine_evt: dict, *, tenant_id: str) -> None:
         self._redis.xadd(
-            self._stream_key,
+            _stream_key(tenant_id),
             {"data": json.dumps(engine_evt, default=str)},
             maxlen=self._maxlen,
             approximate=True,
@@ -119,8 +130,9 @@ class IngestionPipeline:
         if not isinstance(raw, dict):
             self.stats.record_drop("not_a_dict")
             raise ValueError("Event must be a JSON object (dict).")
+        tenant = self._tenant(tenant_id)
         try:
-            evt = self._normalizer.normalise(raw, source_type=source_type, tenant_id=tenant_id)
+            evt = self._normalizer.normalise(raw, source_type=source_type, tenant_id=tenant)
         except Exception as exc:
             self.stats.record_drop(f"normalisation:{type(exc).__name__}")
             raise
@@ -130,12 +142,12 @@ class IngestionPipeline:
 
         if self._use_redis:
             try:
-                self._redis_add(engine_evt)
+                self._redis_add(engine_evt, tenant_id=tenant)
             except Exception as exc:
                 logger.error("Redis XADD failed (%s); event lost", exc)
         else:
             with self._lock:
-                self._buffer.append(engine_evt)
+                self._buffer_for_tenant(tenant).append(engine_evt)
 
         self.stats.record(ocsf)
         return ocsf
@@ -175,12 +187,13 @@ class IngestionPipeline:
     # Buffer + detection
     # ------------------------------------------------------------------
 
-    def snapshot(self, limit: int = 200) -> list[dict[str, Any]]:
+    def snapshot(self, limit: int = 200, *, tenant_id: Optional[str] = None) -> list[dict[str, Any]]:
         """Return the last `limit` buffered (engine-shape) events."""
+        tenant = self._tenant(tenant_id)
         if self._use_redis:
             try:
                 entries = self._redis.xrevrange(
-                    self._stream_key, count=limit,
+                    _stream_key(tenant), count=limit,
                 )
                 entries.reverse()
                 return self._decode_entries(entries)
@@ -188,19 +201,20 @@ class IngestionPipeline:
                 logger.error("Redis XREVRANGE failed (%s)", exc)
                 return []
         with self._lock:
-            return list(self._buffer)[-limit:]
+            return list(self._buffer_for_tenant(tenant))[-limit:]
 
-    def buffer_size(self) -> int:
+    def buffer_size(self, *, tenant_id: Optional[str] = None) -> int:
+        tenant = self._tenant(tenant_id)
         if self._use_redis:
             try:
-                return self._redis.xlen(self._stream_key)
+                return self._redis.xlen(_stream_key(tenant))
             except Exception as exc:
                 logger.error("Redis XLEN failed (%s)", exc)
                 return 0
         with self._lock:
-            return len(self._buffer)
+            return len(self._buffer_for_tenant(tenant))
 
-    def detect(self) -> dict[str, Any]:
+    def detect(self, *, tenant_id: Optional[str] = None) -> dict[str, Any]:
         """Run the detection engine across the current buffer.
 
         Returns:
@@ -208,16 +222,17 @@ class IngestionPipeline:
         """
         from backend.detection.engine import DetectionEngine
 
+        tenant = self._tenant(tenant_id)
         if self._use_redis:
             try:
-                entries = self._redis.xrange(self._stream_key)
+                entries = self._redis.xrange(_stream_key(tenant))
                 events = self._decode_entries(entries)
             except Exception as exc:
                 logger.error("Redis XRANGE failed (%s)", exc)
                 events = []
         else:
             with self._lock:
-                events = list(self._buffer)
+                events = list(self._buffer_for_tenant(tenant))
 
         engine = DetectionEngine(load_sigma=True)
         alerts = engine.analyse(events)
@@ -229,15 +244,16 @@ class IngestionPipeline:
             "events_analysed": len(events),
         }
 
-    def clear(self) -> None:
+    def clear(self, *, tenant_id: Optional[str] = None) -> None:
+        tenant = self._tenant(tenant_id)
         if self._use_redis:
             try:
-                self._redis.delete(self._stream_key)
+                self._redis.delete(_stream_key(tenant))
                 return
             except Exception as exc:
                 logger.error("Redis DELETE (stream clear) failed (%s)", exc)
         with self._lock:
-            self._buffer.clear()
+            self._buffer_for_tenant(tenant).clear()
 
 
 # ---------------------------------------------------------------------------
