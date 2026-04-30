@@ -553,7 +553,7 @@ flowchart TB
     norm["🔄 normalization/"]
     mitre["🎯 mitre/"]
 
-    ai["🤖 ai_analyst.py"]
+    ai["🤖 ai_analyst/<br/>5 mixins"]
     llm["💬 llm_analyst.py"]
     orch["🎼 orchestrator.py"]
     score["🏆 scoring/"]
@@ -1204,7 +1204,7 @@ flowchart TB
     ROOT --> JB["⚙️ backend/jobs/<br/>Arq-shaped task registry"]
 
     BE --> BE1["api/ — 14 routers + main.py + deps.py + errors.py"]
-    BE --> BE2["detection/ — 46 rules + Sigma + correlation"]
+    BE --> BE2["detection/ — rules/ pkg (46 rules, by-tactic) + Sigma + correlation"]
     BE --> BE3["coverage/ — 8-state machine + gap analyzer"]
     BE --> BE4["soc/ — cases · feedback · suppressions"]
     BE --> BE5["ingestion/ — Redis Streams + pipeline"]
