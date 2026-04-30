@@ -9,6 +9,11 @@ os.environ["AUTH_ANALYST_PASSWORD"] = os.environ.get("AUTH_ANALYST_PASSWORD", "s
 os.environ["AUTH_VIEWER_PASSWORD"]  = os.environ.get("AUTH_VIEWER_PASSWORD",  "viewer2024")
 os.environ.setdefault("JWT_SECRET", "test-secret-key-minimum-32-chars-long!")
 
+# Pin JWT lifetime so the suite is deterministic on any developer machine,
+# regardless of what value is set in a local `.env`. `load_dotenv()` does not
+# override existing env vars, so this assignment wins over `.env` content.
+os.environ["JWT_EXPIRY_HOURS"] = "1"
+
 
 # ---------------------------------------------------------------------------
 # Auth fixtures
