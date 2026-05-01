@@ -9,6 +9,7 @@ to be reused across multiple routers lives here:
 - ``_rate_limit_key`` : tenant-aware rate-limit key (tenant:user or IP)
 - ``_client_ip``      : extract the real client IP from request headers
 - ``_get_cached_result`` : fetch a cached simulation result or raise 404
+- ``result_cache_key`` : tenant-scoped simulation result cache key
 - ``_safe_path``      : prevent path-traversal in user-supplied filenames
 - ``_SAFE_ID_RE``     : whitelist regex used by ``_safe_path``
 """
@@ -101,9 +102,14 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def _get_cached_result(scenario_id: str) -> dict:
-    """Return the cached simulation result for ``scenario_id`` or raise 404."""
-    result = cache.get(f"result:{scenario_id}")
+def result_cache_key(scenario_id: str, tenant_id: str = "default") -> str:
+    """Return the tenant-scoped cache key for a simulation result."""
+    return f"result:{tenant_id}:{scenario_id}"
+
+
+def _get_cached_result(scenario_id: str, *, tenant_id: str = "default") -> dict:
+    """Return the tenant-scoped cached simulation result or raise 404."""
+    result = cache.get(result_cache_key(scenario_id, tenant_id))
     if result is None:
         raise HTTPException(404, "No results found. Run a simulation first.")
     return result

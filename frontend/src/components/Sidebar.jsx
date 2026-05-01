@@ -23,6 +23,7 @@ const NAV_SECTIONS = [
       { id: 'timeline', label: 'Timeline', labelKey: 'nav.timeline', icon: Clock },
       { id: 'mitre', label: 'MITRE ATT&CK', labelKey: 'nav.mitre', icon: Grid3X3 },
       { id: 'coverage', label: 'Coverage Center', labelKey: 'nav.coverage', icon: Target, tag: 'NEW' },
+      { id: 'atomic', label: 'Atomic Red Team', icon: Zap, tag: 'NEW' },
       { id: 'logs', label: 'Log Explorer', labelKey: 'nav.logs', icon: FileText },
       { id: 'attack-tree', label: 'Attack Tree', labelKey: 'nav.attackTree', icon: GitBranch },
       { id: 'anomaly', label: 'Anomaly Detection', labelKey: 'nav.anomaly', icon: Cpu, tag: 'ML' },
@@ -61,7 +62,7 @@ const NAV_SECTIONS = [
   }
 ]
 
-const alwaysEnabled = ['dashboard', 'executive', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark', 'soar', 'coverage', 'alert-queue', 'cases', 'suppressions', 'ingestion']
+const alwaysEnabled = ['dashboard', 'executive', 'scenarios', 'network', 'builder', 'comparison', 'threat-intel', 'threat-map', 'risk-matrix', 'maturity', 'analytics', 'benchmark', 'soar', 'coverage', 'atomic', 'alert-queue', 'cases', 'suppressions', 'ingestion']
 
 export default function Sidebar({ page, setPage, hasResult, onLogout, i18n, onLangChange, llmStatus }) {
   const t = i18n?.t || ((k) => k)

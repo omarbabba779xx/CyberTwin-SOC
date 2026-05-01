@@ -15,7 +15,7 @@ implemented today and what remains roadmap work.
 | Area | Current state |
 | --- | --- |
 | Backend | FastAPI, Python 3.12, modular routers, JWT auth, OIDC option, RBAC dependencies |
-| Frontend | React 18 + Vite dashboard, Vitest unit tests, Playwright smoke suite |
+| Frontend | React 18 + Vite dashboard, Vitest unit tests, Playwright smoke plus mocked analyst journey |
 | Simulation | Built-in attack scenarios executed through `SimulationOrchestrator` |
 | Detection | Rule engine, Sigma loader, anomaly/UEBA modules, MITRE coverage center |
 | Ingestion | OCSF-style normalization, bounded in-memory buffer or Redis Streams |
@@ -213,7 +213,7 @@ flowchart TB
     PARSER --> META["Sanitized metadata\ntechnique, platforms, executor names,\ndependencies, argument names"]
     PARSER -. "not exposed by default" .-> CMD["Commands and cleanup commands"]
     META --> API["/api/mitre/atomic-red-team"]
-    META --> UI["Coverage and exercise planning"]
+    META --> UI["Atomic Red Team UI\nmetadata browsing and exercise planning"]
 ```
 
 Setup:
@@ -236,6 +236,13 @@ Endpoints:
 | --- | --- | --- | --- |
 | `GET` | `/api/mitre/atomic-red-team` | `view_results` | List local Atomic technique IDs |
 | `GET` | `/api/mitre/atomic-red-team/{technique_id}` | `view_results` | Return sanitized metadata for one technique |
+
+Frontend exposure:
+
+- Sidebar page: `Atomic Red Team`
+- Displays indexed techniques, supported platforms, executors, dependencies,
+  input argument names, and source file path.
+- Keeps executable command and cleanup command bodies out of the browser.
 
 ## Security Model
 
@@ -413,11 +420,11 @@ engineering lab. It is not yet a finished commercial SOC platform.
 Important remaining gaps:
 
 - Full PostgreSQL runtime CRUD for SOC cases, feedback, evidence, and suppressions.
-- Larger end-to-end frontend journeys beyond smoke coverage.
+- Broader end-to-end analyst journeys beyond smoke plus mocked login/Atomic metadata coverage.
 - Production hardening for deployment secrets, backups, retention, and disaster recovery.
 - Deeper performance profiling under sustained ingestion load.
 - More validated ATT&CK coverage; current coverage is honest and intentionally conservative.
-- UI exposure of the new Atomic Red Team metadata endpoints.
+- Atomic Red Team UI is metadata-only; guided validation planning remains future work.
 - Formal third-party compliance audits; included mappings are readiness material, not certification.
 
 ## Roadmap
@@ -430,7 +437,7 @@ gantt
     PostgreSQL SOC runtime        :active, 2026-05-01, 14d
     Tenant-scoped audit queries   :2026-05-08, 7d
     section Detection
-    Atomic metadata UI            :2026-05-05, 10d
+    Atomic validation planning UI :2026-05-05, 10d
     More validated ATT&CK paths   :2026-05-12, 21d
     section Frontend
     Full analyst E2E journeys     :2026-05-10, 14d

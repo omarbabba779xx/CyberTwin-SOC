@@ -16,7 +16,7 @@ from backend.cache import cache
 from backend.database import save_run
 from backend.orchestrator import SimulationOrchestrator
 
-from ..deps import _client_ip, limiter, orchestrator as _orchestrator
+from ..deps import _client_ip, limiter, orchestrator as _orchestrator, result_cache_key
 
 logger = logging.getLogger("cybertwin.simulation")
 
@@ -78,7 +78,7 @@ async def run_simulation(
         ),
     )
 
-    cache.set(f"result:{req.scenario_id}", result, ttl=7200)
+    cache.set(result_cache_key(req.scenario_id, _tenant_id(user)), result, ttl=7200)
 
     try:
         save_run(req.scenario_id, scenario.get("name", ""), result, tenant_id=_tenant_id(user))
@@ -126,6 +126,10 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
         await websocket.close(code=4001, reason="Invalid or expired token")
         return
 
+    if ws_user.get("type", "access") != "access":
+        await websocket.close(code=4001, reason="Refresh token cannot be used here")
+        return
+
     from backend.auth import is_token_revoked
     jti = ws_user.get("jti")
     if jti and is_token_revoked(jti):
@@ -157,7 +161,7 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
             None,
             lambda: orch.run_simulation(scenario_id=scenario_id, duration_minutes=60)
         )
-        cache.set(f"result:{scenario_id}", result, ttl=7200)
+        cache.set(result_cache_key(scenario_id, _tenant_id(ws_user)), result, ttl=7200)
         log_action("RUN_SIMULATION_WS", username=ws_user.get("sub", "?"),
                    role=ws_user.get("role", "?"), resource=scenario_id)
 

@@ -59,6 +59,54 @@ def test_ingestion_buffer_is_tenant_scoped():
     assert pipeline.snapshot(tenant_id="tenant-b")[0]["tenant_id"] == "tenant-b"
 
 
+def test_results_cache_is_tenant_scoped(client):
+    from backend.api.deps import result_cache_key
+    from backend.auth import create_token
+    from backend.cache import cache
+
+    cache.clear()
+    scenario_id = "tenant-cache-regression"
+    result = {
+        "alerts": [],
+        "incidents": [],
+        "timeline": [],
+        "scores": {"overall_score": 90},
+        "mitre_coverage": {},
+        "report": {},
+        "logs": [],
+        "logs_statistics": {},
+    }
+    cache.set(result_cache_key(scenario_id, "tenant-a"), result, ttl=120)
+
+    token_a = create_token("alice", "analyst", tenant_id="tenant-a")
+    token_b = create_token("bob", "analyst", tenant_id="tenant-b")
+
+    ok = client.get(
+        f"/api/results/{scenario_id}",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    denied = client.get(
+        f"/api/results/{scenario_id}",
+        headers={"Authorization": f"Bearer {token_b}"},
+    )
+
+    assert ok.status_code == 200
+    assert denied.status_code == 404
+
+
+def test_websocket_rejects_refresh_token(client):
+    from starlette.websockets import WebSocketDisconnect
+    from backend.auth import create_refresh_token
+
+    refresh = create_refresh_token("analyst", "analyst", tenant_id="tenant-a")
+
+    with pytest.raises(WebSocketDisconnect) as exc:
+        with client.websocket_connect(f"/ws/simulate/apt_campaign?token={refresh}"):
+            pass
+
+    assert exc.value.code == 4001
+
+
 def test_require_permission_uses_dynamic_tenant_permissions(monkeypatch):
     from fastapi import HTTPException
     from backend.auth import _core as auth_core

@@ -15,6 +15,10 @@ from ..deps import _client_ip, _get_cached_result, limiter
 router = APIRouter(tags=["soar"])
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
 @router.get("/api/soar/status")
 @limiter.limit("30/minute")
 def soar_status(request: Request, user=Depends(require_permission("view_results"))):
@@ -34,7 +38,7 @@ async def push_to_thehive(
     result_id: str, request: Request,
     user=Depends(require_permission("simulation:run")),
 ):
-    result = _get_cached_result(result_id)
+    result = _get_cached_result(result_id, tenant_id=_tenant_id(user))
     from backend.soar import TheHiveClient
     loop = asyncio.get_event_loop()
     try:
@@ -55,7 +59,7 @@ async def analyze_iocs_cortex(
     result_id: str, request: Request,
     user=Depends(require_permission("simulation:run")),
 ):
-    result = _get_cached_result(result_id)
+    result = _get_cached_result(result_id, tenant_id=_tenant_id(user))
     iocs = result.get("ai_analysis", {}).get("iocs", [])
     if not iocs:
         return {"message": "No IOCs found in this simulation result", "jobs": []}

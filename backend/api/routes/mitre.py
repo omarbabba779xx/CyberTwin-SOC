@@ -14,6 +14,10 @@ router = APIRouter(tags=["mitre"])
 _MAX_SIGMA_BYTES = 256 * 1024
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
 @router.get("/api/threat-intel")
 @limiter.limit("60/minute")
 def get_threat_intel(request: Request):
@@ -135,7 +139,7 @@ def mitre_gap_analysis(request: Request, scenario_id: str,
                        user=Depends(require_permission("view_results"))):
     from backend.mitre.attack_data import MITRE_TACTICS, MITRE_TECHNIQUES
     from ..deps import _get_cached_result
-    result = _get_cached_result(scenario_id)
+    result = _get_cached_result(scenario_id, tenant_id=_tenant_id(user))
     detected_tids = {a.get("technique_id", "") for a in result.get("alerts", [])}
     gap: dict = {"covered": [], "uncovered": [], "coverage_pct": 0.0, "by_tactic": {}}
     for tid, tech in MITRE_TECHNIQUES.items():

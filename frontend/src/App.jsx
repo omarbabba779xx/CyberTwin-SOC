@@ -30,6 +30,7 @@ const Benchmark = React.lazy(() => import('./pages/Benchmark'))
 const Anomaly   = React.lazy(() => import('./pages/Anomaly'))
 const SOAR      = React.lazy(() => import('./pages/SOAR'))
 const CoverageCenter = React.lazy(() => import('./pages/CoverageCenter'))
+const AtomicRedTeam = React.lazy(() => import('./pages/AtomicRedTeam'))
 const AlertQueue      = React.lazy(() => import('./pages/AlertQueue'))
 const CaseManagement  = React.lazy(() => import('./pages/CaseManagement'))
 const SuppressionsPage = React.lazy(() => import('./pages/Suppressions'))
@@ -157,6 +158,7 @@ export default function App() {
     anomaly:   <Anomaly   scenarioId={simResult?.scenario?.id} token={token} />,
     soar:      <SOAR      simResult={simResult}                 token={token} />,
     coverage:  <CoverageCenter                                    token={token} />,
+    atomic:    <AtomicRedTeam                                     token={token} />,
     'alert-queue': <AlertQueue       simResult={simResult}        token={token} />,
     cases:         <CaseManagement   simResult={simResult}        token={token} />,
     suppressions:  <SuppressionsPage                              token={token} />,
