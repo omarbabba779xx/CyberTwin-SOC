@@ -17,7 +17,10 @@ logger = logging.getLogger("cybertwin.soc.database")
 
 DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "cybertwin.db"
 
-_USE_ORM = bool(os.getenv("DATABASE_URL", ""))
+
+def use_orm() -> bool:
+    """Return True when SOC runtime should use SQLAlchemy DATABASE_URL."""
+    return bool(os.getenv("DATABASE_URL", "").strip())
 
 
 # ---------------------------------------------------------------------------
@@ -167,6 +170,7 @@ def _orm_init_tables() -> None:
 
 def init_soc_tables() -> None:
     """Create all SOC tables if they don't exist (idempotent)."""
-    _sqlite_init_tables()
-    if _USE_ORM:
+    if use_orm():
         _orm_init_tables()
+        return
+    _sqlite_init_tables()

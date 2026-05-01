@@ -6,24 +6,25 @@ tenant-aware analyst workflow.
 
 It is best described as an advanced pilot-grade security engineering platform:
 it has serious architecture, CI, tests, RBAC, audit, ingestion, MITRE mapping,
-case workflow, and SOAR connector surfaces, but it is not yet a turnkey
-enterprise SOC product. The README is intentionally honest about what is
-implemented today and what remains roadmap work.
+case workflow, and SOAR connector surfaces, but it is not a managed SOC service
+or a self-issued certification artifact. The README is intentionally aligned
+with the implemented code and separates shipped controls from external audit
+validation.
 
 ## At A Glance
 
 | Area | Current state |
 | --- | --- |
 | Backend | FastAPI, Python 3.12, modular routers, JWT auth, OIDC option, RBAC dependencies |
-| Frontend | React 18 + Vite dashboard, Vitest unit tests, Playwright smoke plus mocked analyst journey |
+| Frontend | React 18 + Vite dashboard, Vitest unit tests, Playwright analyst journeys |
 | Simulation | Built-in attack scenarios executed through `SimulationOrchestrator` |
 | Detection | Rule engine, Sigma loader, anomaly/UEBA modules, MITRE coverage center |
 | Ingestion | OCSF-style normalization, bounded in-memory buffer or Redis Streams |
 | SOC workflow | Tenant-scoped cases, comments, evidence, feedback, suppressions, SLA logic |
-| Persistence | SQLite local/demo runtime; SQLAlchemy/Alembic PostgreSQL schema for production paths |
+| Persistence | SQLite local/demo runtime; SQLAlchemy/Alembic PostgreSQL runtime when `DATABASE_URL` is set |
 | Multi-tenancy | JWT `tenant_id`, middleware tenant scope, tenant-scoped history/SOC/ingestion |
 | Atomic Red Team | Optional local metadata catalog via `ATOMIC_RED_TEAM_PATH`; no command execution |
-| Quality gate | Pytest coverage gate, Vitest, build, lint, Bandit, pip-audit, npm audit, Compose validation |
+| Quality gate | Pytest coverage gate, Vitest, Playwright, ingestion profiler, readiness check, security scans |
 
 ## Core Product Loop
 
@@ -187,8 +188,10 @@ stateDiagram-v2
 Current runtime state:
 
 - SOC workflow data is tenant-scoped in SQLite local/demo runtime.
-- PostgreSQL ORM models exist, and migrations are part of CI smoke checks.
-- A full PostgreSQL-only SOC CRUD runtime remains a roadmap item.
+- When `DATABASE_URL` is configured, cases, comments, evidence, feedback,
+  and suppressions use the SQLAlchemy runtime store.
+- Alembic migrations keep the PostgreSQL schema aligned with the runtime
+  models.
 
 Key modules:
 
@@ -241,7 +244,8 @@ Frontend exposure:
 
 - Sidebar page: `Atomic Red Team`
 - Displays indexed techniques, supported platforms, executors, dependencies,
-  input argument names, and source file path.
+  input argument names, source file path, telemetry to watch, and expected SOC
+  validation artifacts.
 - Keeps executable command and cleanup command bodies out of the browser.
 
 ## Security Model
@@ -412,40 +416,36 @@ deploy/
 tests/                 Backend regression, security, integration tests
 ```
 
-## Honest Limits
+## Operational Readiness
 
-CyberTwin SOC is strong for a portfolio, research, pilot, and security
-engineering lab. It is not yet a finished commercial SOC platform.
+CyberTwin SOC now includes the implementation, tests, and evidence material
+that previously lived in the improvement backlog.
 
-Important remaining gaps:
-
-- Full PostgreSQL runtime CRUD for SOC cases, feedback, evidence, and suppressions.
-- Broader end-to-end analyst journeys beyond smoke plus mocked login/Atomic metadata coverage.
-- Production hardening for deployment secrets, backups, retention, and disaster recovery.
-- Deeper performance profiling under sustained ingestion load.
-- More validated ATT&CK coverage; current coverage is honest and intentionally conservative.
-- Atomic Red Team UI is metadata-only; guided validation planning remains future work.
-- Formal third-party compliance audits; included mappings are readiness material, not certification.
-
-## Roadmap
+| Area | Implemented evidence |
+| --- | --- |
+| PostgreSQL SOC runtime CRUD | `backend/soc/orm_store.py`, Alembic `0006`, `tests/test_soc_orm_runtime.py` |
+| Analyst E2E journeys | `frontend/e2e/smoke.spec.ts` covers login, Atomic metadata, and SOC case lifecycle |
+| Production hardening | `scripts/production_readiness_check.py`, `docs/operations/production-hardening-checklist.md` |
+| Backup, retention, DR | `scripts/backup.sh`, `docs/operations/backup-recovery.md` |
+| Sustained ingestion profiling | `scripts/profile_ingestion.py`, `tests/test_ingestion_profiler.py` |
+| Validated ATT&CK paths | `tests/test_attack_validation_matrix.py`, Coverage Center, MITRE proof docs |
+| Atomic Red Team planning | Metadata-only UI plus command-free validation plans |
+| Compliance audit package | `docs/compliance/audit-evidence-pack.md` and readiness mappings |
 
 ```mermaid
-gantt
-    title CyberTwin SOC Improvement Roadmap
-    dateFormat  YYYY-MM-DD
-    section Platform
-    PostgreSQL SOC runtime        :active, 2026-05-01, 14d
-    Tenant-scoped audit queries   :2026-05-08, 7d
-    section Detection
-    Atomic validation planning UI :2026-05-05, 10d
-    More validated ATT&CK paths   :2026-05-12, 21d
-    section Frontend
-    Full analyst E2E journeys     :2026-05-10, 14d
-    Bundle splitting              :2026-05-12, 7d
-    section Operations
-    Backup and restore drills     :2026-05-15, 10d
-    Load and soak testing         :2026-05-20, 14d
+flowchart LR
+    CODE["Runtime controls"] --> TESTS["Automated tests"]
+    TESTS --> PERF["Ingestion profiler"]
+    PERF --> OPS["Production readiness check"]
+    OPS --> DR["Backup / restore drill"]
+    DR --> EVIDENCE["Compliance evidence pack"]
+    EVIDENCE --> AUDIT["External auditor handoff"]
 ```
+
+External certification note: formal SOC 2 / ISO 27001 / GDPR certification is
+not something a repository can self-issue. The project now includes the
+evidence pack and repeatable checks needed for auditor handoff; a signed
+certification still requires an independent third-party audit.
 
 ## License
 

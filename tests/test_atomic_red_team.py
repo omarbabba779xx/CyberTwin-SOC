@@ -42,6 +42,8 @@ def test_atomic_loader_returns_sanitized_metadata(tmp_path):
     assert data["atomic_test_count"] == 1
     assert data["supported_platforms"] == ["windows"]
     assert data["executors"] == ["powershell"]
+    assert data["tests"][0]["validation_plan"]["mode"] == "metadata_only_guidance"
+    assert "windows_event" in data["tests"][0]["validation_plan"]["telemetry_to_watch"]
     assert "command" not in data["tests"][0]
     assert "cleanup_command" not in data["tests"][0]
 

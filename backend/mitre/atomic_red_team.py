@@ -123,6 +123,12 @@ def load_atomic_technique(
             "elevation_required": bool(executor.get("elevation_required") or False),
             "input_arguments": sorted((item.get("input_arguments") or {}).keys()),
             "dependency_count": len(item.get("dependencies") or []),
+            "validation_plan": _build_validation_plan(
+                technique_id=technique_id,
+                platforms=platforms,
+                executor=executor_name,
+                dependency_count=len(item.get("dependencies") or []),
+            ),
         }
         if include_commands:
             entry["command"] = str(executor.get("command") or "")
@@ -137,4 +143,40 @@ def load_atomic_technique(
         "supported_platforms": sorted(platform_set),
         "executors": sorted(executor_set),
         "tests": tests,
+    }
+
+
+def _build_validation_plan(
+    *,
+    technique_id: str,
+    platforms: list[str],
+    executor: str,
+    dependency_count: int,
+) -> dict[str, Any]:
+    """Return a safe, command-free validation plan for one Atomic test."""
+    telemetry = ["process_creation", "authentication", "file_activity"]
+    if any(p in {"linux", "macos"} for p in platforms):
+        telemetry.extend(["auditd", "shell_history"])
+    if any(p in {"windows"} for p in platforms):
+        telemetry.extend(["windows_event", "sysmon"])
+
+    return {
+        "mode": "metadata_only_guidance",
+        "technique_id": technique_id,
+        "executor": executor,
+        "supported_platforms": platforms,
+        "dependency_count": dependency_count,
+        "prechecks": [
+            "Run only in an isolated lab tenant or approved validation range.",
+            "Confirm logging sources are enabled before any external exercise.",
+            "Record owner, change window, expected alert, and rollback contact.",
+        ],
+        "telemetry_to_watch": sorted(set(telemetry)),
+        "expected_soc_artifacts": [
+            "Normalized ingestion event",
+            "Detection alert mapped to the ATT&CK technique",
+            "SOC case or analyst feedback entry",
+            "Coverage Center status update",
+        ],
+        "safety": "CyberTwin does not expose or execute Atomic command bodies through this API.",
     }

@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-from .database import get_conn
+from .database import get_conn, use_orm
 from .models import Suppression, SuppressionScope
 
 
@@ -29,6 +29,14 @@ def create_suppression(
     Raises:
         ValueError: if scope is invalid, target empty, or no expiration provided.
     """
+    if use_orm():
+        from . import orm_store
+        return orm_store.create_suppression(
+            scope=scope, target=target, reason=reason,
+            created_by=created_by, expires_at=expires_at,
+            duration_hours=duration_hours, approved_by=approved_by,
+            tenant_id=tenant_id,
+        )
     if scope not in {s.value for s in SuppressionScope}:
         raise ValueError(f"Invalid scope '{scope}'. "
                          f"Allowed: {[s.value for s in SuppressionScope]}")
@@ -76,6 +84,9 @@ def create_suppression(
 
 def list_suppressions(*, only_active: bool = True, tenant_id: str = "default") -> list[Suppression]:
     """Return all suppressions; if only_active, hide expired/disabled ones."""
+    if use_orm():
+        from . import orm_store
+        return orm_store.list_suppressions(only_active=only_active, tenant_id=tenant_id)
     sql = "SELECT * FROM suppressions WHERE tenant_id = ?"
     params: tuple[Any, ...]
     if only_active:
@@ -104,6 +115,11 @@ def delete_suppression(
     tenant_id: str = "default",
 ) -> bool:
     """Mark a suppression inactive (soft delete preserves audit trail)."""
+    if use_orm():
+        from . import orm_store
+        return orm_store.delete_suppression(
+            suppression_id, deleted_by=deleted_by, tenant_id=tenant_id,
+        )
     conn = get_conn()
     cur = conn.execute(
         "UPDATE suppressions SET active = 0 WHERE suppression_id = ? AND tenant_id = ?",

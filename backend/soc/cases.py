@@ -13,7 +13,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
-from .database import get_conn
+from .database import get_conn, use_orm
 from .models import (
     Case, CaseComment, CaseEvidence, CaseSeverity, CaseStatus, SLA_HOURS,
 )
@@ -75,6 +75,15 @@ def create_case(
     tenant_id: str = "default",
 ) -> Case:
     """Open a new case. SLA due-date is computed from severity."""
+    if use_orm():
+        from . import orm_store
+        return orm_store.create_case(
+            title=title, description=description, severity=severity,
+            created_by=created_by, alert_ids=alert_ids,
+            incident_ids=incident_ids, affected_hosts=affected_hosts,
+            affected_users=affected_users, mitre_techniques=mitre_techniques,
+            tags=tags, assignee=assignee, tenant_id=tenant_id,
+        )
     if severity not in {s.value for s in CaseSeverity}:
         raise ValueError(f"Invalid severity '{severity}'")
     if not title or len(title.strip()) < 3:
@@ -121,6 +130,9 @@ def get_case(
     with_relations: bool = True,
     tenant_id: str = "default",
 ) -> Optional[Case]:
+    if use_orm():
+        from . import orm_store
+        return orm_store.get_case(case_id, with_relations=with_relations, tenant_id=tenant_id)
     conn = get_conn()
     row = conn.execute(
         "SELECT * FROM soc_cases WHERE case_id = ? AND tenant_id = ?",
@@ -161,6 +173,12 @@ def list_cases(
     assignee: Optional[str] = None, limit: int = 50,
     tenant_id: str = "default",
 ) -> list[Case]:
+    if use_orm():
+        from . import orm_store
+        return orm_store.list_cases(
+            status=status, severity=severity, assignee=assignee,
+            limit=limit, tenant_id=tenant_id,
+        )
     sql = ["SELECT * FROM soc_cases WHERE tenant_id = ?"]
     params: list = [tenant_id]
     if status:
@@ -196,6 +214,9 @@ def update_case(case_id: str, *, tenant_id: str = "default", **fields: Any) -> O
     Column names are filtered through ``_UPDATABLE_COLUMNS`` *and* a regex
     identifier pattern, so the f-string SQL composition is safe.
     """
+    if use_orm():
+        from . import orm_store
+        return orm_store.update_case(case_id, tenant_id=tenant_id, **fields)
     if not fields:
         return get_case(case_id, tenant_id=tenant_id)
     # Defence-in-depth: drop any unknown column AND verify it matches an
@@ -238,6 +259,12 @@ def close_case(
     final_status: str = CaseStatus.CLOSED.value,
     tenant_id: str = "default",
 ) -> Optional[Case]:
+    if use_orm():
+        from . import orm_store
+        return orm_store.close_case(
+            case_id, closure_reason=closure_reason,
+            final_status=final_status, tenant_id=tenant_id,
+        )
     if final_status not in {CaseStatus.CLOSED.value,
                             CaseStatus.RESOLVED.value,
                             CaseStatus.FALSE_POSITIVE.value}:
@@ -267,6 +294,12 @@ def add_comment(
     body: str,
     tenant_id: str = "default",
 ) -> CaseComment:
+    if use_orm():
+        from . import orm_store
+        return orm_store.add_comment(
+            case_id, author=author, role=role, body=body,
+            tenant_id=tenant_id,
+        )
     if not body or not body.strip():
         raise ValueError("Comment body is required.")
     if get_case(case_id, with_relations=False, tenant_id=tenant_id) is None:
@@ -295,6 +328,13 @@ def add_evidence(
     payload: Optional[dict[str, Any]] = None,
     tenant_id: str = "default",
 ) -> CaseEvidence:
+    if use_orm():
+        from . import orm_store
+        return orm_store.add_evidence(
+            case_id, type=type, reference=reference,
+            description=description, added_by=added_by, payload=payload,
+            tenant_id=tenant_id,
+        )
     if get_case(case_id, with_relations=False, tenant_id=tenant_id) is None:
         raise ValueError(f"Case '{case_id}' not found.")
     if not reference:

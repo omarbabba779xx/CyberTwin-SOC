@@ -160,8 +160,14 @@ class SocCase(Base):
     status: Mapped[str] = mapped_column(String(20), default="open")
     created_by: Mapped[str] = mapped_column(String(120), nullable=False)
     assignee: Mapped[str | None] = mapped_column(String(120))
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     closure_reason: Mapped[str | None] = mapped_column(Text)
     sla_due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    alert_ids_json: Mapped[str | None] = mapped_column(_JSONColumn)
+    incident_ids_json: Mapped[str | None] = mapped_column(_JSONColumn)
+    affected_hosts_json: Mapped[str | None] = mapped_column(_JSONColumn)
+    affected_users_json: Mapped[str | None] = mapped_column(_JSONColumn)
+    mitre_techniques_json: Mapped[str | None] = mapped_column(_JSONColumn)
     tags_json: Mapped[str | None] = mapped_column(_JSONColumn)
 
     __table_args__ = (

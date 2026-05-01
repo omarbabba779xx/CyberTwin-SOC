@@ -338,7 +338,11 @@ export default function CaseManagement({ token, simResult }) {
             caseObj={selectedCase}
             headers={headers}
             onChanged={(updated) => {
-              setSelectedCase(updated);
+              if (updated?.title) {
+                setSelectedCase(updated);
+              } else {
+                fetchSelected();
+              }
               fetchCases();
             }}
           />

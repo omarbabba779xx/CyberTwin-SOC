@@ -277,6 +277,26 @@ export default function AtomicRedTeam({ token }) {
                         </div>
                       </div>
                     </div>
+
+                    {test.validation_plan && (
+                      <div className="mt-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-3">
+                        <p className="text-xs text-emerald-300 uppercase tracking-wider mb-2">Validation plan</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          <div>
+                            <p className="text-gray-500 mb-1">Telemetry</p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {(test.validation_plan.telemetry_to_watch || []).map((item) => <Pill key={item}>{item}</Pill>)}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 mb-1">Expected SOC artifacts</p>
+                            <ul className="space-y-1 text-gray-300">
+                              {(test.validation_plan.expected_soc_artifacts || []).map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
 

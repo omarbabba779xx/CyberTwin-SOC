@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from .database import get_conn
+from .database import get_conn, use_orm
 from .models import AlertVerdict, AlertFeedback
 
 
@@ -23,6 +23,12 @@ def record_feedback(
 
     Raises ValueError if `verdict` is not a valid AlertVerdict.
     """
+    if use_orm():
+        from . import orm_store
+        return orm_store.record_feedback(
+            alert_id=alert_id, rule_id=rule_id, verdict=verdict,
+            analyst=analyst, role=role, reason=reason, tenant_id=tenant_id,
+        )
     if verdict not in {v.value for v in AlertVerdict}:
         raise ValueError(f"Invalid verdict '{verdict}'. "
                          f"Allowed: {[v.value for v in AlertVerdict]}")
@@ -52,6 +58,12 @@ def list_feedback(
     tenant_id: str = "default",
 ) -> list[AlertFeedback]:
     """Return recent feedback rows, most-recent first."""
+    if use_orm():
+        from . import orm_store
+        return orm_store.list_feedback(
+            alert_id=alert_id, rule_id=rule_id, limit=limit,
+            tenant_id=tenant_id,
+        )
     sql = ["SELECT * FROM alert_feedback WHERE tenant_id = ?"]
     params: list = [tenant_id]
     if alert_id:
@@ -71,6 +83,9 @@ def list_feedback(
 
 def feedback_summary(*, tenant_id: str = "default") -> dict[str, Any]:
     """Aggregate feedback by verdict for the dashboard."""
+    if use_orm():
+        from . import orm_store
+        return orm_store.feedback_summary(tenant_id=tenant_id)
     conn = get_conn()
     rows = conn.execute("""
         SELECT verdict, COUNT(*) AS n
@@ -99,6 +114,12 @@ def list_noisy_rules(*, min_total: int = 3, fp_threshold: float = 0.5,
     A rule is "noisy" if it has at least `min_total` feedback rows AND its
     FP rate is at least `fp_threshold`. Returns sorted descending by FP rate.
     """
+    if use_orm():
+        from . import orm_store
+        return orm_store.list_noisy_rules(
+            min_total=min_total, fp_threshold=fp_threshold,
+            limit=limit, tenant_id=tenant_id,
+        )
     conn = get_conn()
     rows = conn.execute("""
         SELECT rule_id, verdict, COUNT(*) AS n
