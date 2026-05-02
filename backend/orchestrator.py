@@ -74,6 +74,7 @@ class SimulationOrchestrator:
         duration_minutes: int = 60,
         normal_intensity: str = "normal",
         start_time: Optional[datetime] = None,
+        tenant_id: str = "default",
     ) -> dict[str, Any]:
         """Execute a complete attack simulation.
 
@@ -121,9 +122,10 @@ class SimulationOrchestrator:
         log_dicts = [log.to_dict() for log in log_objects]
 
         # Step 4 — Run detection
-        alerts = self.detection.analyse(log_dicts)
-        incidents = self.detection.correlate_incidents(alerts)
-        mitre_coverage = self.detection.get_mitre_coverage()
+        detection = DetectionEngine(tenant_id=tenant_id)
+        alerts = detection.analyse(log_dicts)
+        incidents = detection.correlate_incidents(alerts)
+        mitre_coverage = detection.get_mitre_coverage()
 
         # Step 5 — Calculate scores
         scores = self.scoring.calculate_scores(

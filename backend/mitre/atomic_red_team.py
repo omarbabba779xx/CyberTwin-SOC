@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 from pathlib import Path
 from typing import Any, Optional
 
@@ -59,7 +60,46 @@ def atomic_catalog_status(root: Optional[Path] = None) -> dict[str, Any]:
         "root": str(root),
         "atomics_dir": str(atomics),
         "technique_count": len(technique_dirs),
+        "schema": "atomic-red-team-yaml",
+        "compatibility": "ATT&CK v19 metadata-compatible",
+        **_git_metadata(root),
     }
+
+
+def _git_metadata(root: Path) -> dict[str, Any]:
+    """Return non-sensitive Git metadata for a local Atomic checkout."""
+    git_dir = root / ".git"
+    if not git_dir.exists():
+        return {}
+    try:
+        commit = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--short=12", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        ).stdout.strip()
+        date = subprocess.run(
+            ["git", "-C", str(root), "log", "-1", "--format=%cI"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        ).stdout.strip()
+        subject = subprocess.run(
+            ["git", "-C", str(root), "log", "-1", "--format=%s"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        ).stdout.strip()
+        return {
+            "upstream_commit": commit,
+            "upstream_commit_date": date,
+            "upstream_commit_subject": subject,
+        }
+    except Exception:
+        return {}
 
 
 def list_atomic_techniques(root: Optional[Path] = None, *, limit: int = 2000) -> list[str]:

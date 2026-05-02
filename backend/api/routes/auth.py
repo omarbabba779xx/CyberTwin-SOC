@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 from datetime import datetime, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse
@@ -42,6 +43,10 @@ logger = logging.getLogger("cybertwin.auth.routes")
 router = APIRouter(tags=["auth"])
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -58,7 +63,8 @@ async def login(request: Request, data: LoginRequest):
     tenant_id = user.get("tenant_id", "default")
     access_token = create_token(user["username"], user["role"], tenant_id=tenant_id)
     refresh_token = create_refresh_token(user["username"], user["role"], tenant_id=tenant_id)
-    log_action("LOGIN", username=user["username"], role=user["role"], ip_address=ip)
+    log_action("LOGIN", username=user["username"], role=user["role"],
+               tenant_id=tenant_id, ip_address=ip)
     return {
         "token": access_token,
         "access_token": access_token,
@@ -94,6 +100,7 @@ def logout(request: Request, user=Depends(verify_token)):
         remaining = max(0, int(exp - datetime.now(timezone.utc).timestamp()))
         revoke_token(jti, remaining)
     log_action("LOGOUT", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                ip_address=_client_ip(request))
     return {"status": "logged_out"}
 
@@ -105,6 +112,7 @@ def revoke_all(request: Request, user=Depends(verify_token)):
     username = user["sub"]
     count = revoke_all_sessions(username)
     log_action("REVOKE_ALL_SESSIONS", username=username, role=user.get("role"),
+               tenant_id=_tenant_id(user),
                ip_address=_client_ip(request))
     return {"status": "all_sessions_revoked", "revoked": count}
 
@@ -147,6 +155,7 @@ def refresh_access_token(request: Request, data: RefreshRequest):
     new_refresh_token = create_refresh_token(username, role, tenant_id=tenant_id)
 
     log_action("TOKEN_REFRESH", username=username, role=role,
+               tenant_id=tenant_id,
                ip_address=_client_ip(request))
     return {
         "access_token": access_token,
@@ -161,16 +170,21 @@ def refresh_access_token(request: Request, data: RefreshRequest):
 def audit_log(
     request: Request,
     limit: int = 200,
+    tenant_id: Optional[str] = None,
     user=Depends(require_permission("view_audit_log")),
 ):
     limit = min(limit, 1000)
+    requested_tenant = _tenant_id(user)
+    if user.get("role") == "platform_admin" and tenant_id:
+        requested_tenant = None if tenant_id == "*" else tenant_id
     log_action(
         "VIEW_AUDIT_LOG",
         username=user["sub"],
         role=user.get("role"),
+        tenant_id=_tenant_id(user),
         ip_address=_client_ip(request),
     )
-    return get_audit_log(limit=limit)
+    return get_audit_log(limit=limit, tenant_id=requested_tenant)
 
 
 # ---------------------------------------------------------------------------
@@ -240,6 +254,7 @@ async def oidc_callback(request: Request, code: str = "", state: str = ""):
                                          tenant_id=user.get("tenant_id", "default"))
 
     log_action("OIDC_LOGIN", username=user["username"], role=user["role"],
+               tenant_id=user.get("tenant_id", "default"),
                ip_address=ip, details={"provider": "oidc", "sub": user["oidc_subject"]})
 
     return {

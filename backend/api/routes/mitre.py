@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from backend.audit import log_action
@@ -18,10 +20,20 @@ def _tenant_id(user: dict) -> str:
     return user.get("tenant_id") or "default"
 
 
+def _tenant_slug(tenant_id: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_-]", "-", tenant_id)[:48] or "default"
+
+
+def _scenario_visible_to_tenant(scenario: dict, tenant_id: str) -> bool:
+    owner = scenario.get("tenant_id")
+    return owner in (None, "", "global", tenant_id)
+
+
 @router.get("/api/threat-intel")
 @limiter.limit("60/minute")
-def get_threat_intel(request: Request):
+def get_threat_intel(request: Request, user=Depends(require_permission("view_results"))):
     """Aggregate IOCs from all scenario definitions."""
+    tenant = _tenant_id(user)
     intel: dict = {
         "threat_actors": [],
         "iocs": {
@@ -30,7 +42,9 @@ def get_threat_intel(request: Request):
         },
         "references": [],
     }
-    for sid, scenario in _orchestrator.attack_engine._scenarios.items():
+    for _sid, scenario in _orchestrator.attack_engine._scenarios.items():
+        if not _scenario_visible_to_tenant(scenario, tenant):
+            continue
         if "threat_actor" in scenario:
             intel["threat_actors"].append(scenario["threat_actor"])
         if "references" in scenario:
@@ -83,14 +97,14 @@ def get_threat_intel(request: Request):
 
 @router.get("/api/mitre/tactics")
 @limiter.limit("60/minute")
-def get_mitre_tactics(request: Request):
+def get_mitre_tactics(request: Request, user=Depends(require_permission("view_results"))):
     from backend.mitre.attack_data import MITRE_TACTICS
     return dict(MITRE_TACTICS)
 
 
 @router.get("/api/mitre/techniques")
 @limiter.limit("60/minute")
-def get_mitre_techniques(request: Request):
+def get_mitre_techniques(request: Request, user=Depends(require_permission("view_results"))):
     from backend.mitre.attack_data import MITRE_TECHNIQUES
     return MITRE_TECHNIQUES
 
@@ -170,11 +184,13 @@ async def upload_sigma_rule(request: Request, user=Depends(require_permission("m
         rule = SigmaLoader.load_from_yaml(body.decode("utf-8"))
     except Exception as exc:
         raise HTTPException(400, f"Invalid Sigma rule: {exc}")
-    sigma_dir = PROJECT_ROOT / "data" / "sigma_rules"
+    tenant = _tenant_id(user)
+    sigma_dir = PROJECT_ROOT / "data" / "sigma_rules" / _tenant_slug(tenant)
     sigma_dir.mkdir(parents=True, exist_ok=True)
     rule_file = _safe_path(sigma_dir, rule.rule_id, ".yml")
     rule_file.write_bytes(body)
     log_action("UPLOAD_SIGMA_RULE", username=user["sub"], role=user.get("role"),
+               tenant_id=tenant,
                resource=rule.rule_id, ip_address=_client_ip(request))
     return {"status": "registered", "rule_id": rule.rule_id,
             "name": rule.name, "severity": rule.severity}
@@ -183,7 +199,7 @@ async def upload_sigma_rule(request: Request, user=Depends(require_permission("m
 @router.get("/api/sigma/rules")
 @limiter.limit("30/minute")
 def list_sigma_rules(request: Request, user=Depends(require_permission("view_results"))):
-    sigma_dir = PROJECT_ROOT / "data" / "sigma_rules"
+    sigma_dir = PROJECT_ROOT / "data" / "sigma_rules" / _tenant_slug(_tenant_id(user))
     if not sigma_dir.exists():
         return []
     return [{"filename": f.name, "rule_id": f.stem, "size": f.stat().st_size}
@@ -199,6 +215,7 @@ async def sync_mitre_taxii(request: Request, user=Depends(require_permission("co
     try:
         count = await loop.run_in_executor(None, sync_from_taxii)
         log_action("TAXII_SYNC", username=user["sub"], role=user.get("role"),
+                   tenant_id=_tenant_id(user),
                    ip_address=_client_ip(request), details={"techniques_synced": count})
         return {"status": "synced", "techniques_updated": count}
     except Exception as exc:

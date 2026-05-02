@@ -172,11 +172,21 @@ export default function AtomicRedTeam({ token }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <StatCard icon={Database} label="Techniques indexed" value={catalogue.technique_count || techniques.length} tone="text-red-300" />
         <StatCard icon={ShieldCheck} label="Safe metadata mode" value="On" tone="text-emerald-400" />
         <StatCard icon={EyeOff} label="Commands exposed" value="0" tone="text-gray-200" />
+        <StatCard icon={FlaskConical} label="ATT&CK compatibility" value="v19" tone="text-sky-300" />
       </div>
+
+      {(catalogue.upstream_commit || catalogue.compatibility) && (
+        <div className="card p-4 flex flex-wrap gap-2 text-xs text-gray-400">
+          {catalogue.compatibility && <Pill>{catalogue.compatibility}</Pill>}
+          {catalogue.upstream_commit && <Pill>commit {catalogue.upstream_commit}</Pill>}
+          {catalogue.upstream_commit_date && <Pill>{catalogue.upstream_commit_date}</Pill>}
+          {catalogue.upstream_commit_subject && <Pill>{catalogue.upstream_commit_subject}</Pill>}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-[360px_1fr] gap-6">
         <div className="card overflow-hidden">

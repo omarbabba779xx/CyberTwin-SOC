@@ -50,6 +50,30 @@ def _get_last_hash() -> str:
             return cached
     except Exception:
         pass
+    try:
+        if _database_url_set():
+            from backend.db.session import SessionLocal
+            from backend.db.models import AuditLog
+
+            session = SessionLocal()
+            try:
+                row = session.query(AuditLog).order_by(AuditLog.id.desc()).first()
+                if row and row.integrity_hash:
+                    return row.integrity_hash
+            finally:
+                session.close()
+        else:
+            conn = _conn()
+            row = conn.execute(
+                "SELECT integrity_hash FROM audit_log "
+                "WHERE integrity_hash IS NOT NULL "
+                "ORDER BY id DESC LIMIT 1"
+            ).fetchone()
+            conn.close()
+            if row and row["integrity_hash"]:
+                return row["integrity_hash"]
+    except Exception as exc:
+        logger.debug("Audit hash DB fallback failed: %s", exc)
     return _GENESIS_HASH
 
 
@@ -69,6 +93,7 @@ def _database_url_set() -> bool:
 
 def _write_to_orm(
     ts: str,
+    tenant_id: str,
     username: str,
     role: str,
     action: str,
@@ -86,7 +111,7 @@ def _write_to_orm(
     try:
         entry = AuditLog(
             timestamp=datetime.fromisoformat(ts),
-            tenant_id="default",
+            tenant_id=tenant_id,
             username=username,
             role=role,
             action=action,
@@ -118,6 +143,7 @@ def init_audit_table() -> None:
     conn.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
             id          INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id   TEXT    NOT NULL DEFAULT 'default',
             timestamp   TEXT    NOT NULL,
             username    TEXT    NOT NULL DEFAULT 'anonymous',
             role        TEXT    NOT NULL DEFAULT 'unknown',
@@ -134,6 +160,14 @@ def init_audit_table() -> None:
         conn.execute("ALTER TABLE audit_log ADD COLUMN integrity_hash TEXT")
     except sqlite3.OperationalError:
         pass  # column already exists
+    try:
+        conn.execute("ALTER TABLE audit_log ADD COLUMN tenant_id TEXT NOT NULL DEFAULT 'default'")
+    except sqlite3.OperationalError:
+        pass  # column already exists
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_tenant_timestamp "
+        "ON audit_log (tenant_id, timestamp DESC)"
+    )
     conn.execute(
         "CREATE INDEX IF NOT EXISTS ix_audit_timestamp "
         "ON audit_log (timestamp DESC)"
@@ -158,6 +192,7 @@ def log_action(
     action: str,
     username: str = "anonymous",
     role: str = "unknown",
+    tenant_id: str = "default",
     resource: Optional[str] = None,
     ip_address: Optional[str] = None,
     status: str = "success",
@@ -167,7 +202,8 @@ def log_action(
     ts = datetime.now(timezone.utc).isoformat()
     details_json = json.dumps(details, default=str) if details else None
 
-    entry_data = f"{ts}|{username}|{role}|{action}|{resource}|{ip_address}|{status}|{details_json}"
+    tenant_id = tenant_id or "default"
+    entry_data = f"{ts}|{tenant_id}|{username}|{role}|{action}|{resource}|{ip_address}|{status}|{details_json}"
     previous_hash = _get_last_hash()
     integrity_hash = _compute_hash(previous_hash, entry_data)
 
@@ -176,7 +212,7 @@ def log_action(
     if _database_url_set():
         try:
             _write_to_orm(
-                ts, username, role, action, resource,
+                ts, tenant_id, username, role, action, resource,
                 ip_address, status, details_json, integrity_hash,
             )
             written = True
@@ -188,9 +224,9 @@ def log_action(
             conn = _conn()
             conn.execute(
                 """INSERT INTO audit_log
-                   (timestamp, username, role, action, resource, ip_address, status, details, integrity_hash)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (ts, username, role, action, resource, ip_address, status, details_json, integrity_hash),
+                   (tenant_id, timestamp, username, role, action, resource, ip_address, status, details, integrity_hash)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (tenant_id, ts, username, role, action, resource, ip_address, status, details_json, integrity_hash),
             )
             conn.commit()
             conn.close()
@@ -207,18 +243,29 @@ def log_action(
     )
 
 
-def get_audit_log(limit: int = 200, username: Optional[str] = None) -> list[dict]:
+def get_audit_log(
+    limit: int = 200,
+    username: Optional[str] = None,
+    tenant_id: Optional[str] = "default",
+) -> list[dict]:
     """Return recent audit records, optionally filtered by username."""
+    if _database_url_set():
+        return _get_audit_log_orm(limit=limit, username=username, tenant_id=tenant_id)
+
     conn = _conn()
+    clauses = []
+    params: list[Any] = []
+    if tenant_id is not None:
+        clauses.append("tenant_id=?")
+        params.append(tenant_id)
     if username:
-        rows = conn.execute(
-            "SELECT * FROM audit_log WHERE username=? ORDER BY id DESC LIMIT ?",
-            (username, limit),
-        ).fetchall()
-    else:
-        rows = conn.execute(
-            "SELECT * FROM audit_log ORDER BY id DESC LIMIT ?", (limit,)
-        ).fetchall()
+        clauses.append("username=?")
+        params.append(username)
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    rows = conn.execute(
+        f"SELECT * FROM audit_log {where} ORDER BY id DESC LIMIT ?",  # nosec B608 - where clauses are static
+        (*params, limit),
+    ).fetchall()
     conn.close()
 
     result = []
@@ -231,6 +278,43 @@ def get_audit_log(limit: int = 200, username: Optional[str] = None) -> list[dict
                 pass
         result.append(d)
     return result
+
+
+def _get_audit_log_orm(
+    *,
+    limit: int,
+    username: Optional[str],
+    tenant_id: Optional[str],
+) -> list[dict]:
+    from backend.db.session import SessionLocal
+    from backend.db.models import AuditLog
+
+    session = SessionLocal()
+    try:
+        q = session.query(AuditLog)
+        if tenant_id is not None:
+            q = q.filter(AuditLog.tenant_id == tenant_id)
+        if username:
+            q = q.filter(AuditLog.username == username)
+        rows = q.order_by(AuditLog.id.desc()).limit(limit).all()
+        return [
+            {
+                "id": r.id,
+                "tenant_id": r.tenant_id,
+                "timestamp": r.timestamp.isoformat() if r.timestamp else "",
+                "username": r.username,
+                "role": r.role,
+                "action": r.action,
+                "resource": r.resource,
+                "ip_address": r.ip_address,
+                "status": r.status,
+                "details": r.details,
+                "integrity_hash": r.integrity_hash,
+            }
+            for r in rows
+        ]
+    finally:
+        session.close()
 
 
 def verify_audit_chain(limit: int = 1000) -> dict[str, Any]:
@@ -253,7 +337,7 @@ def verify_audit_chain(limit: int = 1000) -> dict[str, Any]:
 def _verify_chain_sqlite(limit: int) -> dict[str, Any]:
     conn = _conn()
     rows = conn.execute(
-        "SELECT id, timestamp, username, role, action, resource, "
+        "SELECT id, tenant_id, timestamp, username, role, action, resource, "
         "ip_address, status, details, integrity_hash "
         "FROM audit_log ORDER BY id DESC LIMIT ?",
         (limit,),
@@ -278,6 +362,7 @@ def _verify_chain_orm(limit: int) -> dict[str, Any]:
         for r in reversed(rows):
             entries.append({
                 "id": r.id,
+                "tenant_id": r.tenant_id,
                 "timestamp": r.timestamp.isoformat() if r.timestamp else "",
                 "username": r.username,
                 "role": r.role,
@@ -315,12 +400,18 @@ def _verify_rows(entries: list[dict]) -> dict[str, Any]:
             ts = ts.isoformat()
 
         entry_data = (
+            f"{ts}|{entry.get('tenant_id', 'default')}|{entry.get('username')}|"
+            f"{entry.get('role')}|{entry.get('action')}|{entry.get('resource')}|"
+            f"{entry.get('ip_address')}|{entry.get('status')}|{details_raw}"
+        )
+        legacy_entry_data = (
             f"{ts}|{entry.get('username')}|{entry.get('role')}|"
             f"{entry.get('action')}|{entry.get('resource')}|"
             f"{entry.get('ip_address')}|{entry.get('status')}|{details_raw}"
         )
         expected = _compute_hash(previous_hash, entry_data)
-        if expected != stored_hash:
+        legacy_expected = _compute_hash(previous_hash, legacy_entry_data)
+        if expected != stored_hash and legacy_expected != stored_hash:
             return {
                 "valid": False,
                 "checked": entries.index(entry) + 1,

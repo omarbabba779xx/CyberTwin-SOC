@@ -6,7 +6,6 @@ import pytest
 from datetime import datetime, timedelta
 
 from backend.detection.engine import DetectionEngine
-from backend.detection.rules import DETECTION_RULES
 
 
 @pytest.fixture

@@ -201,13 +201,14 @@ class SigmaLoader:
         )
 
     @classmethod
-    def load_directory(cls, sigma_dir: Path) -> list[DetectionRule]:
+    def load_directory(cls, sigma_dir: Path, *, recursive: bool = True) -> list[DetectionRule]:
         """Load all .yml Sigma rules from a directory."""
         rules: list[DetectionRule] = []
         if not sigma_dir.exists():
             logger.warning("Sigma rules directory not found: %s", sigma_dir)
             return rules
-        for yml_file in sigma_dir.glob("**/*.yml"):
+        pattern = "**/*.yml" if recursive else "*.yml"
+        for yml_file in sigma_dir.glob(pattern):
             try:
                 rule = cls.load_from_yaml(yml_file.read_text(encoding="utf-8"))
                 rules.append(rule)

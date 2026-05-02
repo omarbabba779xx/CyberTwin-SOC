@@ -4,8 +4,9 @@ import {
   CheckCircle2, XCircle, Clock, Database, RefreshCw, Filter, ChevronRight,
   TrendingUp, FileWarning,
 } from "lucide-react";
+import { API_BASE } from "../utils/api";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = API_BASE;
 
 // ─── Status meta (color, icon, label) ────────────────────────────────────
 const STATUS_META = {

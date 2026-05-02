@@ -43,26 +43,20 @@ spec:
             {{- toYaml .Values.backend.resources | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- with .Values.extraVolumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           livenessProbe:
-            httpGet:
-              path: /api/health
-              port: 8000
-            initialDelaySeconds: 20
-            periodSeconds: 30
-            timeoutSeconds: 5
+            {{- toYaml .Values.probes.liveness | nindent 12 }}
           readinessProbe:
-            httpGet:
-              path: /api/health/deep
-              port: 8000
-            initialDelaySeconds: 10
-            periodSeconds: 10
-            timeoutSeconds: 5
+            {{- toYaml .Values.probes.readiness | nindent 12 }}
           startupProbe:
-            httpGet:
-              path: /api/health
-              port: 8000
-            failureThreshold: 30
-            periodSeconds: 5
+            {{- toYaml .Values.probes.startup | nindent 12 }}
+      {{- with .Values.extraVolumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
 ---
 apiVersion: v1
 kind: Service

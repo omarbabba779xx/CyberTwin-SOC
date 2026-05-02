@@ -26,6 +26,10 @@ import backend.jobs.tasks  # noqa: F401
 router = APIRouter(tags=["tasks"])
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
 @router.get("/api/tasks/{task_id}")
 @limiter.limit("120/minute")
 def get_task_status(
@@ -67,5 +71,6 @@ def cancel_task(
     status["status"] = TaskStatus.CANCELLED.value
     cache.set(_key(task_id), json.dumps(status, default=str), ttl=86400)
     log_action("TASK_CANCEL", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                resource=task_id, ip_address=_client_ip(request))
     return {"task_id": task_id, "status": TaskStatus.CANCELLED.value}

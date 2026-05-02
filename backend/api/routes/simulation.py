@@ -27,6 +27,11 @@ def _tenant_id(user: dict) -> str:
     return user.get("tenant_id") or "default"
 
 
+def _scenario_visible_to_tenant(scenario: dict, tenant_id: str) -> bool:
+    owner = scenario.get("tenant_id")
+    return owner in (None, "", "global", tenant_id)
+
+
 class SimulationRequest(BaseModel):
     scenario_id: str = Field(min_length=1, max_length=80)
     duration_minutes: int = Field(default=60, ge=1, le=240)
@@ -60,11 +65,12 @@ async def run_simulation(
     user=Depends(require_permission("simulation:run")),
 ):
     scenario = _orchestrator.attack_engine.get_scenario(req.scenario_id)
-    if scenario is None:
+    tenant = _tenant_id(user)
+    if scenario is None or not _scenario_visible_to_tenant(scenario, tenant):
         raise HTTPException(404, f"Scenario '{req.scenario_id}' not found")
 
     log_action("RUN_SIMULATION", username=user["sub"], role=user.get("role"),
-               resource=req.scenario_id, ip_address=_client_ip(request))
+               tenant_id=tenant, resource=req.scenario_id, ip_address=_client_ip(request))
 
     loop = asyncio.get_event_loop()
     orch = SimulationOrchestrator()
@@ -75,13 +81,14 @@ async def run_simulation(
             scenario_id=req.scenario_id,
             duration_minutes=req.duration_minutes,
             normal_intensity=req.normal_intensity,
+            tenant_id=tenant,
         ),
     )
 
-    cache.set(result_cache_key(req.scenario_id, _tenant_id(user)), result, ttl=7200)
+    cache.set(result_cache_key(req.scenario_id, tenant), result, ttl=7200)
 
     try:
-        save_run(req.scenario_id, scenario.get("name", ""), result, tenant_id=_tenant_id(user))
+        save_run(req.scenario_id, scenario.get("name", ""), result, tenant_id=tenant)
     except Exception as exc:
         logger.error("DB save failed: %s", exc)
 
@@ -149,7 +156,7 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
 
     try:
         scenario = _orchestrator.attack_engine.get_scenario(scenario_id)
-        if scenario is None:
+        if scenario is None or not _scenario_visible_to_tenant(scenario, _tenant_id(ws_user)):
             await websocket.send_json({"type": "error", "message": f"Scenario '{scenario_id}' not found"})
             await websocket.close()
             return
@@ -159,11 +166,16 @@ async def ws_simulate(websocket: WebSocket, scenario_id: str, token: str | None 
         orch.initialise()
         result = await loop.run_in_executor(
             None,
-            lambda: orch.run_simulation(scenario_id=scenario_id, duration_minutes=60)
+            lambda: orch.run_simulation(
+                scenario_id=scenario_id,
+                duration_minutes=60,
+                tenant_id=_tenant_id(ws_user),
+            )
         )
         cache.set(result_cache_key(scenario_id, _tenant_id(ws_user)), result, ttl=7200)
         log_action("RUN_SIMULATION_WS", username=ws_user.get("sub", "?"),
-                   role=ws_user.get("role", "?"), resource=scenario_id)
+                   role=ws_user.get("role", "?"), tenant_id=_tenant_id(ws_user),
+                   resource=scenario_id)
 
         try:
             save_run(scenario_id, scenario.get("name", ""), result, tenant_id=_tenant_id(ws_user))

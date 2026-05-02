@@ -32,11 +32,14 @@ atomic_tests:
 
 
 def test_atomic_loader_returns_sanitized_metadata(tmp_path):
-    from backend.mitre.atomic_red_team import load_atomic_technique
+    from backend.mitre.atomic_red_team import atomic_catalog_status, load_atomic_technique
 
     _write_atomic_fixture(tmp_path)
+    status = atomic_catalog_status(tmp_path)
     data = load_atomic_technique("T1003", root=tmp_path)
 
+    assert status["compatibility"] == "ATT&CK v19 metadata-compatible"
+    assert status["schema"] == "atomic-red-team-yaml"
     assert data["technique_id"] == "T1003"
     assert data["display_name"] == "OS Credential Dumping"
     assert data["atomic_test_count"] == 1

@@ -234,7 +234,7 @@ class IngestionPipeline:
             with self._lock:
                 events = list(self._buffer_for_tenant(tenant))
 
-        engine = DetectionEngine(load_sigma=True)
+        engine = DetectionEngine(load_sigma=True, tenant_id=tenant)
         alerts = engine.analyse(events)
         incidents = engine.correlate_incidents(alerts)
         self.stats.record_alerts(len(alerts))

@@ -9,6 +9,7 @@ analysis including a tactic heatmap and technique detection summary.
 from __future__ import annotations
 
 import logging
+import re
 import uuid
 from collections import defaultdict
 from typing import Any
@@ -18,6 +19,10 @@ from .rules import DETECTION_RULES, DetectionRule
 logger = logging.getLogger("cybertwin.detection")
 
 _CORRELATION_WINDOW_SECONDS = 900  # 15-minute temporal proximity window
+
+
+def _tenant_slug(tenant_id: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_-]", "-", tenant_id)[:48] or "default"
 
 
 class DetectionEngine:
@@ -30,7 +35,12 @@ class DetectionEngine:
         incidents = engine.correlate_incidents(alerts)
     """
 
-    def __init__(self, rules: list[DetectionRule] | None = None, load_sigma: bool = True):
+    def __init__(
+        self,
+        rules: list[DetectionRule] | None = None,
+        load_sigma: bool = True,
+        tenant_id: str = "default",
+    ):
         """Initialize the detection engine.
 
         Args:
@@ -38,6 +48,7 @@ class DetectionEngine:
             load_sigma: If True, auto-load Sigma rules from data/sigma_rules/.
         """
         self._rules = list(rules or DETECTION_RULES)
+        self._tenant_id = tenant_id or "default"
         self._alerts: list[dict[str, Any]] = []
         self._incidents: list[dict[str, Any]] = []
         if load_sigma:
@@ -51,7 +62,10 @@ class DetectionEngine:
             return
         try:
             from backend.detection.sigma_loader import SigmaLoader
-            sigma_rules = SigmaLoader.load_directory(sigma_dir)
+            sigma_rules = SigmaLoader.load_directory(sigma_dir, recursive=False)
+            tenant_dir = sigma_dir / _tenant_slug(self._tenant_id)
+            if tenant_dir.exists():
+                sigma_rules.extend(SigmaLoader.load_directory(tenant_dir, recursive=False))
             existing_ids = {r.rule_id for r in self._rules}
             added = 0
             for rule in sigma_rules:

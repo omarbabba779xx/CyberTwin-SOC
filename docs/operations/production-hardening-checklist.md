@@ -15,6 +15,8 @@ The check validates:
 
 - `JWT_SECRET` length and presence.
 - PostgreSQL-backed `DATABASE_URL`.
+- Application production mode refuses startup when `DATABASE_URL` is missing
+  or points to a non-PostgreSQL backend.
 - Shared Redis `REDIS_URL`.
 - Explicit `CORS_ORIGINS`.
 - Non-default bootstrap passwords.
@@ -27,9 +29,10 @@ The check validates:
 | Secrets hardening | `backend/auth/_core.py`, `scripts/production_readiness_check.py` |
 | PostgreSQL production runtime | `backend/soc/orm_store.py`, Alembic `0006` |
 | Backup and restore | `scripts/backup.sh`, `docs/operations/backup-recovery.md` |
-| Kubernetes hardening | `deploy/helm/cybertwin-soc/values-secure.yaml` |
+| Kubernetes hardening | `deploy/helm/cybertwin-soc/values-secure.yaml`, rendered NetworkPolicy/PDB/probes/read-only mounts |
 | Deployment proof | `docs/proof/production-deployment.md` |
 | Security scan proof | `docs/proof/security-scan-summary.md` |
+| Atomic Red Team metadata safety | `scripts/validate_atomic_catalog.py`, `backend/mitre/atomic_red_team.py` |
 
 ## Disaster-Recovery Drill
 
@@ -41,6 +44,7 @@ The check validates:
 ```bash
 python scripts/production_readiness_check.py
 python -m pytest tests/test_soc_orm_runtime.py tests/test_api.py -q
+python scripts/validate_atomic_catalog.py --path /path/to/atomic-red-team --limit 80
 ```
 
 5. Record results in `docs/proof/` with date, operator, commit SHA, and

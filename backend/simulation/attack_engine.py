@@ -87,6 +87,7 @@ class AttackScenarioEngine:
                 "category": s.get("category", ""),
                 "phases": len(s.get("phases", [])),
                 "mitre_techniques": s.get("mitre_techniques_summary", []),
+                "tenant_id": s.get("tenant_id"),
             }
             for sid, s in self._scenarios.items()
         ]

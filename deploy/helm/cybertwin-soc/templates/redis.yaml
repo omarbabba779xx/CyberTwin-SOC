@@ -18,6 +18,8 @@ spec:
         app.kubernetes.io/name: cybertwin-soc
         app.kubernetes.io/component: redis
     spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: redis
           image: {{ .Values.redis.image }}
@@ -25,6 +27,14 @@ spec:
           ports: [{containerPort: 6379, name: redis}]
           resources:
             {{- toYaml .Values.redis.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      volumes:
+        - name: redis-data
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

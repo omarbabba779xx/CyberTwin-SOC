@@ -1,0 +1,137 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cybertwin-default-deny
+  labels:
+    app.kubernetes.io/name: cybertwin-soc
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cybertwin-soc
+  policyTypes: ["Ingress", "Egress"]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cybertwin-allow-frontend-backend
+  labels:
+    app.kubernetes.io/name: cybertwin-soc
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cybertwin-soc
+      app.kubernetes.io/component: backend
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cybertwin-soc
+              app.kubernetes.io/component: frontend
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace | quote }}
+{{ range .Values.networkPolicy.allowedIngressNamespaces }}
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . | quote }}
+{{ end }}
+      ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cybertwin-soc
+              app.kubernetes.io/component: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+{{ range .Values.networkPolicy.allowedEgressNamespaces }}
+{{ if ne . "kube-system" }}
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ . | quote }}
+{{ end }}
+{{ end }}
+{{ if .Values.networkPolicy.externalEgress.enabled }}
+    - to:
+{{ range .Values.networkPolicy.externalEgress.cidrs }}
+        - ipBlock:
+            cidr: {{ . | quote }}
+{{ end }}
+{{ end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cybertwin-allow-frontend-ingress
+  labels:
+    app.kubernetes.io/name: cybertwin-soc
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cybertwin-soc
+      app.kubernetes.io/component: frontend
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: {{ .Values.networkPolicy.ingressNamespace | quote }}
+      ports:
+        - protocol: TCP
+          port: 8080
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cybertwin-soc
+              app.kubernetes.io/component: backend
+      ports:
+        - protocol: TCP
+          port: 8000
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: cybertwin-allow-redis-backend
+  labels:
+    app.kubernetes.io/name: cybertwin-soc
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cybertwin-soc
+      app.kubernetes.io/component: redis
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: cybertwin-soc
+              app.kubernetes.io/component: backend
+      ports:
+        - protocol: TCP
+          port: 6379
+{{- end }}

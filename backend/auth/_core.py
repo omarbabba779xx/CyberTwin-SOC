@@ -496,6 +496,12 @@ def check_production_safety() -> None:
     elif env_secret.lower() in _DEFAULT_JWT_SECRETS:
         problems.append("JWT_SECRET uses a known default value.")
 
+    database_url = os.getenv("DATABASE_URL", "").strip()
+    if not database_url:
+        problems.append("DATABASE_URL is not set; production mode requires PostgreSQL.")
+    elif not database_url.startswith(("postgresql://", "postgresql+psycopg2://")):
+        problems.append("DATABASE_URL must point to PostgreSQL in production mode.")
+
     # Default passwords
     for var in ("AUTH_ADMIN_PASSWORD", "AUTH_ANALYST_PASSWORD", "AUTH_VIEWER_PASSWORD"):
         val = os.getenv(var, "")

@@ -21,6 +21,10 @@ _COVERAGE_CACHE_KEY = "coverage:snapshot"
 _COVERAGE_CACHE_TTL = 30
 
 
+def _tenant_id(user: dict) -> str:
+    return user.get("tenant_id") or "default"
+
+
 def _compute_coverage_snapshot() -> dict[str, Any]:
     cached = cache.get(_COVERAGE_CACHE_KEY)
     if isinstance(cached, dict):
@@ -133,6 +137,7 @@ def coverage_recalculate(
     cache.delete(_COVERAGE_CACHE_KEY) if hasattr(cache, "delete") else None
     snap = _compute_coverage_snapshot()
     log_action("COVERAGE_RECALCULATE", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                ip_address=_client_ip(request),
                details={"catalog_total": snap["summary"]["catalog_total"]})
     return {"status": "recalculated", "summary": snap["summary"]}

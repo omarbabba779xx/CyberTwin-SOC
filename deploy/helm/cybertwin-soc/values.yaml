@@ -72,6 +72,25 @@ securityContext:
   capabilities:
     drop: ["ALL"]
 
+extraVolumes: []
+extraVolumeMounts: []
+
+probes:
+  liveness:
+    httpGet: { path: /api/health, port: 8000 }
+    initialDelaySeconds: 20
+    periodSeconds: 30
+    timeoutSeconds: 5
+  readiness:
+    httpGet: { path: /api/health/deep, port: 8000 }
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+  startup:
+    httpGet: { path: /api/health, port: 8000 }
+    failureThreshold: 30
+    periodSeconds: 5
+
 # ServiceMonitor for kube-prometheus-stack
 metrics:
   enabled: true
@@ -83,3 +102,13 @@ metrics:
 # NetworkPolicy: deny-by-default + allow ingress + allow egress to deps
 networkPolicy:
   enabled: false
+  ingressNamespace: ingress-nginx
+  allowedIngressNamespaces: []
+  allowedEgressNamespaces: []
+  externalEgress:
+    enabled: false
+    cidrs: []
+
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1

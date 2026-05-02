@@ -16,6 +16,7 @@ an external auditor's signed certification.
 | Backup and recovery | `docs/operations/backup-recovery.md` |
 | PostgreSQL readiness | `docs/proof/postgres-migration-report.md`, `tests/test_soc_orm_runtime.py` |
 | Detection coverage | `docs/proof/mitre-rule-validation.md`, `tests/test_attack_validation_matrix.py` |
+| Atomic Red Team metadata safety | `docs/proof/atomic-red-team-validation.md`, `scripts/validate_atomic_catalog.py`, `tests/test_atomic_red_team.py` |
 | Security scans | `docs/proof/security-scan-summary.md` |
 | CI status | `docs/proof/ci-status.md` |
 
@@ -38,6 +39,7 @@ Give the auditor:
 ```bash
 python scripts/production_readiness_check.py
 python scripts/profile_ingestion.py --events 10000 --batch-size 500 --detect
+python scripts/validate_atomic_catalog.py --path /path/to/atomic-red-team --limit 80
 python -m pytest tests/test_api.py tests/test_soc.py tests/test_soc_orm_runtime.py tests/test_attack_validation_matrix.py -q
 cd frontend && npm test && npm run test:e2e
 ```

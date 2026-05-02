@@ -125,6 +125,99 @@ def test_require_permission_uses_dynamic_tenant_permissions(monkeypatch):
     assert exc.value.status_code == 403
 
 
+def test_internal_health_and_metrics_can_be_restricted(client, auth_headers, monkeypatch):
+    monkeypatch.setenv("RESTRICT_INTERNAL_ENDPOINTS", "true")
+    try:
+        assert client.get("/api/health/deep").status_code == 401
+        assert client.get("/api/metrics").status_code == 401
+        assert client.get("/api/health/deep", headers=auth_headers).status_code in {200, 503}
+        assert client.get("/api/metrics", headers=auth_headers).status_code == 200
+    finally:
+        monkeypatch.delenv("RESTRICT_INTERNAL_ENDPOINTS", raising=False)
+
+
+def test_audit_log_is_tenant_scoped():
+    from backend.audit import get_audit_log, init_audit_table, log_action
+
+    init_audit_table()
+    log_action("TENANT_A_EVENT", username="alice", role="analyst", tenant_id="tenant-a")
+    log_action("TENANT_B_EVENT", username="bob", role="analyst", tenant_id="tenant-b")
+
+    tenant_a = get_audit_log(limit=20, tenant_id="tenant-a")
+    tenant_b = get_audit_log(limit=20, tenant_id="tenant-b")
+
+    assert any(row["action"] == "TENANT_A_EVENT" for row in tenant_a)
+    assert not any(row["action"] == "TENANT_B_EVENT" for row in tenant_a)
+    assert any(row["action"] == "TENANT_B_EVENT" for row in tenant_b)
+    assert not any(row["action"] == "TENANT_A_EVENT" for row in tenant_b)
+
+
+def test_threat_intel_is_tenant_filtered(client):
+    from backend.api.deps import orchestrator
+    from backend.auth import create_token
+
+    original = dict(orchestrator.attack_engine._scenarios)
+    orchestrator.attack_engine._scenarios.update({
+        "tenant-a-intel": {
+            "id": "tenant-a-intel",
+            "tenant_id": "tenant-a",
+            "phases": [{"ioc": {"domains": ["tenant-a.example"], "tools": ["tool-a"]}}],
+        },
+        "tenant-b-intel": {
+            "id": "tenant-b-intel",
+            "tenant_id": "tenant-b",
+            "phases": [{"ioc": {"domains": ["tenant-b.example"], "tools": ["tool-b"]}}],
+        },
+    })
+    try:
+        token = create_token("alice", "analyst", tenant_id="tenant-a")
+        response = client.get("/api/threat-intel", headers={"Authorization": f"Bearer {token}"})
+        assert response.status_code == 200
+        body = response.json()
+        assert "tenant-a.example" in body["iocs"]["domains"]
+        assert "tenant-b.example" not in body["iocs"]["domains"]
+        assert "tool-a" in body["iocs"]["tools"]
+        assert "tool-b" not in body["iocs"]["tools"]
+    finally:
+        orchestrator.attack_engine._scenarios = original
+
+
+def test_sigma_upload_uses_tenant_directory(client, tmp_path, monkeypatch):
+    from backend.api.routes import mitre as mitre_routes
+    from backend.auth import create_token
+
+    monkeypatch.setattr(mitre_routes, "PROJECT_ROOT", tmp_path)
+    token = create_token("alice", "analyst", tenant_id="tenant/../evil")
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "text/yaml"}
+    sigma_yaml = """
+title: Tenant scoped Sigma fixture
+id: tenant-scoped-sigma-fixture
+status: experimental
+description: Test rule for tenant-scoped upload paths.
+logsource:
+  product: windows
+  category: process_creation
+detection:
+  selection:
+    process_name: powershell.exe
+  condition: selection
+level: high
+tags:
+  - attack.execution
+  - attack.t1059.001
+""".strip()
+
+    upload = client.post("/api/sigma/upload", content=sigma_yaml, headers=headers)
+    assert upload.status_code == 200
+    expected_dir = tmp_path / "data" / "sigma_rules" / "tenant----evil"
+    assert expected_dir.is_dir()
+    assert list(expected_dir.glob("*.yml"))
+
+    listed = client.get("/api/sigma/rules", headers={"Authorization": f"Bearer {token}"})
+    assert listed.status_code == 200
+    assert listed.json()[0]["rule_id"].startswith("SIGMA-")
+
+
 def test_soc_workflow_is_tenant_scoped():
     from backend.soc import (
         add_comment,

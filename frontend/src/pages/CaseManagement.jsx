@@ -3,8 +3,9 @@ import {
   Briefcase, Plus, RefreshCw, User, Calendar, Tag, MessageSquare,
   Paperclip, CheckCircle2, XCircle, Clock, AlertTriangle, ChevronRight,
 } from "lucide-react";
+import { API_BASE } from "../utils/api";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = API_BASE;
 
 const SEV_COLOR = {
   critical: "bg-red-500/20 text-red-300 border-red-500/30",

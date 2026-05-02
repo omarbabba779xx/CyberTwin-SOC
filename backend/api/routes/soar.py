@@ -46,6 +46,7 @@ async def push_to_thehive(
             None, lambda: TheHiveClient().push_simulation_result(result)
         )
         log_action("SOAR_PUSH", username=user["sub"], role=user.get("role"),
+                   tenant_id=_tenant_id(user),
                    resource=result_id, ip_address=_client_ip(request),
                    details={"case_id": push_result.get("case_id")})
         return push_result
@@ -68,6 +69,7 @@ async def analyze_iocs_cortex(
     try:
         jobs = await loop.run_in_executor(None, lambda: CortexClient().analyze_iocs(iocs))
         log_action("SOAR_CORTEX", username=user["sub"], role=user.get("role"),
+                   tenant_id=_tenant_id(user),
                    resource=result_id, ip_address=_client_ip(request),
                    details={"iocs_submitted": len(jobs)})
         return {"iocs_submitted": len(jobs), "jobs": jobs}

@@ -12,9 +12,10 @@ import os
 import time
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, Response
 
+from backend.auth import has_permission_for_tenant, verify_token_optional
 from backend.cache import cache
 
 from ..deps import limiter
@@ -23,15 +24,19 @@ logger = logging.getLogger("cybertwin.health")
 
 router = APIRouter(tags=["health"])
 
-_restrict_internals = os.getenv("RESTRICT_INTERNAL_ENDPOINTS", "false").lower() == "true"
 
+def _internal_access(user=Depends(verify_token_optional)):
+    """Require auth for internal endpoints when RESTRICT_INTERNAL_ENDPOINTS=true."""
+    if os.getenv("RESTRICT_INTERNAL_ENDPOINTS", "false").lower() != "true":
+        return None
 
-def _maybe_require_auth():
-    """Return an auth dependency when RESTRICT_INTERNAL_ENDPOINTS=true, else None."""
-    if _restrict_internals:
-        from backend.auth import require_permission
-        return Depends(require_permission("view_results"))
-    return None
+    if user is None:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    role = user.get("role", "viewer")
+    tenant_id = user.get("tenant_id") or "default"
+    if not has_permission_for_tenant(role, "view_results", tenant_id):
+        raise HTTPException(status_code=403, detail="Permission 'view_results' required")
+    return user
 
 
 @router.get("/")
@@ -53,7 +58,7 @@ def health(request: Request):
 
 @router.get("/api/health/deep")
 @limiter.limit("60/minute")
-def health_deep(request: Request):
+def health_deep(request: Request, _user=Depends(_internal_access)):
     """Deep health probe: report dependency status (cache, DB, ingestion).
 
     Set RESTRICT_INTERNAL_ENDPOINTS=true to require authentication.
@@ -146,7 +151,7 @@ def health_deep(request: Request):
 
 @router.get("/api/metrics")
 @limiter.limit("60/minute")
-def metrics_endpoint(request: Request):
+def metrics_endpoint(request: Request, _user=Depends(_internal_access)):
     """Prometheus exposition format.
 
     Set RESTRICT_INTERNAL_ENDPOINTS=true to require authentication.

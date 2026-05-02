@@ -3,8 +3,9 @@ import {
   Upload, Activity, RefreshCw, FileText, Zap, Database, CheckCircle2,
   XCircle, ChevronRight, Trash2,
 } from "lucide-react";
+import { API_BASE } from "../utils/api";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = API_BASE;
 
 const SOURCE_TYPES = [
   { value: "json",          label: "Generic JSON" },

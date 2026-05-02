@@ -3,8 +3,9 @@ import {
   Shield, Zap, CheckCircle2, XCircle, AlertTriangle,
   Send, RefreshCw, Activity, Search, ExternalLink, ChevronRight,
 } from "lucide-react";
+import { API_BASE } from "../utils/api";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = API_BASE;
 
 function badge(connected) {
   return connected

@@ -22,8 +22,8 @@ validation.
 | Ingestion | OCSF-style normalization, bounded in-memory buffer or Redis Streams |
 | SOC workflow | Tenant-scoped cases, comments, evidence, feedback, suppressions, SLA logic |
 | Persistence | SQLite local/demo runtime; SQLAlchemy/Alembic PostgreSQL runtime when `DATABASE_URL` is set |
-| Multi-tenancy | JWT `tenant_id`, middleware tenant scope, tenant-scoped history/SOC/ingestion |
-| Atomic Red Team | Optional local metadata catalog via `ATOMIC_RED_TEAM_PATH`; no command execution |
+| Multi-tenancy | JWT `tenant_id`, middleware tenant scope, tenant-scoped history/SOC/ingestion/audit/Sigma/custom scenarios |
+| Atomic Red Team | Optional local metadata catalog via `ATOMIC_RED_TEAM_PATH`; ATT&CK v19 metadata compatible; no command execution |
 | Quality gate | Pytest coverage gate, Vitest, Playwright, ingestion profiler, readiness check, security scans |
 
 ## Core Product Loop
@@ -240,6 +240,22 @@ Endpoints:
 | `GET` | `/api/mitre/atomic-red-team` | `view_results` | List local Atomic technique IDs |
 | `GET` | `/api/mitre/atomic-red-team/{technique_id}` | `view_results` | Return sanitized metadata for one technique |
 
+Upstream compatibility:
+
+- Parser schema: `atomic-red-team-yaml`.
+- Compatibility target: MITRE ATT&CK v19 metadata layout.
+- Latest validation run used a fresh clone of
+  `redcanaryco/atomic-red-team` at commit `113f30c97c33`
+  (`Attack v19 migration (#3329)`, committed 2026-05-01).
+- Validation sampled 80 techniques from a 331-technique catalog and confirmed
+  zero API/browser command leakage.
+
+Validation command:
+
+```bash
+python scripts/validate_atomic_catalog.py --path /path/to/atomic-red-team --limit 80
+```
+
 Frontend exposure:
 
 - Sidebar page: `Atomic Red Team`
@@ -269,11 +285,17 @@ Implemented controls:
 - Concurrent session cap.
 - Role and permission based FastAPI dependencies.
 - Dynamic tenant RBAC lookup when the database-backed role store is available.
-- Tenant-scoped history, SOC workflow, and ingestion buffers.
+- Tenant-scoped history, SOC workflow, ingestion buffers, audit reads,
+  custom scenarios, and uploaded Sigma rules.
+- Authenticated scenario, threat-intel, MITRE, history, environment, Atomic,
+  and SOC read surfaces.
+- Optional auth restriction for deep health and Prometheus metrics with
+  `RESTRICT_INTERNAL_ENDPOINTS=true`.
 - Rate limiting through `slowapi`.
 - Bounded request sizes for ingestion and SOC payloads.
 - Time-bound suppressions only.
-- Production safety checks for weak JWT secrets and default passwords.
+- Production safety checks for weak JWT secrets, default passwords, and
+  missing/non-PostgreSQL `DATABASE_URL`.
 - Security scans in CI: Bandit, pip-audit, npm audit, secret scanning, Trivy, Semgrep.
 
 ## Deployment Modes
@@ -335,10 +357,12 @@ alembic upgrade head
 | Ingestion | `/api/ingest/event`, `/api/ingest/batch`, `/api/ingest/detect` | Tenant from JWT, not request body |
 | Coverage | `/api/coverage/summary`, `/api/coverage/technique/{id}` | MITRE coverage analysis |
 | SOC | `/api/cases`, `/api/suppressions`, `/api/alerts/{id}/feedback` | Case workflow and feedback loop |
-| MITRE | `/api/mitre/techniques`, `/api/mitre/atomic-red-team` | ATT&CK and Atomic metadata |
-| Sigma | `/api/sigma/upload`, `/api/sigma/rules` | Rule upload/list |
+| MITRE | `/api/mitre/techniques`, `/api/mitre/atomic-red-team` | Authenticated ATT&CK and Atomic metadata |
+| Threat intel | `/api/threat-intel` | Authenticated, tenant-filtered scenario IOCs |
+| Scenarios | `/api/scenarios`, `/api/scenarios/custom` | Authenticated, tenant-filtered custom scenarios |
+| Sigma | `/api/sigma/upload`, `/api/sigma/rules` | Tenant-scoped rule upload/list |
 | SOAR | `/api/soar/*`, connector routes | Integrations and stubs |
-| Health/metrics | `/api/health`, `/api/health/deep`, `/api/metrics` | Operational checks |
+| Health/metrics | `/api/health`, `/api/health/deep`, `/api/metrics` | Public basic health; deep health/metrics can require auth |
 
 ## Quality And Verification
 
@@ -354,13 +378,14 @@ python -m pip_audit -r requirements.txt --strict
 npm audit --audit-level=high
 docker compose config --quiet
 docker compose --profile soar config --quiet
+python scripts/validate_atomic_catalog.py --path /path/to/atomic-red-team --limit 80
 ```
 
 Current observed results:
 
 | Check | Result |
 | --- | --- |
-| Backend tests + coverage | Passing, 75.85% backend coverage, gate 71% |
+| Backend tests + coverage | Passing, 76.00% backend coverage, gate 71% |
 | Frontend unit tests | Passing, 10 Vitest tests |
 | Frontend production build | Passing; known large `html2pdf` chunk warning |
 | Python lint | Passing, `flake8` count 0 |
@@ -368,6 +393,7 @@ Current observed results:
 | Python dependency audit | No known vulnerabilities found |
 | npm high+ audit | 0 vulnerabilities |
 | Compose config | Default and SOAR profile validate |
+| Atomic Red Team v19 metadata validation | Passing against commit `113f30c97c33`, 80 parsed techniques, 0 command leaks |
 
 ## CI/CD Quality Gate
 
@@ -426,10 +452,11 @@ that previously lived in the improvement backlog.
 | PostgreSQL SOC runtime CRUD | `backend/soc/orm_store.py`, Alembic `0006`, `tests/test_soc_orm_runtime.py` |
 | Analyst E2E journeys | `frontend/e2e/smoke.spec.ts` covers login, Atomic metadata, and SOC case lifecycle |
 | Production hardening | `scripts/production_readiness_check.py`, `docs/operations/production-hardening-checklist.md` |
+| Helm secure overlay | NetworkPolicy default-deny, Redis/backend/frontend allow policies, PDB, read-only root filesystem mounts, probes |
 | Backup, retention, DR | `scripts/backup.sh`, `docs/operations/backup-recovery.md` |
 | Sustained ingestion profiling | `scripts/profile_ingestion.py`, `tests/test_ingestion_profiler.py` |
 | Validated ATT&CK paths | `tests/test_attack_validation_matrix.py`, Coverage Center, MITRE proof docs |
-| Atomic Red Team planning | Metadata-only UI plus command-free validation plans |
+| Atomic Red Team planning | ATT&CK v19 metadata status, metadata-only UI, command-free validation plans |
 | Compliance audit package | `docs/compliance/audit-evidence-pack.md` and readiness mappings |
 
 ```mermaid

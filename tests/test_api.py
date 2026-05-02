@@ -14,7 +14,6 @@ from backend.api.main import app
 async def client():
     """Async test client using ASGITransport – no running server needed."""
     # Trigger startup initialization (on_event startup doesn't fire in test mode)
-    from backend.orchestrator import SimulationOrchestrator
     from backend.api.main import _orchestrator
     if not _orchestrator.attack_engine._scenarios:
         _orchestrator.initialise()
@@ -61,21 +60,30 @@ class TestAPI:
         assert isinstance(data, list)
         assert len(data) > 0
 
-    async def test_get_scenarios(self, client):
-        resp = await client.get("/api/scenarios")
+    async def test_get_scenarios(self, client, auth_headers):
+        unauth = await client.get("/api/scenarios")
+        assert unauth.status_code == 401
+
+        resp = await client.get("/api/scenarios", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, list)
         assert len(data) >= 4
 
-    async def test_get_mitre_tactics(self, client):
-        resp = await client.get("/api/mitre/tactics")
+    async def test_get_mitre_tactics(self, client, auth_headers):
+        unauth = await client.get("/api/mitre/tactics")
+        assert unauth.status_code == 401
+
+        resp = await client.get("/api/mitre/tactics", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert len(data) == 14
 
-    async def test_get_mitre_techniques(self, client):
-        resp = await client.get("/api/mitre/techniques")
+    async def test_get_mitre_techniques(self, client, auth_headers):
+        unauth = await client.get("/api/mitre/techniques")
+        assert unauth.status_code == 401
+
+        resp = await client.get("/api/mitre/techniques", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert isinstance(data, dict)
@@ -88,7 +96,7 @@ class TestAPI:
         from backend.auth import create_token
         token = create_token("analyst", "analyst")
         headers = {"Authorization": f"Bearer {token}"}
-        resp = await client.get("/api/scenarios")
+        resp = await client.get("/api/scenarios", headers=headers)
         scenarios = resp.json()
         sid = scenarios[0]["id"]
         oversized = await client.post("/api/simulate", json={
@@ -113,7 +121,7 @@ class TestAPI:
         from backend.auth import create_token
         token = create_token("analyst", "analyst")
         headers = {"Authorization": f"Bearer {token}"}
-        resp = await client.get("/api/scenarios")
+        resp = await client.get("/api/scenarios", headers=headers)
         scenarios = resp.json()
         sid = scenarios[0]["id"]
         await client.post("/api/simulate", json={
@@ -150,8 +158,11 @@ class TestAPI:
         assert by_scenario.status_code == 200
         assert isinstance(by_scenario.json(), list)
 
-    async def test_threat_intel_endpoint(self, client):
-        resp = await client.get("/api/threat-intel")
+    async def test_threat_intel_endpoint(self, client, auth_headers):
+        unauth = await client.get("/api/threat-intel")
+        assert unauth.status_code == 401
+
+        resp = await client.get("/api/threat-intel", headers=auth_headers)
         assert resp.status_code == 200
         data = resp.json()
         assert "iocs" in data

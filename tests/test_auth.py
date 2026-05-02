@@ -2,7 +2,6 @@
 Tests for backend/auth.py — password hashing, JWT, RBAC, user store.
 """
 import os
-import time
 import pytest
 import jwt
 
@@ -117,6 +116,22 @@ class TestRBAC:
     def test_viewer_can_view_results(self):
         from backend.auth import has_permission
         assert has_permission("viewer", "view_results") is True
+
+    def test_production_safety_requires_postgres_database_url(self, monkeypatch):
+        from backend.auth import check_production_safety
+
+        monkeypatch.setenv("ENV", "production")
+        monkeypatch.setenv("JWT_SECRET", "x" * 64)
+        monkeypatch.setenv("AUTH_ADMIN_PASSWORD", "correct-horse-battery-staple")
+        monkeypatch.setenv("AUTH_ANALYST_PASSWORD", "correct-horse-battery-staple")
+        monkeypatch.setenv("AUTH_VIEWER_PASSWORD", "correct-horse-battery-staple")
+
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+        with pytest.raises(RuntimeError, match="DATABASE_URL"):
+            check_production_safety()
+
+        monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg2://user:pass@db:5432/cybertwin")
+        check_production_safety()
 
     def test_viewer_cannot_run_simulation(self):
         from backend.auth import has_permission

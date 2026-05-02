@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   ShieldOff, Plus, Trash2, RefreshCw, Clock, AlertTriangle, XCircle,
 } from "lucide-react";
+import { API_BASE } from "../utils/api";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = API_BASE;
 
 const SCOPES = ["rule", "user", "host", "ip", "process", "tenant"];
 

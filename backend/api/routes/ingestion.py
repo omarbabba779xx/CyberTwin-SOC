@@ -143,6 +143,7 @@ async def ingest_upload(request: Request, user=Depends(require_permission("inges
         except Exception:
             rejected += 1
     log_action("INGEST_UPLOAD", username=user["sub"], role=user.get("role"),
+               tenant_id=tenant,
                ip_address=_client_ip(request),
                details={"accepted": accepted, "rejected": rejected})
     return {"accepted": accepted, "rejected": rejected}
@@ -191,5 +192,6 @@ def ingest_clear(request: Request, user=Depends(require_permission("configure_sy
     from backend.ingestion import get_pipeline
     get_pipeline().clear(tenant_id=_tenant_id(user))
     log_action("INGEST_CLEAR", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                ip_address=_client_ip(request))
     return {"status": "cleared"}

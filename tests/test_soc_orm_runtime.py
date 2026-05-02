@@ -8,6 +8,47 @@ import sys
 import textwrap
 
 
+def test_soc_orm_store_is_covered_in_process(tmp_path, monkeypatch):
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from backend.db.models import Base
+    from backend.soc import orm_store
+
+    engine = create_engine(f"sqlite:///{(tmp_path / 'covered_orm.db').as_posix()}")
+    Base.metadata.create_all(bind=engine)
+    monkeypatch.setattr(orm_store, "SessionLocal", sessionmaker(bind=engine))
+
+    case = orm_store.create_case(
+        title="Covered ORM case",
+        created_by="alice",
+        tenant_id="tenant-a",
+        alert_ids=["ALR-1"],
+    )
+    assert orm_store.list_cases(tenant_id="tenant-b") == []
+    comment = orm_store.add_comment(
+        case.case_id,
+        author="alice",
+        role="analyst",
+        body="covered",
+        tenant_id="tenant-a",
+    )
+    feedback = orm_store.record_feedback(
+        alert_id="ALR-1",
+        rule_id="RULE-1",
+        verdict="true_positive",
+        analyst="alice",
+        role="analyst",
+        tenant_id="tenant-a",
+    )
+
+    loaded = orm_store.get_case(case.case_id, tenant_id="tenant-a")
+    assert loaded is not None
+    assert loaded.comments[0].comment_id == comment.comment_id
+    assert feedback.feedback_id
+    assert orm_store.feedback_summary(tenant_id="tenant-a")["total_feedback"] == 1
+
+
 def test_soc_crud_uses_database_url_runtime(tmp_path):
     db_path = tmp_path / "soc_orm.db"
     env = os.environ.copy()

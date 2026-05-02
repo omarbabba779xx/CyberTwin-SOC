@@ -491,12 +491,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Create compose .env (test-only secrets)
-        # `.env` is git-ignored; we create a stub so `env_file` is satisfied
-        # and the production-safety gate gets strong test-only secrets.
+      - name: Create compose .env (test-only local/demo settings)
+        # `.env` is git-ignored; the default compose stack is a local/demo
+        # topology without PostgreSQL, so it intentionally runs in development
+        # mode. Production validation is covered by the postgres-migration job
+        # plus the production readiness check.
         run: |
           cat > .env <<'EOF'
-          ENV=production
+          ENV=development
           JWT_SECRET=ci-only-secret-for-compose-validation-0000000000000000000000000000
           AUTH_ADMIN_PASSWORD=ci-admin-password-0000
           AUTH_ANALYST_PASSWORD=ci-analyst-password-0000

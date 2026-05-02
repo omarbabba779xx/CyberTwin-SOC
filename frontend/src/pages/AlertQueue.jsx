@@ -3,8 +3,9 @@ import {
   AlertTriangle, CheckCircle2, XCircle, Filter, RefreshCw, Send,
   ShieldAlert, Activity, ChevronRight,
 } from "lucide-react";
+import { API_BASE } from "../utils/api";
 
-const API = import.meta.env.VITE_API_URL || "";
+const API = API_BASE;
 
 const VERDICT_OPTIONS = [
   { value: "true_positive",   label: "True Positive",   color: "red" },

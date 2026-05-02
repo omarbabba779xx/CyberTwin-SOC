@@ -77,6 +77,7 @@ def history_delete(
         "DELETE_HISTORY",
         username=user["sub"],
         role=user.get("role"),
+        tenant_id=_tenant_id(user),
         resource=str(run_id),
         ip_address=_client_ip(request),
     )

@@ -184,6 +184,7 @@ def post_alert_feedback(
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     log_action("ALERT_FEEDBACK", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                resource=alert_id, ip_address=_client_ip(request),
                details={"rule_id": payload.rule_id, "verdict": payload.verdict})
     return fb.to_dict()
@@ -235,6 +236,7 @@ def post_case(payload: CaseCreateRequest, request: Request,
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     log_action("CASE_CREATE", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                resource=case.case_id, ip_address=_client_ip(request),
                details={"severity": case.severity})
     return case.to_dict()
@@ -280,6 +282,7 @@ def patch_case(case_id: str, payload: CasePatchRequest, request: Request,
     if case is None:
         raise HTTPException(404, f"Case '{case_id}' not found")
     log_action("CASE_UPDATE", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                resource=case_id, ip_address=_client_ip(request),
                details={"changes": list(fields.keys())})
     return case.to_dict()
@@ -323,6 +326,7 @@ def post_case_assign(case_id: str, payload: AssignRequest, request: Request,
     if case is None:
         raise HTTPException(404, f"Case '{case_id}' not found")
     log_action("CASE_ASSIGN", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                resource=case_id, ip_address=_client_ip(request),
                details={"assignee": payload.assignee})
     return case.to_dict()
@@ -342,6 +346,7 @@ def post_case_close(case_id: str, payload: CaseCloseRequest, request: Request,
     if case is None:
         raise HTTPException(404, f"Case '{case_id}' not found")
     log_action("CASE_CLOSE", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                resource=case_id, ip_address=_client_ip(request),
                details={"final_status": payload.final_status})
     return case.to_dict()
@@ -367,6 +372,7 @@ def post_suppression(payload: SuppressionRequest, request: Request,
     except ValueError as exc:
         raise HTTPException(400, str(exc))
     log_action("SUPPRESSION_CREATE", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                ip_address=_client_ip(request),
                details={"scope": s.scope, "target": s.target, "expires_at": s.expires_at})
     return s.to_dict()
@@ -393,5 +399,6 @@ def delete_suppression_endpoint(suppression_id: int, request: Request,
     ):
         raise HTTPException(404, f"Suppression #{suppression_id} not found")
     log_action("SUPPRESSION_DELETE", username=user["sub"], role=user.get("role"),
+               tenant_id=_tenant_id(user),
                resource=str(suppression_id), ip_address=_client_ip(request))
     return {"status": "deleted", "suppression_id": suppression_id}

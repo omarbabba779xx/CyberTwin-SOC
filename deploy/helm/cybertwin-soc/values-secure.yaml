@@ -1,5 +1,5 @@
 ## =============================================================================
-## CyberTwin SOC — production / hardened Helm values
+## CyberTwin SOC - production / hardened Helm values
 ## =============================================================================
 ##
 ## Use this overlay on top of `values.yaml` for any environment that ships
@@ -23,7 +23,7 @@
 ## =============================================================================
 
 # ---------------------------------------------------------------------------
-# Pod-level hardening — applied to every workload (backend, frontend, worker)
+# Pod-level hardening - applied to backend, frontend, and Redis workloads
 # ---------------------------------------------------------------------------
 podSecurityContext:
   runAsNonRoot: true
@@ -35,7 +35,7 @@ podSecurityContext:
 
 securityContext:
   allowPrivilegeEscalation: false
-  readOnlyRootFilesystem: true   # ← key change vs values.yaml (false there)
+  readOnlyRootFilesystem: true   # key change vs values.yaml (false there)
   privileged: false
   runAsNonRoot: true
   capabilities:
@@ -43,19 +43,31 @@ securityContext:
   seccompProfile:
     type: RuntimeDefault
 
-# Mount writable scratch space under /tmp because the root FS is read-only.
-# uvicorn writes nothing else to disk; logs go to stdout.
+# Mount writable scratch space because the root FS is read-only. Backend needs
+# /tmp; nginx-unprivileged also expects cache/run paths to be writable.
 extraVolumes:
   - name: tmp-scratch
     emptyDir:
       sizeLimit: 64Mi
+  - name: nginx-cache
+    emptyDir:
+      sizeLimit: 64Mi
+  - name: nginx-run
+    emptyDir:
+      sizeLimit: 8Mi
 extraVolumeMounts:
   - name: tmp-scratch
     mountPath: /tmp
     readOnly: false
+  - name: nginx-cache
+    mountPath: /var/cache/nginx
+    readOnly: false
+  - name: nginx-run
+    mountPath: /var/run
+    readOnly: false
 
 # ---------------------------------------------------------------------------
-# Backend — production replica count + tighter caps
+# Backend - production replica count + tighter caps
 # ---------------------------------------------------------------------------
 backend:
   replicas: 3
@@ -83,7 +95,7 @@ backend:
   existingSecret: cybertwin-secrets
 
 # ---------------------------------------------------------------------------
-# Frontend — read-only nginx-unprivileged + production replica count
+# Frontend - read-only nginx-unprivileged + production replica count
 # ---------------------------------------------------------------------------
 frontend:
   replicas: 3
@@ -96,7 +108,7 @@ frontend:
       memory: 256Mi
 
 # ---------------------------------------------------------------------------
-# Ingress — TLS-only, HSTS, modern ciphers
+# Ingress - TLS-only, HSTS, modern ciphers
 # ---------------------------------------------------------------------------
 ingress:
   enabled: true
@@ -117,15 +129,18 @@ ingress:
     nginx.ingress.kubernetes.io/limit-connections: "200"
 
 # ---------------------------------------------------------------------------
-# NetworkPolicy — default-deny + explicit allow rules
+# NetworkPolicy - default-deny + explicit allow rules
 # ---------------------------------------------------------------------------
 # Enabled in the secure overlay. The default-deny policy blocks all pod
-# egress; the allow rules let backend → redis, backend → postgres (if
-# external), and ingress-controller → backend. Anything else (e.g. a
+# egress; the allow rules let frontend -> backend, backend -> redis,
+# DNS egress, monitoring scrape ingress, and optional external CIDRs.
+# Anything else (e.g. a
 # compromised pod calling out to an attacker C2) is dropped at the CNI.
 networkPolicy:
   enabled: true
   ingressNamespace: ingress-nginx       # the namespace running the ingress
+  allowedIngressNamespaces:
+    - monitoring                         # Prometheus / Grafana scrape path
   allowedEgressNamespaces:               # additional egress targets
     - kube-system                        # CoreDNS
     - monitoring                         # Prometheus / Grafana
@@ -134,14 +149,14 @@ networkPolicy:
     cidrs: []
 
 # ---------------------------------------------------------------------------
-# PodDisruptionBudget — zero-downtime upgrades
+# PodDisruptionBudget - zero-downtime upgrades
 # ---------------------------------------------------------------------------
 podDisruptionBudget:
   enabled: true
   minAvailable: 2   # keep at least 2/3 backend pods up during voluntary disruption
 
 # ---------------------------------------------------------------------------
-# Probes — production-grade liveness + readiness + startup
+# Probes - production-grade liveness + readiness + startup
 # ---------------------------------------------------------------------------
 probes:
   liveness:
@@ -151,7 +166,7 @@ probes:
     timeoutSeconds: 5
     failureThreshold: 3
   readiness:
-    httpGet: { path: /api/health/ready, port: 8000 }
+    httpGet: { path: /api/health/deep, port: 8000 }
     initialDelaySeconds: 5
     periodSeconds: 5
     timeoutSeconds: 3
@@ -162,7 +177,7 @@ probes:
     periodSeconds: 10
 
 # ---------------------------------------------------------------------------
-# Observability — ServiceMonitor + OpenTelemetry collector wiring
+# Observability - ServiceMonitor + OpenTelemetry collector wiring
 # ---------------------------------------------------------------------------
 metrics:
   enabled: true

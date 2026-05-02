@@ -90,6 +90,19 @@ class TestHashChain:
         assert result["checked"] == 10
         assert result["first_broken_id"] is None
 
+    def test_chain_survives_last_hash_cache_loss(self, isolated_audit_db):
+        import backend.audit as audit_mod
+        from backend.audit import log_action, verify_audit_chain
+        from backend.cache import cache
+
+        log_action("FIRST_ACTION", username="alice", role="analyst", tenant_id="tenant-a")
+        cache.delete(audit_mod._REDIS_HASH_KEY)
+        log_action("SECOND_ACTION", username="alice", role="analyst", tenant_id="tenant-a")
+
+        result = verify_audit_chain(limit=100)
+        assert result["valid"] is True, result["message"]
+        assert result["checked"] == 2
+
 
 class TestTamperDetection:
     def test_modified_action_field_breaks_chain(self, isolated_audit_db):
